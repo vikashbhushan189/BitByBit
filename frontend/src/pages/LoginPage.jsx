@@ -1,61 +1,102 @@
 import React, { useState } from 'react';
-import api from '../api/axios'; // <--- CHANGED: Import custom api
+import api from '../api/axios';
 import { useNavigate, Link } from 'react-router-dom';
+import { AlertCircle, LogIn, Lock, User } from 'lucide-react';
 
 const LoginPage = () => {
     const [formData, setFormData] = useState({ username: '', password: '' });
+    const [error, setError] = useState(''); // State to hold error messages
+    const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+        setError(''); // Clear error when user starts typing again
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setIsLoading(true);
+        setError('');
+
         try {
-            // CHANGED: Use api.post and relative path
             const res = await api.post('auth/jwt/create/', formData);
             
             localStorage.setItem('access_token', res.data.access);
             localStorage.setItem('refresh_token', res.data.refresh);
             
-            alert("Login Successful!");
+            // Redirect immediately (no success popup needed for login)
             navigate('/'); 
             window.location.reload(); 
         } catch (err) {
-            console.error(err);
-            alert("Invalid Credentials");
+            console.error("Login Error:", err);
+            // Check if it's a specific error (401 Unauthorized usually means bad password)
+            if (err.response && err.response.status === 401) {
+                setError("Invalid Username or Password.");
+            } else {
+                setError("Something went wrong. Please check your connection.");
+            }
+        } finally {
+            setIsLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <div className="bg-white p-8 rounded-lg shadow-md w-96">
-                <h2 className="text-2xl font-bold mb-6 text-center text-blue-900">Login</h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <input
-                        type="text"
-                        name="username"
-                        placeholder="Username"
-                        onChange={handleChange}
-                        className="w-full p-2 border rounded"
-                        required
-                    />
-                    <input
-                        type="password"
-                        name="password"
-                        placeholder="Password"
-                        onChange={handleChange}
-                        className="w-full p-2 border rounded"
-                        required
-                    />
-                    <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-                        Login
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 font-sans">
+            <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md border border-gray-100">
+                <div className="text-center mb-8">
+                    <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <LogIn className="text-blue-600" size={28} />
+                    </div>
+                    <h2 className="text-2xl font-bold text-slate-800">Welcome Back</h2>
+                    <p className="text-slate-500 text-sm mt-2">Please enter your details to sign in.</p>
+                </div>
+
+                {/* --- INLINE ERROR MESSAGE --- */}
+                {error && (
+                    <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg flex items-center gap-3 text-sm animate-pulse">
+                        <AlertCircle size={18} />
+                        <span>{error}</span>
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="relative">
+                        <User className="absolute left-3 top-3.5 text-gray-400 w-5 h-5" />
+                        <input
+                            type="text"
+                            name="username"
+                            placeholder="Username"
+                            onChange={handleChange}
+                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                            required
+                        />
+                    </div>
+                    
+                    <div className="relative">
+                        <Lock className="absolute left-3 top-3.5 text-gray-400 w-5 h-5" />
+                        <input
+                            type="password"
+                            name="password"
+                            placeholder="Password"
+                            onChange={handleChange}
+                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                            required
+                        />
+                    </div>
+
+                    <button 
+                        type="submit" 
+                        disabled={isLoading}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold shadow-md hover:shadow-lg transition-all disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                    >
+                        {isLoading ? "Signing in..." : "Login"}
                     </button>
                 </form>
-                <p className="mt-4 text-center text-sm">
-                    Don't have an account? <Link to="/register" className="text-blue-600">Register</Link>
-                </p>
+
+                <div className="mt-6 text-center text-sm text-gray-600">
+                    <p>Don't have an account? <Link to="/register" className="text-blue-600 font-semibold hover:underline">Create one</Link></p>
+                </div>
             </div>
         </div>
     );

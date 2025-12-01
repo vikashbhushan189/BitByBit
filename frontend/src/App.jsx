@@ -1,24 +1,24 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import CourseList from './components/CourseList';
 import ExamPage from './pages/ExamPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import LandingPage from './pages/LandingPage';
-import NotesPage from './pages/NotesPage'; // <--- NEW IMPORT
-import { LogOut, LayoutDashboard, BookOpen } from 'lucide-react';
-import AdminGeneratorPage from './pages/AdminGeneratorPage';
+import AdminGeneratorPage from './pages/AdminGeneratorPage'; // Admin Tool
+import AdminLoginPage from './pages/AdminLoginPage'; // <--- NEW FILE WE WILL CREATE
+import NotesPage from './pages/NotesPage';
+import { LogOut, LayoutDashboard, BookOpen, ShieldCheck } from 'lucide-react';
 
-const Navbar = () => {
+const Navbar = ({ isLoggedIn }) => {
     const navigate = useNavigate();
-    const isLoggedIn = !!localStorage.getItem('access_token');
     
     const handleLogout = () => {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
-        navigate('/login');
-        window.location.reload(); 
+        // Force a hard reload to clear all states cleanly
+        window.location.href = '/login'; 
     };
 
     return (
@@ -44,7 +44,7 @@ const Navbar = () => {
                         </button>
                     </div>
                 ) : (
-                    <div className="space-x-4">
+                    <div className="space-x-4 flex items-center">
                         <Link to="/login" className="text-slate-600 font-bold hover:text-blue-600 transition-colors">
                             Login
                         </Link>
@@ -60,30 +60,41 @@ const Navbar = () => {
 
 // Helper: Protect Routes
 const PrivateRoute = ({ children }) => {
-    const isLoggedIn = !!localStorage.getItem('access_token');
-    return isLoggedIn ? children : <Navigate to="/login" />;
+    const token = localStorage.getItem('access_token');
+    return token ? children : <Navigate to="/login" />;
+};
+
+// Helper: Protect Admin Routes (Basic check, backend verifies actual permissions)
+const AdminRoute = ({ children }) => {
+    const token = localStorage.getItem('access_token');
+    return token ? children : <Navigate to="/admin-portal" />;
 };
 
 function App() {
-  const isLoggedIn = !!localStorage.getItem('access_token');
+  // FIX: Lazy Initialization prevents the "Flash" of landing page
+  // This runs BEFORE the first render
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+      return !!localStorage.getItem('access_token');
+  });
 
   return (
     <Router>
       <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-100">
-        <Navbar />
+        <Navbar isLoggedIn={isLoggedIn} />
         <Routes>
             {/* If logged in, go to Courses. If not, go to Landing Page */}
-            <Route path="/" element={isLoggedIn ? <Navigate to="/courses" /> : <LandingPage />} />
+            <Route path="/" element={isLoggedIn ? <Navigate to="/courses" replace /> : <LandingPage />} />
             
-            {/* Protected Routes */}
+            {/* Student Routes */}
             <Route path="/courses" element={<PrivateRoute><CourseList /></PrivateRoute>} />
             <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
             <Route path="/exam/:examId" element={<PrivateRoute><ExamPage /></PrivateRoute>} />
-            <Route path="/admin-generator" element={<AdminGeneratorPage />} />
-            
-            {/* NEW: Secure Notes Route */}
             <Route path="/topic/:topicId/notes" element={<PrivateRoute><NotesPage /></PrivateRoute>} />
             
+            {/* Admin Routes */}
+            <Route path="/admin-portal" element={<AdminLoginPage />} />
+            <Route path="/admin-generator" element={<AdminRoute><AdminGeneratorPage /></AdminRoute>} />
+
             {/* Public Routes */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />

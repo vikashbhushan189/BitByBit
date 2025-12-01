@@ -1,12 +1,12 @@
 import axios from 'axios';
 
-// Automatically switches between Localhost and Cloud URL
-const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api/';
-
+// NUCLEAR FIX: We are hardcoding the Render URL to force it to work.
+// This bypasses the environment variable issue completely.
 const api = axios.create({
-    baseURL: apiUrl,
+    baseURL: 'https://bitbybit-p3ym.onrender.com/api/',
 });
 
+// Add the token to every request if we have one
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('access_token');
     if (token) {

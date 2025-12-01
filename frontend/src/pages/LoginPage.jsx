@@ -5,13 +5,13 @@ import { AlertCircle, LogIn, Lock, User } from 'lucide-react';
 
 const LoginPage = () => {
     const [formData, setFormData] = useState({ username: '', password: '' });
-    const [error, setError] = useState(''); // State to hold error messages
+    const [error, setError] = useState(''); 
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
-        setError(''); // Clear error when user starts typing again
+        setError(''); 
     };
 
     const handleSubmit = async (e) => {
@@ -20,17 +20,30 @@ const LoginPage = () => {
         setError('');
 
         try {
+            // 1. Get Token
             const res = await api.post('auth/jwt/create/', formData);
+            const token = res.data.access;
             
-            localStorage.setItem('access_token', res.data.access);
+            // 2. Check User Role (Critical Step)
+            // We temporarily use this token to ask "Who am I?"
+            const userRes = await api.get('auth/users/me/', {
+                headers: { Authorization: `JWT ${token}` }
+            });
+
+            if (userRes.data.is_superuser || userRes.data.is_staff) {
+                setError("Admins must use the Admin Portal.");
+                setIsLoading(false);
+                return; // Stop execution
+            }
+
+            // 3. If Student, Proceed
+            localStorage.setItem('access_token', token);
             localStorage.setItem('refresh_token', res.data.refresh);
             
-            // Redirect immediately (no success popup needed for login)
             navigate('/'); 
             window.location.reload(); 
         } catch (err) {
             console.error("Login Error:", err);
-            // Check if it's a specific error (401 Unauthorized usually means bad password)
             if (err.response && err.response.status === 401) {
                 setError("Invalid Username or Password.");
             } else {
@@ -48,11 +61,10 @@ const LoginPage = () => {
                     <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                         <LogIn className="text-blue-600" size={28} />
                     </div>
-                    <h2 className="text-2xl font-bold text-slate-800">Welcome Back</h2>
+                    <h2 className="text-2xl font-bold text-slate-800">Student Login</h2>
                     <p className="text-slate-500 text-sm mt-2">Please enter your details to sign in.</p>
                 </div>
 
-                {/* --- INLINE ERROR MESSAGE --- */}
                 {error && (
                     <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg flex items-center gap-3 text-sm animate-pulse">
                         <AlertCircle size={18} />
@@ -90,7 +102,7 @@ const LoginPage = () => {
                         disabled={isLoading}
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold shadow-md hover:shadow-lg transition-all disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
                     >
-                        {isLoading ? "Signing in..." : "Login"}
+                        {isLoading ? "Checking Access..." : "Login"}
                     </button>
                 </form>
 

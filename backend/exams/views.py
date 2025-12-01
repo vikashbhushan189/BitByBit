@@ -6,30 +6,30 @@ from django.utils import timezone
 from .models import Course, Exam, ExamAttempt, Question, Option, StudentResponse, Topic
 from .serializers import CourseSerializer, ExamSerializer, ExamAttemptSerializer, TopicSerializer
 from .ai_service import generate_questions_from_text
-from django.conf import settings
-
-# ... existing ViewSets (CourseViewSet, TopicViewSet, ExamViewSet, AttemptHistoryViewSet) ...
-# (I am omitting them to save space, but DO NOT DELETE THEM from your file. 
-# Only replace the AIGeneratorViewSet class below)
+# Import the new permission
+from .permissions import IsPaidSubscriberOrAdmin 
 
 class CourseViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    # Allow Admins to see all, Students to see only what they have access to
+    permission_classes = [permissions.IsAuthenticated]
 
 class TopicViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Topic.objects.all()
     serializer_class = TopicSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    # Apply the custom permission here
+    permission_classes = [permissions.IsAuthenticated, IsPaidSubscriberOrAdmin]
 
 class ExamViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Exam.objects.all()
     serializer_class = ExamSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsPaidSubscriberOrAdmin]
 
     @action(detail=True, methods=['post'])
     def start_attempt(self, request, pk=None):
         exam = self.get_object()
+        # Admins can take tests too for testing purposes
         attempt = ExamAttempt.objects.create(user=request.user, exam=exam)
         return Response({
             'attempt_id': attempt.id,
@@ -85,7 +85,6 @@ class AttemptHistoryViewSet(viewsets.ReadOnlyModelViewSet):
         return ExamAttempt.objects.filter(user=self.request.user).order_by('-start_time')
 
 class AIGeneratorViewSet(viewsets.ViewSet):
-    # SECURITY RESTORED: Only Admin/Superusers can access this
     permission_classes = [permissions.IsAdminUser]
 
     @action(detail=False, methods=['post'])

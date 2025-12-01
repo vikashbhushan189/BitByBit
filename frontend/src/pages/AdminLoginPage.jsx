@@ -27,7 +27,7 @@ const AdminLoginPage = () => {
             localStorage.setItem('refresh_token', res.data.refresh);
             
             // Redirect to Admin Generator
-            window.location.href = '/admin-generator';
+            window.location.href = '/admin-dashboard';
         } catch (err) {
             console.error(err);
             if (err.response && err.response.status === 401) {

@@ -10,6 +10,7 @@ import AdminGeneratorPage from './pages/AdminGeneratorPage'; // Admin Tool
 import AdminLoginPage from './pages/AdminLoginPage'; // <--- NEW FILE WE WILL CREATE
 import NotesPage from './pages/NotesPage';
 import { LogOut, LayoutDashboard, BookOpen, ShieldCheck } from 'lucide-react';
+import AdminDashboardPage from './pages/AdminDashboardPage';
 
 const Navbar = ({ isLoggedIn }) => {
     const navigate = useNavigate();
@@ -92,6 +93,7 @@ function App() {
             <Route path="/topic/:topicId/notes" element={<PrivateRoute><NotesPage /></PrivateRoute>} />
             
             {/* Admin Routes */}
+            <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} /> {/* <--- New Route */}
             <Route path="/admin-portal" element={<AdminLoginPage />} />
             <Route path="/admin-generator" element={<AdminRoute><AdminGeneratorPage /></AdminRoute>} />
 

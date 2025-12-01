@@ -30,6 +30,17 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com']
 
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "https://bit-by-bit-lemon.vercel.app",  # <--- REPLACE THIS with your actual Vercel URL
+]
+
+# 2. Trust for POST requests (Login/Register)
+CSRF_TRUSTED_ORIGINS = [
+    "https://bit-by-bit-lemon.vercel.app",  # <--- REPLACE THIS with your actual Vercel URL
+    "https://bitbybit-p3ym.onrender.com",
+]
 # Application definition
 
 INSTALLED_APPS = [
@@ -144,3 +155,5 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT',),
 }
+
+GEMINI_API_KEY = config('GEMINI_API_KEY', default=None)

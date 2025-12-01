@@ -24,7 +24,8 @@ def home(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('exams.urls')),
-    path('auth/', include('djoser.urls')),
-    path('auth/', include('djoser.urls.jwt')),
-    path('', home),
+    
+    # CHANGED: Added 'api/' prefix to match Frontend requests
+    path('api/auth/', include('djoser.urls')),      
+    path('api/auth/', include('djoser.urls.jwt')),
 ]

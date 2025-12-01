@@ -6,7 +6,8 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import LandingPage from './pages/LandingPage';
-import { LogOut, User, LayoutDashboard, BookOpen } from 'lucide-react';
+import NotesPage from './pages/NotesPage'; // <--- NEW IMPORT
+import { LogOut, LayoutDashboard, BookOpen } from 'lucide-react';
 
 const Navbar = () => {
     const navigate = useNavigate();
@@ -32,7 +33,7 @@ const Navbar = () => {
                             <BookOpen size={18}/> Courses
                         </Link>
                         <Link to="/dashboard" className="text-slate-600 hover:text-blue-600 font-semibold flex items-center gap-2">
-                            <LayoutDashboard size={18}/> My Dashboard
+                            <LayoutDashboard size={18}/> Dashboard
                         </Link>
                         <button 
                             onClick={handleLogout} 
@@ -73,10 +74,15 @@ function App() {
             {/* If logged in, go to Courses. If not, go to Landing Page */}
             <Route path="/" element={isLoggedIn ? <Navigate to="/courses" /> : <LandingPage />} />
             
+            {/* Protected Routes */}
             <Route path="/courses" element={<PrivateRoute><CourseList /></PrivateRoute>} />
             <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
             <Route path="/exam/:examId" element={<PrivateRoute><ExamPage /></PrivateRoute>} />
             
+            {/* NEW: Secure Notes Route */}
+            <Route path="/topic/:topicId/notes" element={<PrivateRoute><NotesPage /></PrivateRoute>} />
+            
+            {/* Public Routes */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
         </Routes>

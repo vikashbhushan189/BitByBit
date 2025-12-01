@@ -6,8 +6,8 @@ import json
 genai.configure(api_key=settings.GEMINI_API_KEY)
 
 def generate_questions_from_text(text_content, num_questions=5, difficulty="Medium"):
-    # FIX: Use the latest stable model "gemini-1.5-flash"
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    # FIX: Updated to the latest 2025 model version
+    model = genai.GenerativeModel('gemini-2.5-flash')
 
     # 2. Craft the Prompt
     prompt = f"""

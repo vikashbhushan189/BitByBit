@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../api/axios'; // <--- CHANGED: Import custom api
 import { useNavigate, Link } from 'react-router-dom';
 
 const LoginPage = () => {
@@ -13,16 +13,15 @@ const LoginPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            // Call Djoser Login API
-            const res = await axios.post('http://127.0.0.1:8000/auth/jwt/create/', formData);
+            // CHANGED: Use api.post and relative path
+            const res = await api.post('auth/jwt/create/', formData);
             
-            // Save Token in Browser
             localStorage.setItem('access_token', res.data.access);
             localStorage.setItem('refresh_token', res.data.refresh);
             
             alert("Login Successful!");
-            navigate('/'); // Go to Dashboard
-            window.location.reload(); // Refresh to update Navbar state
+            navigate('/'); 
+            window.location.reload(); 
         } catch (err) {
             console.error(err);
             alert("Invalid Credentials");

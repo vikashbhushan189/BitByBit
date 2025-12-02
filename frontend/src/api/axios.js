@@ -1,7 +1,5 @@
 import axios from 'axios';
 
-// NUCLEAR FIX: We are hardcoding the Render URL to force it to work.
-// This bypasses the environment variable issue completely.
 const api = axios.create({
     baseURL: 'https://bitbybit-p3ym.onrender.com/api/',
     headers: {

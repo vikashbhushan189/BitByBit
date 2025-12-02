@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
-import api from '../api/axios'; // <--- CHANGED: Import custom api, not raw axios
+import api from '../api/axios';
 import { useNavigate, Link } from 'react-router-dom';
-import { AlertCircle, User, Mail, Lock } from 'lucide-react';
+import { AlertCircle, User, Mail, Lock, CheckCircle } from 'lucide-react';
 
 const RegisterPage = () => {
-    const [formData, setFormData] = useState({ username: '', email: '', password: '' });
+    // Added re_password to state
+    const [formData, setFormData] = useState({ 
+        username: '', 
+        email: '', 
+        password: '', 
+        re_password: '' 
+    });
+    
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
@@ -16,13 +23,22 @@ const RegisterPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // 1. Client-side Validation
+        if (formData.password !== formData.re_password) {
+            setError("Passwords do not match.");
+            return;
+        }
+
         setIsLoading(true);
         setError('');
 
         try {
-            // CHANGED: Use relative path (api base URL handles the domain)
+            // 2. Send Data (Djoser expects 're_password' if configured)
             await api.post('auth/users/', formData);
-            alert("Registration Successful! Redirecting to Login...");
+            
+            // Success!
+            alert("Registration Successful! Please check your email to activate or login.");
             navigate('/login');
         } catch (err) {
             console.error("Registration Error:", err);
@@ -30,13 +46,12 @@ const RegisterPage = () => {
             if (err.response && err.response.data) {
                 const data = err.response.data;
                 const firstErrorKey = Object.keys(data)[0];
-                // Handle cases where error is string vs array
                 const errorMessage = Array.isArray(data[firstErrorKey]) 
                     ? data[firstErrorKey][0] 
                     : data[firstErrorKey];
                 setError(`${firstErrorKey.toUpperCase()}: ${errorMessage}`);
             } else {
-                setError("Network error. Please ensure the backend is running.");
+                setError("Network error. Please check your connection.");
             }
         } finally {
             setIsLoading(false);
@@ -44,7 +59,7 @@ const RegisterPage = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 font-sans">
             <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md border border-gray-100">
                 <div className="text-center mb-8">
                     <h2 className="text-3xl font-extrabold text-blue-900">Create Account</h2>
@@ -52,7 +67,7 @@ const RegisterPage = () => {
                 </div>
 
                 {error && (
-                    <div className="mb-6 bg-red-50 text-red-700 p-4 rounded-lg flex items-start gap-3 text-sm">
+                    <div className="mb-6 bg-red-50 text-red-700 p-4 rounded-lg flex items-start gap-3 text-sm animate-pulse border border-red-100">
                         <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                         <span>{error}</span>
                     </div>
@@ -89,6 +104,19 @@ const RegisterPage = () => {
                             type="password"
                             name="password"
                             placeholder="Password (Min 8 chars)"
+                            onChange={handleChange}
+                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                            required
+                        />
+                    </div>
+
+                    {/* NEW: Confirm Password Field */}
+                    <div className="relative">
+                        <CheckCircle className="absolute left-3 top-3.5 text-gray-400 w-5 h-5" />
+                        <input
+                            type="password"
+                            name="re_password"
+                            placeholder="Confirm Password"
                             onChange={handleChange}
                             className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                             required

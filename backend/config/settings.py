@@ -14,6 +14,7 @@ from pathlib import Path
 import dj_database_url
 from decouple import config
 import os
+from corsheaders.defaults import default_headers
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -30,6 +31,13 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com']
 
+# NEW: Allow the security headers we added to the frontend
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "cache-control",
+    "pragma",
+    "expires",
+    "authorization",
+]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",

@@ -20,13 +20,26 @@ const AdminLoginPage = () => {
         setError('');
 
         try {
+            // 1. Authenticate to get Token
             const res = await api.post('auth/jwt/create/', formData);
+            const token = res.data.access;
+
+            // 2. Verify Admin Status (Critical Security Check)
+            const userRes = await api.get('auth/users/me/', {
+                headers: { Authorization: `JWT ${token}` }
+            });
+
+            if (!userRes.data.is_superuser && !userRes.data.is_staff) {
+                setError("Access Denied: You do not have admin privileges.");
+                setIsLoading(false);
+                return;
+            }
             
-            // Save tokens
-            localStorage.setItem('access_token', res.data.access);
+            // 3. Save tokens and Redirect
+            localStorage.setItem('access_token', token);
             localStorage.setItem('refresh_token', res.data.refresh);
             
-            // Redirect to Admin Generator
+            // Redirect to Admin Dashboard
             window.location.href = '/admin-dashboard';
         } catch (err) {
             console.error(err);

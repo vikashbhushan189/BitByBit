@@ -11,7 +11,8 @@ import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminGeneratorPage from './pages/AdminGeneratorPage';
 import { LogOut, LayoutDashboard, BookOpen } from 'lucide-react';
-
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 // --- Components ---
 
 const Navbar = () => {
@@ -144,6 +145,8 @@ function App() {
                 {/* Auth Routes */}
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/password-reset/:uid/:token" element={<ResetPasswordPage />} />
             </Routes>
         </Layout>
     </Router>

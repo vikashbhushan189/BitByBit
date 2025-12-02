@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react'; // <--- Added useEffect here
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import CourseList from './components/CourseList';
 import ExamPage from './pages/ExamPage';
@@ -13,14 +13,15 @@ import AdminGeneratorPage from './pages/AdminGeneratorPage';
 import { LogOut, LayoutDashboard, BookOpen } from 'lucide-react';
 
 // --- Components ---
+
 const Navbar = () => {
     const navigate = useNavigate();
     const isLoggedIn = !!localStorage.getItem('access_token');
     
+    // SMART LOGOUT LOGIC
     const handleLogout = () => {
         // 1. Check Role BEFORE clearing data
         const role = localStorage.getItem('user_role');
-
 
         // 2. Clear Data
         localStorage.removeItem('access_token');
@@ -29,9 +30,9 @@ const Navbar = () => {
         
         // 3. Redirect based on Role
         if (role === 'admin') {
-            window.location.href = '/admin-portal'; // Send Admin back to Admin Login
+            window.location.href = '/admin-portal'; 
         } else {
-            window.location.href = '/login'; // Send Student back to Student Login
+            window.location.href = '/login'; 
         }
     };
 
@@ -83,7 +84,7 @@ const AdminRoute = ({ children }) => {
     return token ? children : <Navigate to="/admin-portal" />;
 };
 
-// NEW: Layout Component to Handle Navbar Visibility
+// Layout Component to Handle Navbar Visibility
 const Layout = ({ children }) => {
     const location = useLocation();
     
@@ -100,9 +101,11 @@ const Layout = ({ children }) => {
 
 function App() {
   const isLoggedIn = !!localStorage.getItem('access_token');
+
+  // FIX: Force re-validation on history navigation (Back Button)
   useEffect(() => {
     const handleFocus = () => {
-        // on a protected page but have no token, force reload
+        // If we are on a protected page but have no token, force reload
         const isPublic = ['/login', '/register', '/'].includes(window.location.pathname);
         const hasToken = !!localStorage.getItem('access_token');
         
@@ -148,4 +151,3 @@ function App() {
 }
 
 export default App;
-

@@ -13,16 +13,26 @@ import AdminGeneratorPage from './pages/AdminGeneratorPage';
 import { LogOut, LayoutDashboard, BookOpen } from 'lucide-react';
 
 // --- Components ---
-
 const Navbar = () => {
     const navigate = useNavigate();
     const isLoggedIn = !!localStorage.getItem('access_token');
     
     const handleLogout = () => {
+        // 1. Check Role BEFORE clearing data
+        const role = localStorage.getItem('user_role');
+
+
+        // 2. Clear Data
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
-        navigate('/login');
-        window.location.reload(); 
+        localStorage.removeItem('user_role');
+        
+        // 3. Redirect based on Role
+        if (role === 'admin') {
+            window.location.href = '/admin-portal'; // Send Admin back to Admin Login
+        } else {
+            window.location.href = '/login'; // Send Student back to Student Login
+        }
     };
 
     return (
@@ -119,3 +129,4 @@ function App() {
 }
 
 export default App;
+

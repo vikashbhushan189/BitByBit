@@ -46,6 +46,7 @@ const AdminLoginPage = () => {
             // 3. Save tokens and Redirect
             localStorage.setItem('access_token', token);
             localStorage.setItem('refresh_token', res.data.refresh);
+            localStorage.setItem('user_role', 'admin');
             
             // Redirect to Admin Dashboard
             window.location.href = '/admin-dashboard';

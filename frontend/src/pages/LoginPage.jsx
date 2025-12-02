@@ -39,7 +39,7 @@ const LoginPage = () => {
             // 3. If Student, Proceed
             localStorage.setItem('access_token', token);
             localStorage.setItem('refresh_token', res.data.refresh);
-            
+            localStorage.setItem('user_role', 'student');
             navigate('/'); 
             window.location.reload(); 
         } catch (err) {

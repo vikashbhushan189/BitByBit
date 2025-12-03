@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Wand2, Layout, LogOut, ShieldCheck, ExternalLink } from 'lucide-react';
+import { Wand2, Layout, LogOut, ShieldCheck, ExternalLink, UploadCloud } from 'lucide-react';
 
 const AdminDashboardPage = () => {
     
@@ -23,30 +23,32 @@ const AdminDashboardPage = () => {
                 </button>
             </header>
 
-            <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
-                {/* Option 1: AI Generator */}
-                <Link to="/admin-generator" className="group bg-slate-800 p-8 rounded-2xl border border-slate-700 hover:border-purple-500 hover:bg-slate-800/80 transition-all shadow-xl">
-                    <div className="bg-purple-900/50 w-16 h-16 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                        <Wand2 className="text-purple-400" size={32} />
+            <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-6">
+                {/* 1. AI Generator */}
+                <Link to="/admin-generator" className="group bg-slate-800 p-6 rounded-2xl border border-slate-700 hover:border-purple-500 hover:bg-slate-800/80 transition-all shadow-xl">
+                    <div className="bg-purple-900/50 w-14 h-14 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <Wand2 className="text-purple-400" size={28} />
                     </div>
-                    <h2 className="text-2xl font-bold mb-3">AI Question Generator</h2>
-                    <p className="text-slate-400 leading-relaxed">
-                        Generate bulk questions from study notes using Google Gemini. Edit, review, and publish instantly.
-                    </p>
+                    <h2 className="text-xl font-bold mb-2">AI Question Generator</h2>
+                    <p className="text-slate-400 text-sm">Generate questions from notes using Gemini AI.</p>
                 </Link>
 
-                {/* Option 2: Explore Website */}
-                <Link to="/courses" className="group bg-slate-800 p-8 rounded-2xl border border-slate-700 hover:border-blue-500 hover:bg-slate-800/80 transition-all shadow-xl">
-                    <div className="bg-blue-900/50 w-16 h-16 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                        <Layout className="text-blue-400" size={32} />
+                {/* 2. Bulk Notes Uploader (NEW) */}
+                <Link to="/admin-notes-upload" className="group bg-slate-800 p-6 rounded-2xl border border-slate-700 hover:border-emerald-500 hover:bg-slate-800/80 transition-all shadow-xl">
+                    <div className="bg-emerald-900/50 w-14 h-14 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <UploadCloud className="text-emerald-400" size={28} />
                     </div>
-                    <h2 className="text-2xl font-bold mb-3">Test Live Website</h2>
-                    <p className="text-slate-400 leading-relaxed">
-                        Explore the student interface in <strong>God Mode</strong>. Bypass all payments and restrictions to verify content.
-                    </p>
-                    <div className="mt-4 flex items-center gap-2 text-blue-400 text-sm font-bold">
-                        OPEN APP <ExternalLink size={14} />
+                    <h2 className="text-xl font-bold mb-2">Bulk Notes Upload</h2>
+                    <p className="text-slate-400 text-sm">Upload CSVs to create courses & notes instantly.</p>
+                </Link>
+
+                {/* 3. Live Site */}
+                <Link to="/courses" className="group bg-slate-800 p-6 rounded-2xl border border-slate-700 hover:border-blue-500 hover:bg-slate-800/80 transition-all shadow-xl">
+                    <div className="bg-blue-900/50 w-14 h-14 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <Layout className="text-blue-400" size={28} />
                     </div>
+                    <h2 className="text-xl font-bold mb-2">Test Live Website</h2>
+                    <p className="text-slate-400 text-sm">Explore student view in God Mode.</p>
                 </Link>
             </div>
         </div>

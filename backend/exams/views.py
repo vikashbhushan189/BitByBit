@@ -122,6 +122,29 @@ class AIGeneratorViewSet(viewsets.ViewSet):
             count += 1
         return Response({"status": "success", "added": count, "duration_updated": bool(duration)})
 
+class CourseViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Course.objects.all()
+    serializer_class = CourseSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    # --- NEW: Action to get only purchased courses ---
+    @action(detail=False, methods=['get'])
+    def enrolled(self, request):
+        """Returns courses the user has subscribed to"""
+        if not request.user.is_authenticated:
+            return Response([])
+        
+        # Get active subscriptions
+        subscribed_ids = UserSubscription.objects.filter(
+            user=request.user, 
+            active=True
+        ).values_list('course_id', flat=True)
+        
+        # Filter courses
+        courses = Course.objects.filter(id__in=subscribed_ids)
+        serializer = self.get_serializer(courses, many=True)
+        return Response(serializer.data)
+    
 # --- NEW: Bulk Notes Uploader ---
 class BulkNotesViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAdminUser]

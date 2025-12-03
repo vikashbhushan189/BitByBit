@@ -40,7 +40,7 @@ const LoginPage = () => {
             localStorage.setItem('access_token', token);
             localStorage.setItem('refresh_token', res.data.refresh);
             localStorage.setItem('user_role', 'student');
-            navigate('/'); 
+            navigate('/dashboard'); 
             window.location.reload(); 
         } catch (err) {
             console.error("Login Error:", err);

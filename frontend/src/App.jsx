@@ -47,11 +47,13 @@ const Navbar = () => {
             <div>
                 {isLoggedIn ? (
                     <div className="flex items-center gap-6">
+                        {/* STORE LINK */}
                         <Link to="/courses" className="text-slate-600 hover:text-blue-600 font-semibold flex items-center gap-2">
-                            <BookOpen size={18}/> Courses
+                            <BookOpen size={18}/> All Courses
                         </Link>
-                        <Link to="/dashboard" className="text-slate-600 hover:text-blue-600 font-semibold flex items-center gap-2">
-                            <LayoutDashboard size={18}/> Dashboard
+                        {/* DASHBOARD LINK (Primary) */}
+                        <Link to="/dashboard" className="text-blue-600 font-bold flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-lg">
+                            <LayoutDashboard size={18}/> My Learning
                         </Link>
                         <button 
                             onClick={handleLogout} 
@@ -130,7 +132,7 @@ function App() {
         <Layout>
             <Routes>
                 {/* Landing / Home */}
-                <Route path="/" element={isLoggedIn ? <Navigate to="/courses" /> : <LandingPage />} />
+                <Route path="/" element={isLoggedIn ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
                 
                 {/* Student Routes */}
                 <Route path="/courses" element={<PrivateRoute><CourseList /></PrivateRoute>} />

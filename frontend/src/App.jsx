@@ -14,6 +14,7 @@ import { LogOut, LayoutDashboard, BookOpen } from 'lucide-react';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import AdminNotesUploadPage from './pages/AdminNotesUploadPage';
+import CourseStorePage from './pages/CourseStorePage';
 // --- Components ---
 
 const Navbar = () => {
@@ -138,7 +139,7 @@ function App() {
                 <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
                 <Route path="/exam/:examId" element={<PrivateRoute><ExamPage /></PrivateRoute>} />
                 <Route path="/topic/:topicId/notes" element={<PrivateRoute><NotesPage /></PrivateRoute>} />
-                
+                <Route path="/store" element={<PrivateRoute><CourseStorePage /></PrivateRoute>} />
                 {/* Admin Routes */}
                 <Route path="/admin-portal" element={<AdminLoginPage />} />
                 <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />

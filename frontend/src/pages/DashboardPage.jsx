@@ -1,36 +1,26 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { 
-    Clock, CheckCircle, TrendingUp, BookOpen, 
-    ChevronRight, GraduationCap, PlayCircle, PlusCircle 
+    BookOpen, CheckCircle, Clock, MoreVertical, 
+    PlayCircle, HelpCircle, FileText, Layout, 
+    ChevronRight, ShoppingCart
 } from 'lucide-react';
 
 const DashboardPage = () => {
     const [enrolledCourses, setEnrolledCourses] = useState([]);
-    const [attempts, setAttempts] = useState([]);
-    const [stats, setStats] = useState({ total: 0, passed: 0, avgScore: 0 });
+    const [activeCourse, setActiveCourse] = useState(null);
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // 1. Fetch History
-                const histRes = await api.get('history/');
-                const histData = histRes.data;
-                setAttempts(histData);
-                
-                // Calculate Stats
-                if (histData.length > 0) {
-                    const passed = histData.filter(a => (a.total_score / a.exam_total_marks) >= 0.4).length;
-                    const avg = histData.reduce((acc, curr) => acc + curr.total_score, 0) / histData.length;
-                    setStats({ total: histData.length, passed, avgScore: Math.round(avg) });
+                const res = await api.get('courses/enrolled/');
+                setEnrolledCourses(res.data);
+                if (res.data.length > 0) {
+                    setActiveCourse(res.data[0]); // Default to first course
                 }
-
-                // 2. Fetch Enrolled Courses (NEW)
-                const courseRes = await api.get('courses/enrolled/');
-                setEnrolledCourses(courseRes.data);
-
             } catch (err) {
                 console.error(err);
             } finally {
@@ -40,129 +30,141 @@ const DashboardPage = () => {
         fetchData();
     }, []);
 
-    if (loading) return <div className="min-h-screen flex items-center justify-center text-blue-600 font-bold">Loading Your Dashboard...</div>;
+    if (loading) return <div className="min-h-screen flex items-center justify-center font-bold text-slate-600">Loading Study Center...</div>;
+
+    // --- EMPTY STATE (New User) ---
+    if (enrolledCourses.length === 0) {
+        return (
+            <div className="max-w-5xl mx-auto p-8 text-center mt-10">
+                <div className="bg-white p-12 rounded-3xl shadow-sm border border-slate-200">
+                    <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" alt="No Courses" className="w-32 h-32 mx-auto mb-6 opacity-80" />
+                    <h2 className="text-3xl font-bold text-slate-900 mb-3">Start Your Journey</h2>
+                    <p className="text-slate-500 mb-8 max-w-md mx-auto">You haven't enrolled in any batches yet. Explore our store to find the perfect course for your goal.</p>
+                    <Link to="/store" className="bg-blue-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-200">
+                        Explore Batches
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="max-w-7xl mx-auto p-6 font-sans text-slate-800">
-            {/* Header */}
-            <div className="flex justify-between items-center mb-10">
-                <div>
-                    <h1 className="text-3xl font-extrabold text-slate-900">My Study Zone</h1>
-                    <p className="text-slate-500 mt-1">Welcome back! Pick up where you left off.</p>
-                </div>
-                <Link to="/courses" className="bg-slate-900 text-white px-5 py-2.5 rounded-lg font-bold hover:bg-slate-800 transition-colors flex items-center gap-2 shadow-lg">
-                    <PlusCircle size={18} /> Explore New Courses
-                </Link>
-            </div>
-
-            {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                <StatCard 
-                    icon={<BookOpen className="text-blue-600" />} 
-                    bg="bg-blue-50" 
-                    value={stats.total} 
-                    label="Tests Taken" 
-                />
-                <StatCard 
-                    icon={<CheckCircle className="text-emerald-600" />} 
-                    bg="bg-emerald-50" 
-                    value={stats.passed} 
-                    label="Exams Passed" 
-                />
-                <StatCard 
-                    icon={<TrendingUp className="text-purple-600" />} 
-                    bg="bg-purple-50" 
-                    value={`${stats.avgScore}`} 
-                    label="Average Score" 
-                />
-            </div>
-
-            {/* --- MY BATCHES (Enrolled Courses) --- */}
-            <div className="mb-12">
-                <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-                    <GraduationCap className="text-blue-600"/> Your Enrolled Batches
-                </h2>
-
-                {enrolledCourses.length > 0 ? (
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {enrolledCourses.map(course => (
-                            <div key={course.id} className="bg-white border border-slate-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow flex flex-col">
-                                <div className="h-32 bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white relative">
-                                    <h3 className="font-bold text-xl relative z-10">{course.title}</h3>
-                                    <BookOpen className="absolute right-[-10px] bottom-[-10px] w-24 h-24 opacity-10 rotate-12" />
+        <div className="min-h-screen bg-slate-50 font-sans pb-20">
+            {/* --- TOP HERO SECTION (Dark Theme like PW) --- */}
+            <div className="bg-slate-900 text-white pt-8 pb-16 px-6 relative overflow-hidden">
+                <div className="max-w-7xl mx-auto relative z-10">
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">YOUR BATCH</div>
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <h1 className="text-2xl md:text-3xl font-bold leading-tight max-w-2xl">
+                                {activeCourse?.title || "Select a Batch"}
+                            </h1>
+                            {activeCourse && (
+                                <div className="mt-4 flex gap-3 text-sm">
+                                    <span className="bg-white/10 px-3 py-1 rounded-full border border-white/10">Validity: Lifetime</span>
+                                    <span className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full border border-green-500/20">Active</span>
                                 </div>
-                                <div className="p-6 flex-1 flex flex-col">
-                                    <p className="text-sm text-slate-500 mb-4 line-clamp-2">{course.description}</p>
-                                    
-                                    <div className="mt-auto pt-4 border-t border-slate-100">
-                                        <Link 
-                                            // Since we reuse the CourseList component logic for now, 
-                                            // we might want a specific "Study Page". 
-                                            // For now, let's link to the Course Browser but filtered.
-                                            // Ideally, you'd create a "MyCourseView.jsx" later.
-                                            to={`/courses?filter=my`} 
-                                            className="w-full bg-blue-50 text-blue-700 py-2 rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-blue-100 transition-colors"
-                                        >
-                                            <PlayCircle size={18} /> Continue Learning
-                                        </Link>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-12 text-center">
-                        <div className="bg-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                            <BookOpen className="text-slate-300" size={32} />
+                            )}
                         </div>
-                        <h3 className="text-lg font-bold text-slate-700">No Active Batches</h3>
-                        <p className="text-slate-500 mb-6">You haven't enrolled in any courses yet.</p>
-                        <Link to="/courses" className="inline-flex items-center gap-2 text-blue-600 font-bold hover:underline">
-                            Browse Store <ChevronRight size={16} />
-                        </Link>
+                        
+                        {/* Batch Switcher (Simple Dropdown Trigger) */}
+                        <div className="relative group">
+                            <button className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                                <MoreVertical size={24} className="text-slate-400" />
+                            </button>
+                            {/* Hover Dropdown for switching batches */}
+                            <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 hidden group-hover:block text-slate-800 z-50">
+                                <div className="p-3 border-b border-slate-100 font-bold text-xs text-slate-400 uppercase">Switch Batch</div>
+                                {enrolledCourses.map(c => (
+                                    <button 
+                                        key={c.id} 
+                                        onClick={() => setActiveCourse(c)}
+                                        className={`w-full text-left px-4 py-3 text-sm font-medium hover:bg-slate-50 transition-colors ${activeCourse?.id === c.id ? 'text-blue-600 bg-blue-50' : ''}`}
+                                    >
+                                        {c.title}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     </div>
-                )}
+                </div>
+                
+                {/* Decorative Background */}
+                <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
             </div>
 
-            {/* Recent Activity Table (Simplified) */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-200 font-bold text-slate-700 bg-slate-50/50">
-                    Recent Test Activity
+            <div className="max-w-7xl mx-auto px-6 -mt-8 relative z-20">
+                {/* --- BATCH OFFERINGS (Action Cards) --- */}
+                <h3 className="font-bold text-slate-800 mb-4 ml-1">Batch Offerings</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+                    <ActionCard 
+                        icon={<BookOpen size={24} className="text-blue-600"/>} 
+                        title="All Classes" 
+                        desc="Watch recorded lectures"
+                        onClick={() => navigate('/courses')} // Or specific lecture page
+                    />
+                    <ActionCard 
+                        icon={<FileText size={24} className="text-purple-600"/>} 
+                        title="All Tests" 
+                        desc="Attempt mock exams"
+                        onClick={() => navigate(`/exam/${activeCourse?.id || ''}`)} // Should link to list of exams for this course
+                    />
+                    <ActionCard 
+                        icon={<HelpCircle size={24} className="text-orange-600"/>} 
+                        title="My Doubts" 
+                        desc="Ask experts"
+                        onClick={() => alert("Doubt engine coming soon!")}
+                    />
                 </div>
-                {attempts.length > 0 ? (
-                    <table className="w-full text-left text-sm">
-                        <thead className="text-slate-400 font-medium border-b border-slate-100">
-                            <tr>
-                                <th className="px-6 py-3">Exam</th>
-                                <th className="px-6 py-3">Date</th>
-                                <th className="px-6 py-3 text-right">Score</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {attempts.slice(0, 5).map(a => (
-                                <tr key={a.id} className="hover:bg-slate-50">
-                                    <td className="px-6 py-3 font-medium text-slate-700">{a.exam_title}</td>
-                                    <td className="px-6 py-3 text-slate-500">{new Date(a.start_time).toLocaleDateString()}</td>
-                                    <td className="px-6 py-3 text-right font-bold text-blue-600">{a.total_score}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                ) : (
-                    <div className="p-6 text-center text-slate-400 italic">No recent activity.</div>
-                )}
+
+                {/* --- MY STUDY ZONE (Navigation) --- */}
+                <h3 className="font-bold text-slate-800 mb-4 ml-1">My Study Zone</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Card 1: My Batches */}
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow cursor-pointer group">
+                        <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+                            <Layout size={24} />
+                        </div>
+                        <h4 className="font-bold text-lg text-slate-800 mb-1">My Batches</h4>
+                        <p className="text-slate-500 text-sm mb-4">View list of batches in which you are enrolled.</p>
+                        <span className="text-blue-600 font-bold text-sm flex items-center gap-1 group-hover:translate-x-1 transition-transform">View All <ChevronRight size={16}/></span>
+                    </div>
+
+                    {/* Card 2: Analytics */}
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow cursor-pointer group">
+                        <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
+                            <Clock size={24} />
+                        </div>
+                        <h4 className="font-bold text-lg text-slate-800 mb-1">Analytics</h4>
+                        <p className="text-slate-500 text-sm mb-4">Track your progress through detailed reports.</p>
+                        <span className="text-purple-600 font-bold text-sm flex items-center gap-1 group-hover:translate-x-1 transition-transform">Check Stats <ChevronRight size={16}/></span>
+                    </div>
+
+                    {/* Card 3: Store */}
+                    <Link to="/store" className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow cursor-pointer group">
+                        <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
+                            <ShoppingCart size={24} />
+                        </div>
+                        <h4 className="font-bold text-lg text-slate-800 mb-1">Course Store</h4>
+                        <p className="text-slate-500 text-sm mb-4">Explore new courses and upgrade your skills.</p>
+                        <span className="text-emerald-600 font-bold text-sm flex items-center gap-1 group-hover:translate-x-1 transition-transform">Buy Now <ChevronRight size={16}/></span>
+                    </Link>
+                </div>
             </div>
         </div>
     );
 };
 
-const StatCard = ({ icon, bg, value, label }) => (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-        <div className={`${bg} p-4 rounded-full`}>{icon}</div>
-        <div>
-            <div className="text-3xl font-extrabold text-slate-900">{value}</div>
-            <div className="text-sm font-semibold text-slate-400 uppercase tracking-wider">{label}</div>
+const ActionCard = ({ icon, title, desc, onClick }) => (
+    <div onClick={onClick} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 cursor-pointer hover:border-blue-300 hover:shadow-md transition-all">
+        <div className="bg-slate-50 p-3 rounded-lg">
+            {icon}
         </div>
+        <div>
+            <div className="font-bold text-slate-800">{title}</div>
+            <div className="text-xs text-slate-500">{desc}</div>
+        </div>
+        <ChevronRight size={18} className="ml-auto text-slate-300" />
     </div>
 );
 

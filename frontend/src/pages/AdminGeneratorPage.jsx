@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
-import { Loader2, Save, Trash2, Plus, Wand2, Clock, FileText, Image as ImageIcon, Layers, UploadCloud, Link as LinkIcon } from 'lucide-react';
+import { Loader2, Save, Trash2, Plus, Wand2, Clock, FileText, Image as ImageIcon, Layers, UploadCloud, Link as LinkIcon, FileSpreadsheet, Download } from 'lucide-react';
 
 const AdminGeneratorPage = () => {
     // Data Sources
@@ -10,16 +10,18 @@ const AdminGeneratorPage = () => {
     const [exams, setExams] = useState([]);
     
     // Generator Config
-    const [mode, setMode] = useState('text'); // 'text' | 'image'
-    const [scope, setScope] = useState('topic'); // 'topic' | 'subject' | 'course'
+    const [mode, setMode] = useState('text'); // 'text' | 'image' | 'csv'
+    const [scope, setScope] = useState('topic'); 
     
-    const [selectedId, setSelectedId] = useState(''); // ID of Topic/Subject/Course
+    const [selectedId, setSelectedId] = useState(''); 
     const [selectedExam, setSelectedExam] = useState('');
     const [numQ, setNumQ] = useState(5);
     const [difficulty, setDifficulty] = useState('Medium');
     const [customInstructions, setCustomInstructions] = useState('');
     
     const [imageFile, setImageFile] = useState(null);
+    const [csvFile, setCsvFile] = useState(null); // New state for CSV
+    
     const [generatedQuestions, setGeneratedQuestions] = useState([]);
     const [suggestedDuration, setSuggestedDuration] = useState(0);
     const [loading, setLoading] = useState(false);
@@ -28,7 +30,6 @@ const AdminGeneratorPage = () => {
     useEffect(() => {
         const loadData = async () => {
             try {
-                // Fetch all hierarchy levels
                 const [cRes, tRes, eRes] = await Promise.all([
                     api.get('courses/'),
                     api.get('topics/'),
@@ -36,7 +37,6 @@ const AdminGeneratorPage = () => {
                 ]);
                 
                 setCourses(cRes.data);
-                // Extract subjects from courses
                 const allSubjects = cRes.data.flatMap(c => c.subjects || []);
                 setSubjects(allSubjects);
                 setTopics(tRes.data);
@@ -53,7 +53,7 @@ const AdminGeneratorPage = () => {
     // --- HANDLERS ---
 
     const handleTextGenerate = async () => {
-        if (!selectedId) return alert("Please select a source (Topic/Subject/Course)");
+        if (!selectedId) return alert("Please select a source");
         setLoading(true);
         try {
             const res = await api.post('ai-generator/generate/', {
@@ -63,11 +63,10 @@ const AdminGeneratorPage = () => {
                 difficulty: difficulty,
                 custom_instructions: customInstructions
             });
-            // Add image_url field to response data for UI handling
             const formattedData = res.data.map(q => ({ ...q, image_url: '' }));
             setGeneratedQuestions(prev => [...prev, ...formattedData]);
         } catch (err) {
-            alert("Generation failed. Ensure the selected source has notes.");
+            alert("Generation failed.");
         } finally {
             setLoading(false);
         }
@@ -94,6 +93,40 @@ const AdminGeneratorPage = () => {
         }
     };
 
+    const downloadCsvTemplate = () => {
+        const csvContent = "data:text/csv;charset=utf-8," 
+            + "Question Text,Option A,Option B,Option C,Option D,Correct Option,Marks\n"
+            + "What is RAM?,Read Access Memory,Random Access Memory,Run Access Memory,None,B,2";
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "questions_template.csv");
+        document.body.appendChild(link);
+        link.click();
+    };
+
+    const handleCsvUpload = async () => {
+        if (!csvFile) return alert("Select a CSV file");
+        if (!selectedExam) return alert("Select an Exam first (to save directly)");
+        
+        setLoading(true);
+        const formData = new FormData();
+        formData.append('file', csvFile);
+        formData.append('exam_id', selectedExam);
+
+        try {
+            const res = await api.post('ai-generator/upload_questions_csv/', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            alert(`Success! Added ${res.data.added} questions.`);
+            setCsvFile(null);
+        } catch (err) {
+            alert("CSV Upload failed. Check format.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const addManualQuestion = () => {
         setGeneratedQuestions(prev => [
             ...prev,
@@ -102,7 +135,7 @@ const AdminGeneratorPage = () => {
                 options: ["Option A", "Option B", "Option C", "Option D"],
                 correct_index: 0,
                 marks: 2,
-                image_url: '' // New Field
+                image_url: ''
             }
         ]);
     };
@@ -110,16 +143,12 @@ const AdminGeneratorPage = () => {
     const handleSave = async () => {
         if (!selectedExam) return alert("Select an Exam first");
         
-        // Prepare questions: Append Image URL to text as Markdown if present
         const questionsToSave = generatedQuestions.map(q => {
             let finalContent = q.question_text;
             if (q.image_url) {
                 finalContent += `\n\n![Diagram](${q.image_url})`;
             }
-            return {
-                ...q,
-                question_text: finalContent
-            };
+            return { ...q, question_text: finalContent };
         });
 
         try {
@@ -180,19 +209,28 @@ const AdminGeneratorPage = () => {
                         onClick={() => setMode('text')}
                         className={`flex-1 py-4 font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 ${mode === 'text' ? 'bg-purple-50 text-purple-700 border-b-2 border-purple-600' : 'text-slate-500 hover:bg-slate-50'}`}
                     >
-                        <FileText size={18}/> From Notes (Text)
+                        <FileText size={18}/> From Notes
                     </button>
                     <button 
                         onClick={() => setMode('image')}
                         className={`flex-1 py-4 font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 ${mode === 'image' ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' : 'text-slate-500 hover:bg-slate-50'}`}
                     >
-                        <ImageIcon size={18}/> From Image (Visual)
+                        <ImageIcon size={18}/> From Image
+                    </button>
+                    {/* NEW CSV TAB */}
+                    <button 
+                        onClick={() => setMode('csv')}
+                        className={`flex-1 py-4 font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 ${mode === 'csv' ? 'bg-green-50 text-green-700 border-b-2 border-green-600' : 'text-slate-500 hover:bg-slate-50'}`}
+                    >
+                        <FileSpreadsheet size={18}/> From CSV
                     </button>
                 </div>
 
                 <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* LEFT: Configuration */}
                     <div className="space-y-6">
+                        
+                        {/* TEXT MODE */}
                         {mode === 'text' && (
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2">1. Generation Scope</label>
@@ -211,6 +249,7 @@ const AdminGeneratorPage = () => {
                             </div>
                         )}
 
+                        {/* IMAGE MODE */}
                         {mode === 'image' && (
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2">1. Upload Image</label>
@@ -218,47 +257,80 @@ const AdminGeneratorPage = () => {
                                     <input type="file" accept="image/*" onChange={e => setImageFile(e.target.files[0])} className="hidden" id="imgUpload" />
                                     <label htmlFor="imgUpload" className="cursor-pointer">
                                         <UploadCloud className="mx-auto text-slate-400 mb-2" size={32} />
-                                        <p className="text-sm text-slate-600 font-medium">{imageFile ? imageFile.name : "Click to upload diagram/question"}</p>
+                                        <p className="text-sm text-slate-600 font-medium">{imageFile ? imageFile.name : "Click to upload diagram"}</p>
                                     </label>
                                 </div>
                             </div>
                         )}
 
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">2. Instructions & Difficulty</label>
-                            <div className="flex gap-2 mb-3">
-                                {mode === 'text' && <input type="number" className="w-20 p-2 border rounded" value={numQ} onChange={e => setNumQ(e.target.value)} placeholder="Qty" />}
-                                <select className="flex-1 p-2 border rounded" value={difficulty} onChange={e => setDifficulty(e.target.value)}>
-                                    <option>Easy</option>
-                                    <option>Medium</option>
-                                    <option>Hard</option>
-                                </select>
+                        {/* CSV MODE */}
+                        {mode === 'csv' && (
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">1. Upload CSV</label>
+                                <div className="border-2 border-dashed border-green-300 rounded-xl p-8 text-center bg-green-50/50 hover:border-green-500 transition-colors">
+                                    <input type="file" accept=".csv" onChange={e => setCsvFile(e.target.files[0])} className="hidden" id="csvUpload" />
+                                    <label htmlFor="csvUpload" className="cursor-pointer">
+                                        <FileSpreadsheet className="mx-auto text-green-500 mb-2" size={32} />
+                                        <p className="text-sm text-slate-600 font-medium">{csvFile ? csvFile.name : "Click to upload CSV"}</p>
+                                    </label>
+                                </div>
+                                <button onClick={downloadCsvTemplate} className="mt-4 text-xs text-blue-600 hover:underline flex items-center gap-1">
+                                    <Download size={12}/> Download Template
+                                </button>
                             </div>
-                            <textarea 
-                                className="w-full p-3 border rounded-lg text-sm h-24"
-                                placeholder="E.g. Focus on numericals. Match PYQ style."
-                                value={customInstructions}
-                                onChange={e => setCustomInstructions(e.target.value)}
-                            />
-                        </div>
+                        )}
 
+                        {/* SETTINGS (Shared for Text/Image) */}
+                        {mode !== 'csv' && (
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">2. Instructions & Difficulty</label>
+                                <div className="flex gap-2 mb-3">
+                                    {mode === 'text' && <input type="number" className="w-20 p-2 border rounded" value={numQ} onChange={e => setNumQ(e.target.value)} placeholder="Qty" />}
+                                    <select className="flex-1 p-2 border rounded" value={difficulty} onChange={e => setDifficulty(e.target.value)}>
+                                        <option>Easy</option>
+                                        <option>Medium</option>
+                                        <option>Hard</option>
+                                    </select>
+                                </div>
+                                <textarea 
+                                    className="w-full p-3 border rounded-lg text-sm h-24"
+                                    placeholder="E.g. Focus on numericals. Match PYQ style."
+                                    value={customInstructions}
+                                    onChange={e => setCustomInstructions(e.target.value)}
+                                />
+                            </div>
+                        )}
+
+                        {/* ACTION BUTTONS */}
                         <div className="flex flex-col gap-3">
-                            <button 
-                                onClick={mode === 'text' ? handleTextGenerate : handleImageGenerate} 
-                                disabled={loading}
-                                className={`w-full py-3 rounded-xl font-bold text-white shadow-lg transition-all flex justify-center items-center gap-2
-                                    ${mode === 'text' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-blue-600 hover:bg-blue-700'}
-                                `}
-                            >
-                                {loading ? <Loader2 className="animate-spin" /> : <><Wand2 size={18}/> Generate {mode === 'text' ? 'Bulk' : 'Question'}</>}
-                            </button>
+                            {mode !== 'csv' ? (
+                                <button 
+                                    onClick={mode === 'text' ? handleTextGenerate : handleImageGenerate} 
+                                    disabled={loading}
+                                    className={`w-full py-3 rounded-xl font-bold text-white shadow-lg transition-all flex justify-center items-center gap-2
+                                        ${mode === 'text' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-blue-600 hover:bg-blue-700'}
+                                    `}
+                                >
+                                    {loading ? <Loader2 className="animate-spin" /> : <><Wand2 size={18}/> Generate</>}
+                                </button>
+                            ) : (
+                                <button 
+                                    onClick={handleCsvUpload}
+                                    disabled={loading || !csvFile}
+                                    className="w-full py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 shadow-lg transition-all flex justify-center items-center gap-2"
+                                >
+                                    {loading ? <Loader2 className="animate-spin" /> : <><UploadCloud size={18}/> Upload & Save</>}
+                                </button>
+                            )}
                             
-                            <button 
-                                onClick={addManualQuestion} 
-                                className="w-full py-3 rounded-xl font-bold border-2 border-dashed border-slate-300 text-slate-500 hover:border-blue-500 hover:text-blue-600 flex justify-center items-center gap-2 transition-all"
-                            >
-                                <Plus size={18}/> Add Manual Question
-                            </button>
+                            {mode !== 'csv' && (
+                                <button 
+                                    onClick={addManualQuestion} 
+                                    className="w-full py-3 rounded-xl font-bold border-2 border-dashed border-slate-300 text-slate-500 hover:border-blue-500 hover:text-blue-600 flex justify-center items-center gap-2 transition-all"
+                                >
+                                    <Plus size={18}/> Add Manual Question
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -278,7 +350,7 @@ const AdminGeneratorPage = () => {
                         {generatedQuestions.length === 0 ? (
                             <div className="text-center text-slate-400 mt-20 flex flex-col items-center">
                                 <Layers size={48} className="mb-4 opacity-50"/>
-                                <p>Generated questions will appear here.</p>
+                                <p>{mode === 'csv' ? "Uploaded questions are saved directly." : "Generated questions will appear here."}</p>
                             </div>
                         ) : (
                             <div className="space-y-4">
@@ -289,7 +361,6 @@ const AdminGeneratorPage = () => {
                                             <Trash2 size={14} className="text-red-400 cursor-pointer" onClick={() => setGeneratedQuestions(prev => prev.filter((_, i) => i !== qIdx))}/>
                                         </div>
                                         
-                                        {/* TEXT INPUT */}
                                         <textarea 
                                             className="w-full text-sm font-medium border-none p-0 resize-none focus:ring-0 mb-2" 
                                             value={q.question_text}
@@ -297,13 +368,12 @@ const AdminGeneratorPage = () => {
                                             placeholder="Question text..."
                                         />
 
-                                        {/* IMAGE INPUT & PREVIEW */}
                                         <div className="mb-4 bg-slate-50 p-2 rounded border border-slate-100">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <LinkIcon size={14} className="text-slate-400"/>
                                                 <input 
                                                     className="bg-transparent text-xs w-full outline-none text-slate-600 placeholder-slate-400"
-                                                    placeholder="Paste Image URL here (e.g. https://imgur.com/...)"
+                                                    placeholder="Paste Image URL here..."
                                                     value={q.image_url || ''}
                                                     onChange={e => updateQuestion(qIdx, 'image_url', e.target.value)}
                                                 />
@@ -318,7 +388,6 @@ const AdminGeneratorPage = () => {
                                             )}
                                         </div>
 
-                                        {/* OPTIONS */}
                                         <div className="grid grid-cols-2 gap-2">
                                             {q.options.map((opt, oIdx) => (
                                                 <div key={oIdx} className={`flex items-center gap-2 p-1.5 rounded border text-xs ${q.correct_index === oIdx ? 'bg-green-50 border-green-300' : 'bg-slate-50'}`}>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
     BookOpen, CheckCircle, Clock, Trophy, ChevronDown, Menu, X, 
-    GraduationCap, ArrowRight, Monitor, Cpu, FileText, Globe 
+    GraduationCap, ArrowRight, Monitor, Cpu, FileText, Globe, Cloud 
 } from 'lucide-react';
 
 // --- NAVIGATION DATA ---
@@ -73,12 +73,78 @@ const NAV_LINKS = [
 const LandingPage = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState(null);
+    const [showAd, setShowAd] = useState(true); // State for Top Banner
 
     return (
         <div className="bg-white font-sans text-slate-800">
             
+            {/* --- TOP ADS BANNER --- */}
+            {showAd && (
+                <div className="relative bg-gradient-to-r from-sky-50 via-white to-blue-50 border-b border-blue-100 p-4 md:py-8 overflow-hidden">
+                    {/* Background decoration */}
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 via-blue-500 to-green-500"></div>
+                    
+                    <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+                        {/* Text Side */}
+                        <div className="flex-1 space-y-4 text-center md:text-left">
+                            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight font-serif italic">
+                                Learn <span className="text-slate-800">Cloud Computing</span>
+                            </h2>
+                            <p className="text-slate-600 font-medium text-lg">
+                                Build your skills with Google Cloud's newest offerings!
+                            </p>
+                            <div className="flex gap-4 justify-center md:justify-start pt-2">
+                                <button className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2.5 rounded-full font-bold text-sm transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                                    Explore offerings
+                                </button>
+                                <button className="bg-white hover:bg-slate-50 text-orange-600 border-2 border-orange-200 px-6 py-2.5 rounded-full font-bold text-sm transition-all">
+                                    Learn more
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Visual Side (Floating Cards) */}
+                        <div className="hidden md:flex items-center gap-6 pr-8">
+                            {/* Card 1 */}
+                            <div className="bg-slate-900 text-white p-5 rounded-2xl shadow-xl w-64 transform rotate-[-3deg] border border-slate-700 hover:rotate-0 transition-transform duration-300">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <div className="bg-white p-1.5 rounded-lg"><Cloud className="w-4 h-4 text-slate-900"/></div>
+                                    <span className="font-bold text-xs tracking-wider">GOOGLE CLOUD</span>
+                                </div>
+                                <div className="h-20 mb-3 bg-gradient-to-br from-slate-800 to-slate-950 rounded-xl border border-slate-700/50 flex items-center justify-center">
+                                    <div className="w-10 h-1 bg-slate-700 rounded-full"></div>
+                                </div>
+                                <p className="font-bold text-base leading-tight">Computing Foundations</p>
+                                <div className="mt-3 text-[10px] bg-slate-800 inline-block px-2 py-1 rounded text-slate-400 font-medium border border-slate-700">Professional Certificate</div>
+                            </div>
+                             {/* Card 2 */}
+                             <div className="bg-white text-slate-900 p-5 rounded-2xl shadow-xl w-64 transform rotate-[3deg] border border-slate-200 hover:rotate-0 transition-transform duration-300 translate-y-4">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <div className="bg-blue-50 p-1.5 rounded-lg border border-blue-100"><Cloud className="w-4 h-4 text-blue-600"/></div>
+                                    <span className="font-bold text-xs text-slate-500 tracking-wider">GOOGLE CLOUD</span>
+                                </div>
+                                <div className="h-20 mb-3 bg-yellow-50 rounded-xl border border-yellow-100 flex items-center justify-center">
+                                    <BookOpen className="text-yellow-500 w-8 h-8" />
+                                </div>
+                                <p className="font-bold text-base leading-tight">Workspace Admin</p>
+                                <div className="mt-3 text-[10px] bg-slate-100 inline-block px-2 py-1 rounded text-slate-500 font-medium">Professional Certificate</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Close Button */}
+                    <button 
+                        onClick={() => setShowAd(false)}
+                        className="absolute top-3 right-3 p-2 text-slate-400 hover:text-slate-600 hover:bg-black/5 rounded-full transition-colors"
+                        title="Dismiss"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
+            )}
+
             {/* --- NAVIGATION BAR --- */}
-            <nav className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
+            <nav className={`sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm ${showAd ? '' : 'top-0'}`}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-20">
                         

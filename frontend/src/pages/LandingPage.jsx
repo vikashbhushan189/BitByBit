@@ -377,7 +377,7 @@ const LandingPage = () => {
                         </div>
                         
                         <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 leading-tight">
-                            Don't let them just <span className="text-red-500 decoration-wavy underline decoration-2 underline-offset-4">watch</span>. <br/>
+                            Don't let them just <span className="text-red-500 decoration-wavy underline decoration-2 underline-offset-4">Watch</span>. <br/>
                             Help them <span className="text-blue-600">Learn.</span>
                         </h2>
                         

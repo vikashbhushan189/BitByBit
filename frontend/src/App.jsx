@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'; // <--- Added useEffect here
+import React, { useEffect } from 'react'; 
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import CourseList from './components/CourseList';
 import ExamPage from './pages/ExamPage';
@@ -16,6 +16,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import AdminNotesUploadPage from './pages/AdminNotesUploadPage';
 import CourseStorePage from './pages/CourseStorePage';
 import AdminAdManagerPage from './pages/AdminAdManagerPage';
+
 // --- Components ---
 
 const Navbar = () => {
@@ -104,6 +105,7 @@ const Layout = ({ children }) => {
         </div>
     );
 };
+
 function App() {
   const isLoggedIn = !!localStorage.getItem('access_token');
 
@@ -141,12 +143,13 @@ function App() {
                 <Route path="/exam/:examId" element={<PrivateRoute><ExamPage /></PrivateRoute>} />
                 <Route path="/topic/:topicId/notes" element={<PrivateRoute><NotesPage /></PrivateRoute>} />
                 <Route path="/store" element={<PrivateRoute><CourseStorePage /></PrivateRoute>} />
+                
                 {/* Admin Routes */}
                 <Route path="/admin-portal" element={<AdminLoginPage />} />
                 <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
                 <Route path="/admin-generator" element={<AdminRoute><AdminGeneratorPage /></AdminRoute>} />
                 <Route path="/admin-notes-upload" element={<AdminRoute><AdminNotesUploadPage /></AdminRoute>} />
-                <Route path="/admin-ads" element={<AdminRoute><AdminAdManagerPage /></AdminRoute>} />
+                <Route path="/admin-ads" element={<AdminRoute><AdminAdManagerPage /></AdminRoute>} /> 
 
                 {/* Auth Routes */}
                 <Route path="/login" element={<LoginPage />} />

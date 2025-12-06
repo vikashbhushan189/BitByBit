@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { 
     BookOpen, CheckCircle, Clock, Trophy, ChevronDown, Menu, X, 
     GraduationCap, ArrowRight, Monitor, Cpu, FileText, Cloud,
-    Atom, Stethoscope, Building2, Scale, Briefcase, Globe, Code
+    Atom, Stethoscope, Building2, Scale, Briefcase, Globe, Code,
+    BrainCircuit, MousePointerClick, Zap, Users
 } from 'lucide-react';
 import api from '../api/axios';
 
@@ -64,11 +65,7 @@ const NAV_LINKS = [
             }
         ]
     },
-    {
-        label: "India's Update",
-        type: "link",
-        to: "/news"
-    },
+    { label: "India's Update", type: "link", to: "/news" },
     {
         label: "AI Tools",
         type: "dropdown",
@@ -99,10 +96,7 @@ const NAV_LINKS = [
             { name: "GATE CS 2010-2024" }
         ]
     },
-    {
-        label: "Power Batch",
-        type: "text",
-    }
+    { label: "Power Batch", type: "text" }
 ];
 
 const LandingPage = () => {
@@ -113,19 +107,15 @@ const LandingPage = () => {
     const [activeTab, setActiveTab] = useState(0);
     const [currentAdIndex, setCurrentAdIndex] = useState(0);
     
-    // Fetch Ads on Load
     useEffect(() => {
         api.get('banners/').then(res => setBanners(res.data)).catch(() => {});
     }, []);
 
-    // Timer Logic (Auto-Slide)
     useEffect(() => {
         if (banners.length <= 1) return;
-        
         const timer = setInterval(() => {
             setCurrentAdIndex(prev => (prev + 1) % banners.length);
         }, 4000); 
-
         return () => clearInterval(timer);
     }, [banners]);
 
@@ -138,7 +128,6 @@ const LandingPage = () => {
             <nav className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-20">
-                        
                         {/* Logo */}
                         <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer">
                             <div className="bg-slate-900 text-white p-2 rounded-lg">
@@ -158,22 +147,18 @@ const LandingPage = () => {
                                     onMouseEnter={() => setActiveDropdown(idx)}
                                     onMouseLeave={() => setActiveDropdown(null)}
                                 >
-                                    {/* Menu Trigger */}
                                     <button className={`px-4 py-2.5 rounded-lg text-sm font-bold flex items-center gap-1.5 transition-all
                                         ${activeDropdown === idx ? 'bg-blue-50 text-blue-600' : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'}`}>
                                         {link.label}
                                         {['mega_tabs', 'dropdown'].includes(link.type) && <ChevronDown size={14} className={`mt-0.5 transition-transform duration-200 ${activeDropdown === idx ? 'rotate-180' : ''}`}/>}
                                     </button>
 
-                                    {/* --- DROPDOWN LOGIC --- */}
+                                    {/* MEGA MENU LOGIC */}
                                     {activeDropdown === idx && (
                                         <div className="absolute top-full left-0 pt-2 w-max animate-in fade-in slide-in-from-top-2 duration-200">
-                                            
-                                            {/* TYPE 1: MEGA TABS (Sidebar + Grid) */}
                                             {link.type === 'mega_tabs' && (
                                                 <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 flex overflow-hidden w-[700px] -ml-20">
-                                                    
-                                                    {/* Left Sidebar (Categories) */}
+                                                    {/* Sidebar */}
                                                     <div className="w-1/3 bg-slate-50 border-r border-slate-100 p-2">
                                                         {link.categories.map((cat, cIdx) => (
                                                             <div 
@@ -188,8 +173,7 @@ const LandingPage = () => {
                                                             </div>
                                                         ))}
                                                     </div>
-
-                                                    {/* Right Content (Exam Grid) */}
+                                                    {/* Content Grid */}
                                                     <div className="w-2/3 p-6 bg-white">
                                                         <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">
                                                             {link.categories[activeTab].name}
@@ -207,8 +191,7 @@ const LandingPage = () => {
                                                     </div>
                                                 </div>
                                             )}
-
-                                            {/* TYPE 2: SIMPLE DROPDOWN */}
+                                            {/* Simple Dropdown */}
                                             {link.type === 'dropdown' && (
                                                 <div className="bg-white rounded-xl shadow-xl border border-slate-100 p-2 w-64">
                                                     {link.items.map((item, iIdx) => (
@@ -249,8 +232,6 @@ const LandingPage = () => {
                             {NAV_LINKS.map((link, idx) => (
                                 <div key={idx} className="border-b border-slate-50 pb-2 last:border-0">
                                     <div className="font-bold text-slate-800 py-2">{link.label}</div>
-                                    
-                                    {/* Mobile Logic for Mega Tabs: Flatten them */}
                                     {link.type === 'mega_tabs' && (
                                         <div className="pl-4 space-y-4 mt-2">
                                             {link.categories.map((cat, cIdx) => (
@@ -258,9 +239,7 @@ const LandingPage = () => {
                                                     <div className="text-xs font-bold text-blue-500 uppercase mb-2">{cat.name}</div>
                                                     <div className="grid grid-cols-2 gap-2">
                                                         {cat.items.map((item, iIdx) => (
-                                                            <div key={iIdx} className="text-sm text-slate-500 flex items-center gap-2 p-2 bg-slate-50 rounded">
-                                                                {item.name}
-                                                            </div>
+                                                            <div key={iIdx} className="text-sm text-slate-500 flex items-center gap-2 p-2 bg-slate-50 rounded">{item.name}</div>
                                                         ))}
                                                     </div>
                                                 </div>
@@ -278,43 +257,29 @@ const LandingPage = () => {
                 )}
             </nav>
 
-            {/* --- DYNAMIC TOP ADS CAROUSEL --- */}
+            {/* --- AD BANNER --- */}
             {activeBanner && showAd && (
                 <div className={`relative bg-gradient-to-r from-${activeBanner.bg_gradient_from} to-${activeBanner.bg_gradient_to} text-white p-3 md:py-4 transition-all duration-500 ease-in-out`}>
                     <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 relative z-10 px-4">
-                        
-                        {/* Text Content */}
                         <div className="text-center md:text-left flex-1">
                             <span className="bg-white/20 text-xs font-bold px-2 py-1 rounded mr-3 uppercase tracking-wider hidden md:inline-block">New</span>
                             <span className="font-bold text-sm md:text-base">{activeBanner.title}</span>
                             <span className="hidden md:inline mx-2">•</span>
                             <span className="text-sm opacity-90">{activeBanner.description}</span>
                         </div>
-
-                        {/* Action Button */}
                         <div className="flex items-center gap-4">
                             <Link to={activeBanner.link} className="bg-white text-slate-900 px-4 py-1.5 rounded-full text-xs font-bold hover:bg-slate-100 transition-colors shadow-sm whitespace-nowrap">
                                 {activeBanner.button_text}
                             </Link>
-                            
-                            {/* Close Button */}
-                            <button 
-                                onClick={() => setShowAd(false)}
-                                className="text-white/60 hover:text-white"
-                            >
+                            <button onClick={() => setShowAd(false)} className="text-white/60 hover:text-white">
                                 <X size={18} />
                             </button>
                         </div>
                     </div>
-
-                    {/* Slide Indicators (Dots) */}
                     {banners.length > 1 && (
                         <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1">
                             {banners.map((_, idx) => (
-                                <div 
-                                    key={idx} 
-                                    className={`w-1.5 h-1.5 rounded-full transition-colors ${idx === currentAdIndex ? 'bg-white' : 'bg-white/30'}`}
-                                />
+                                <div key={idx} className={`w-1.5 h-1.5 rounded-full transition-colors ${idx === currentAdIndex ? 'bg-white' : 'bg-white/30'}`}/>
                             ))}
                         </div>
                     )}
@@ -345,14 +310,9 @@ const LandingPage = () => {
                         </div>
                     </div>
                     <div className="md:w-1/2">
-                        {/* 3D Floating Elements Placeholder */}
                         <div className="relative bg-gradient-to-br from-slate-800 to-slate-900 p-8 rounded-3xl border border-slate-700 shadow-2xl">
                             <div className="flex items-center justify-between mb-8">
-                                <div className="flex gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-red-500"/>
-                                    <div className="w-3 h-3 rounded-full bg-yellow-500"/>
-                                    <div className="w-3 h-3 rounded-full bg-green-500"/>
-                                </div>
+                                <div className="flex gap-2"><div className="w-3 h-3 rounded-full bg-red-500"/><div className="w-3 h-3 rounded-full bg-yellow-500"/><div className="w-3 h-3 rounded-full bg-green-500"/></div>
                                 <div className="text-slate-500 text-xs font-mono">live_class.mp4</div>
                             </div>
                             <div className="bg-slate-950 rounded-xl h-64 flex items-center justify-center border border-slate-800 relative overflow-hidden group">
@@ -361,48 +321,144 @@ const LandingPage = () => {
                                     <div className="w-0 h-0 border-t-[10px] border-t-transparent border-l-[20px] border-l-white border-b-[10px] border-b-transparent ml-1"></div>
                                 </div>
                             </div>
-                            <div className="mt-6 flex gap-4">
-                                <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
-                                    <div className="h-full w-2/3 bg-blue-500"></div>
-                                </div>
-                                <span className="text-xs text-slate-400">65% Complete</span>
-                            </div>
                         </div>
                     </div>
                 </div>
             </header>
 
-            {/* --- FEATURES GRID --- */}
-            <section className="py-24 px-6 bg-slate-50">
-                <div className="max-w-6xl mx-auto">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl font-bold text-slate-900 mb-4">Why Choose Bit by Bit?</h2>
-                        <p className="text-slate-500">Structured courses, endless practice, and AI-powered insights.</p>
+            {/* --- SECTION 1: EXAM CATEGORIES (Like PW/Byjus) --- */}
+            <section className="py-20 bg-slate-50 px-6">
+                <div className="max-w-7xl mx-auto">
+                    <div className="text-center mb-12">
+                        <h2 className="text-3xl font-extrabold text-slate-900">Explore Exam Categories</h2>
+                        <p className="text-slate-500 mt-2">Prepare for 50+ exams with India's top educators.</p>
                     </div>
-                    <div className="grid md:grid-cols-3 gap-8">
-                        <FeatureCard icon={<BookOpen size={24} className="text-white"/>} color="bg-blue-600" title="Comprehensive Notes" desc="Detailed chapter-wise notes curated by top faculties."/>
-                        <FeatureCard icon={<Clock size={24} className="text-white"/>} color="bg-purple-600" title="Real-time Mock Tests" desc="Practice in an actual exam-like environment with negative marking."/>
-                        <FeatureCard icon={<Trophy size={24} className="text-white"/>} color="bg-emerald-600" title="Performance Analysis" desc="Track your weak areas and improve bit by bit every day."/>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        {["IIT JEE", "NEET", "UPSC", "GATE", "SSC", "Banking", "Teaching", "Defence"].map((exam, idx) => (
+                            <div key={idx} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:border-blue-200 transition-all cursor-pointer flex flex-col items-center gap-4 group">
+                                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center group-hover:bg-blue-600 transition-colors">
+                                    <BookOpen size={32} className="text-blue-600 group-hover:text-white transition-colors"/>
+                                </div>
+                                <span className="font-bold text-lg text-slate-800">{exam}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* --- SECTION 2: WHY BIT BY BIT? (Philosophy) --- */}
+            <section className="py-24 bg-white px-6">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-16">
+                    <div className="md:w-1/2 relative">
+                        <div className="absolute inset-0 bg-emerald-100 rounded-3xl rotate-3"></div>
+                        <div className="relative bg-slate-900 p-10 rounded-3xl shadow-2xl text-white">
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="p-3 bg-emerald-500 rounded-xl"><BrainCircuit size={32} /></div>
+                                <div>
+                                    <h3 className="font-bold text-xl">Active Recall</h3>
+                                    <p className="text-emerald-200 text-sm">Scientifically Proven</p>
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="flex gap-4 items-center p-4 bg-slate-800 rounded-xl border border-slate-700">
+                                    <span className="text-2xl">📖</span>
+                                    <div>
+                                        <p className="font-bold">Reading & Writing</p>
+                                        <p className="text-xs text-slate-400">Increases retention by 60%</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-4 items-center p-4 bg-slate-800 rounded-xl border border-slate-700 opacity-50">
+                                    <span className="text-2xl">📺</span>
+                                    <div>
+                                        <p className="font-bold">Passive Watching</p>
+                                        <p className="text-xs text-slate-400">Low retention & focus</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="md:w-1/2 space-y-6">
+                        <h2 className="text-4xl font-extrabold text-slate-900 leading-tight">
+                            Why <span className="text-blue-600">Bit by Bit?</span>
+                        </h2>
+                        <p className="text-lg text-slate-600 leading-relaxed">
+                            Our motto is to bring back the capability of <strong>Reading and Learning</strong>. 
+                            Scientific research shows that students who read, write, and practice indulge in 
+                            <strong> active learning</strong> which grows IQ and cognitive function significantly more than passive video watching.
+                        </p>
+                        <ul className="space-y-3 mt-4">
+                            {[
+                                "Focus on Revision & Practice over long videos",
+                                "Mental capabilities enhancement through reading",
+                                "Activity-based learning for higher functioning"
+                            ].map((item, i) => (
+                                <li key={i} className="flex items-center gap-3 text-slate-700 font-medium">
+                                    <CheckCircle size={20} className="text-emerald-500 flex-shrink-0" /> {item}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            {/* --- SECTION 3: AI TOOLS --- */}
+            <section className="py-20 bg-slate-50 px-6">
+                <div className="max-w-7xl mx-auto">
+                    <div className="text-center mb-16">
+                        <div className="inline-block bg-purple-100 text-purple-700 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4">Powered by Gemini</div>
+                        <h2 className="text-3xl font-bold text-slate-900">Smart AI Tools for Students</h2>
+                    </div>
+                    <div className="grid md:grid-cols-4 gap-6">
+                        {[
+                            { title: "AI Summarizer", icon: <FileText className="text-blue-500"/>, desc: "Turn long chapters into short notes." },
+                            { title: "Video to Text", icon: <Monitor className="text-pink-500"/>, desc: "Convert lectures into readable scripts." },
+                            { title: "Mind Maps", icon: <Cpu className="text-purple-500"/>, desc: "Visualize complex topics instantly." },
+                            { title: "Auto Notes", icon: <Zap className="text-yellow-500"/>, desc: "Generate study material from topics." },
+                        ].map((tool, idx) => (
+                            <div key={idx} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:border-purple-200 hover:shadow-lg transition-all group cursor-pointer">
+                                <div className="w-12 h-12 bg-slate-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-purple-50 transition-colors">
+                                    {tool.icon}
+                                </div>
+                                <h3 className="font-bold text-slate-900 mb-2">{tool.title}</h3>
+                                <p className="text-sm text-slate-500">{tool.desc}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* --- SECTION 4: STATS / TRUST --- */}
+            <section className="py-20 bg-white border-t border-slate-100">
+                <div className="max-w-7xl mx-auto px-6">
+                    <div className="text-center mb-12">
+                        <h2 className="text-2xl font-bold text-slate-900">Trusted by Students & Parents</h2>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                        {[
+                            { num: "150K+", label: "Active Students", icon: <Users className="mx-auto mb-2 text-blue-500"/> },
+                            { num: "4.8/5", label: "App Rating", icon: <Trophy className="mx-auto mb-2 text-yellow-500"/> },
+                            { num: "10M+", label: "Questions Solved", icon: <CheckCircle className="mx-auto mb-2 text-green-500"/> },
+                            { num: "200+", label: "Top Educators", icon: <GraduationCap className="mx-auto mb-2 text-purple-500"/> },
+                        ].map((stat, idx) => (
+                            <div key={idx}>
+                                {stat.icon}
+                                <div className="text-4xl font-extrabold text-slate-900 mb-1">{stat.num}</div>
+                                <div className="text-sm text-slate-500 font-medium uppercase tracking-wide">{stat.label}</div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </section>
 
             {/* Footer */}
-            <footer className="bg-white border-t border-slate-200 py-12 text-center text-slate-500 text-sm">
-                &copy; 2025 Bit by Bit Education. All rights reserved.
+            <footer className="bg-slate-900 text-slate-400 py-12 px-6">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div className="font-bold text-2xl text-white">Bit by Bit</div>
+                    <div className="text-sm">© 2025 Bit by Bit Education. All rights reserved.</div>
+                </div>
             </footer>
         </div>
     );
 };
-
-const FeatureCard = ({ icon, color, title, desc }) => (
-    <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-shadow">
-        <div className={`w-14 h-14 ${color} rounded-xl flex items-center justify-center mb-6 shadow-lg shadow-slate-200`}>
-            {icon}
-        </div>
-        <h3 className="text-xl font-bold text-slate-900 mb-2">{title}</h3>
-        <p className="text-slate-500 leading-relaxed">{desc}</p>
-    </div>
-);
 
 export default LandingPage;

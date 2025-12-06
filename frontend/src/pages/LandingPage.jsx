@@ -4,11 +4,12 @@ import {
     BookOpen, CheckCircle, Clock, Trophy, ChevronDown, Menu, X, 
     GraduationCap, ArrowRight, Monitor, Cpu, FileText, Cloud,
     Atom, Stethoscope, Building2, Scale, Briefcase, Globe, Code,
-    BrainCircuit, MousePointerClick, Zap, Users
+    BrainCircuit, Zap, Users, Moon, Sun // <--- Import Moon/Sun
 } from 'lucide-react';
 import api from '../api/axios';
+import { useTheme } from '../hooks/useTheme'; // <--- Import Hook
 
-// --- NAVIGATION DATA ---
+// ... [NAV_LINKS constant remains the same] ...
 const NAV_LINKS = [
     {
         label: "All Exams",
@@ -65,7 +66,11 @@ const NAV_LINKS = [
             }
         ]
     },
-    { label: "India's Update", type: "link", to: "/news" },
+    {
+        label: "India's Update",
+        type: "link",
+        to: "/news"
+    },
     {
         label: "AI Tools",
         type: "dropdown",
@@ -96,7 +101,10 @@ const NAV_LINKS = [
             { name: "GATE CS 2010-2024" }
         ]
     },
-    { label: "Power Batch", type: "text" }
+    {
+        label: "Power Batch",
+        type: "text",
+    }
 ];
 
 const LandingPage = () => {
@@ -106,6 +114,7 @@ const LandingPage = () => {
     const [banners, setBanners] = useState([]);
     const [activeTab, setActiveTab] = useState(0);
     const [currentAdIndex, setCurrentAdIndex] = useState(0);
+    const { theme, toggleTheme } = useTheme(); // <--- Use Theme Hook
     
     useEffect(() => {
         api.get('banners/').then(res => setBanners(res.data)).catch(() => {});
@@ -122,18 +131,19 @@ const LandingPage = () => {
     const activeBanner = banners[currentAdIndex];
 
     return (
-        <div className="bg-white font-sans text-slate-800">
+        <div className="bg-white dark:bg-slate-900 font-sans text-slate-800 dark:text-slate-200 transition-colors duration-300">
             
             {/* --- NAVIGATION BAR --- */}
-            <nav className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
+            <nav className="sticky top-0 z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-20">
+                        
                         {/* Logo */}
                         <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer">
-                            <div className="bg-slate-900 text-white p-2 rounded-lg">
+                            <div className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 p-2 rounded-lg transition-colors">
                                 <GraduationCap size={24} />
                             </div>
-                            <span className="font-black text-2xl tracking-tighter">
+                            <span className="font-black text-2xl tracking-tighter text-slate-900 dark:text-white">
                                 <span className="text-blue-600">Bit</span>byBit
                             </span>
                         </div>
@@ -148,24 +158,30 @@ const LandingPage = () => {
                                     onMouseLeave={() => setActiveDropdown(null)}
                                 >
                                     <button className={`px-4 py-2.5 rounded-lg text-sm font-bold flex items-center gap-1.5 transition-all
-                                        ${activeDropdown === idx ? 'bg-blue-50 text-blue-600' : 'text-slate-700 hover:text-blue-600 hover:bg-slate-50'}`}>
+                                        ${activeDropdown === idx 
+                                            ? 'bg-blue-50 dark:bg-slate-800 text-blue-600' 
+                                            : 'text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                                         {link.label}
                                         {['mega_tabs', 'dropdown'].includes(link.type) && <ChevronDown size={14} className={`mt-0.5 transition-transform duration-200 ${activeDropdown === idx ? 'rotate-180' : ''}`}/>}
                                     </button>
 
-                                    {/* MEGA MENU LOGIC */}
+                                    {/* DROPDOWNS (Dark Mode Styled) */}
                                     {activeDropdown === idx && (
                                         <div className="absolute top-full left-0 pt-2 w-max animate-in fade-in slide-in-from-top-2 duration-200">
+                                            
+                                            {/* TYPE 1: MEGA TABS */}
                                             {link.type === 'mega_tabs' && (
-                                                <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 flex overflow-hidden w-[700px] -ml-20">
+                                                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 flex overflow-hidden w-[700px] -ml-20">
                                                     {/* Sidebar */}
-                                                    <div className="w-1/3 bg-slate-50 border-r border-slate-100 p-2">
+                                                    <div className="w-1/3 bg-slate-50 dark:bg-slate-900 border-r border-slate-100 dark:border-slate-700 p-2">
                                                         {link.categories.map((cat, cIdx) => (
                                                             <div 
                                                                 key={cIdx}
                                                                 onMouseEnter={() => setActiveTab(cIdx)}
                                                                 className={`px-4 py-3 rounded-xl text-sm font-bold cursor-pointer flex justify-between items-center transition-all mb-1
-                                                                    ${activeTab === cIdx ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'}
+                                                                    ${activeTab === cIdx 
+                                                                        ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm' 
+                                                                        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200'}
                                                                 `}
                                                             >
                                                                 {cat.name}
@@ -173,31 +189,33 @@ const LandingPage = () => {
                                                             </div>
                                                         ))}
                                                     </div>
-                                                    {/* Content Grid */}
-                                                    <div className="w-2/3 p-6 bg-white">
-                                                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">
+
+                                                    {/* Right Content */}
+                                                    <div className="w-2/3 p-6 bg-white dark:bg-slate-800">
+                                                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">
                                                             {link.categories[activeTab].name}
                                                         </h4>
                                                         <div className="grid grid-cols-2 gap-3">
                                                             {link.categories[activeTab].items.map((item, iIdx) => (
-                                                                <div key={iIdx} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:shadow-md transition-all cursor-pointer group bg-slate-50/50 hover:bg-white">
-                                                                    <div className="bg-white p-2 rounded-lg shadow-sm group-hover:scale-110 transition-transform">
+                                                                <div key={iIdx} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-500 hover:shadow-md transition-all cursor-pointer group bg-slate-50/50 dark:bg-slate-900/50 hover:bg-white dark:hover:bg-slate-900">
+                                                                    <div className="bg-white dark:bg-slate-800 p-2 rounded-lg shadow-sm group-hover:scale-110 transition-transform">
                                                                         {item.icon}
                                                                     </div>
-                                                                    <span className="text-sm font-bold text-slate-700 group-hover:text-blue-700">{item.name}</span>
+                                                                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-blue-700 dark:group-hover:text-blue-400">{item.name}</span>
                                                                 </div>
                                                             ))}
                                                         </div>
                                                     </div>
                                                 </div>
                                             )}
-                                            {/* Simple Dropdown */}
+
+                                            {/* TYPE 2: SIMPLE DROPDOWN */}
                                             {link.type === 'dropdown' && (
-                                                <div className="bg-white rounded-xl shadow-xl border border-slate-100 p-2 w-64">
+                                                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 p-2 w-64">
                                                     {link.items.map((item, iIdx) => (
-                                                        <div key={iIdx} className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 cursor-pointer group">
+                                                        <div key={iIdx} className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer group">
                                                             {item.icon && <span className="text-slate-400 group-hover:text-blue-500">{item.icon}</span>}
-                                                            <span className="text-sm font-medium text-slate-700 group-hover:text-blue-700">{item.name}</span>
+                                                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-blue-700 dark:group-hover:text-blue-400">{item.name}</span>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -208,30 +226,43 @@ const LandingPage = () => {
                             ))}
                         </div>
 
-                        {/* Auth Buttons */}
-                        <div className="hidden lg:flex items-center gap-3">
-                            <Link to="/login" className="text-slate-600 font-bold hover:text-blue-600 px-4 py-2">Login</Link>
-                            <Link to="/register" className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-200 hover:-translate-y-0.5">
+                        {/* Right Side: Theme Toggle & Auth */}
+                        <div className="hidden lg:flex items-center gap-4">
+                            {/* THEME TOGGLE BUTTON */}
+                            <button 
+                                onClick={toggleTheme}
+                                className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                            >
+                                {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                            </button>
+
+                            <Link to="/login" className="text-slate-600 dark:text-slate-300 font-bold hover:text-blue-600 dark:hover:text-blue-400 px-4 py-2 transition-colors">Login</Link>
+                            <Link to="/register" className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-200 dark:shadow-none hover:-translate-y-0.5">
                                 Register
                             </Link>
                         </div>
 
                         {/* Mobile Menu Button */}
-                        <div className="lg:hidden">
-                            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-600">
+                        <div className="lg:hidden flex items-center gap-4">
+                             <button onClick={toggleTheme} className="p-2 text-slate-600 dark:text-slate-300">
+                                {theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
+                            </button>
+                            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-600 dark:text-slate-300">
                                 {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
                             </button>
                         </div>
                     </div>
                 </div>
 
-                {/* Mobile Menu Drawer */}
+                {/* Mobile Menu Drawer (Dark Mode) */}
                 {isMobileMenuOpen && (
-                    <div className="lg:hidden bg-white border-t border-slate-100 absolute w-full left-0 shadow-xl max-h-[80vh] overflow-y-auto">
+                    <div className="lg:hidden bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 absolute w-full left-0 shadow-xl max-h-[80vh] overflow-y-auto">
                         <div className="p-4 space-y-2">
                             {NAV_LINKS.map((link, idx) => (
-                                <div key={idx} className="border-b border-slate-50 pb-2 last:border-0">
-                                    <div className="font-bold text-slate-800 py-2">{link.label}</div>
+                                <div key={idx} className="border-b border-slate-50 dark:border-slate-800 pb-2 last:border-0">
+                                    <div className="font-bold text-slate-800 dark:text-slate-200 py-2">{link.label}</div>
+                                    
                                     {link.type === 'mega_tabs' && (
                                         <div className="pl-4 space-y-4 mt-2">
                                             {link.categories.map((cat, cIdx) => (
@@ -239,7 +270,9 @@ const LandingPage = () => {
                                                     <div className="text-xs font-bold text-blue-500 uppercase mb-2">{cat.name}</div>
                                                     <div className="grid grid-cols-2 gap-2">
                                                         {cat.items.map((item, iIdx) => (
-                                                            <div key={iIdx} className="text-sm text-slate-500 flex items-center gap-2 p-2 bg-slate-50 rounded">{item.name}</div>
+                                                            <div key={iIdx} className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded">
+                                                                {item.name}
+                                                            </div>
                                                         ))}
                                                     </div>
                                                 </div>
@@ -248,8 +281,8 @@ const LandingPage = () => {
                                     )}
                                 </div>
                             ))}
-                            <div className="flex flex-col gap-3 mt-6 pt-4 border-t border-slate-100">
-                                <Link to="/login" className="w-full text-center border-2 border-slate-100 py-3 rounded-xl font-bold text-slate-700">Login</Link>
+                            <div className="flex flex-col gap-3 mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
+                                <Link to="/login" className="w-full text-center border-2 border-slate-100 dark:border-slate-700 py-3 rounded-xl font-bold text-slate-700 dark:text-slate-300">Login</Link>
                                 <Link to="/register" className="w-full text-center bg-blue-600 text-white py-3 rounded-xl font-bold">Register</Link>
                             </div>
                         </div>
@@ -310,6 +343,7 @@ const LandingPage = () => {
                         </div>
                     </div>
                     <div className="md:w-1/2">
+                        {/* 3D Floating Elements */}
                         <div className="relative bg-gradient-to-br from-slate-800 to-slate-900 p-8 rounded-3xl border border-slate-700 shadow-2xl">
                             <div className="flex items-center justify-between mb-8">
                                 <div className="flex gap-2"><div className="w-3 h-3 rounded-full bg-red-500"/><div className="w-3 h-3 rounded-full bg-yellow-500"/><div className="w-3 h-3 rounded-full bg-green-500"/></div>
@@ -321,159 +355,91 @@ const LandingPage = () => {
                                     <div className="w-0 h-0 border-t-[10px] border-t-transparent border-l-[20px] border-l-white border-b-[10px] border-b-transparent ml-1"></div>
                                 </div>
                             </div>
+                            <div className="mt-6 flex gap-4">
+                                <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
+                                    <div className="h-full w-2/3 bg-blue-500"></div>
+                                </div>
+                                <span className="text-xs text-slate-400">65% Complete</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </header>
 
-            {/* --- SECTION 1: EXAM CATEGORIES (Like PW/Byjus) --- */}
-            <section className="py-20 bg-slate-50 px-6">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-12">
-                        <h2 className="text-3xl font-extrabold text-slate-900">Explore Exam Categories</h2>
-                        <p className="text-slate-500 mt-2">Prepare for 50+ exams with India's top educators.</p>
+            {/* --- FEATURES GRID (Dark Mode Ready) --- */}
+            <section className="py-24 px-6 bg-slate-50 dark:bg-slate-900 transition-colors">
+                <div className="max-w-6xl mx-auto">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Why Choose Bit by Bit?</h2>
+                        <p className="text-slate-500 dark:text-slate-400">Structured courses, endless practice, and AI-powered insights.</p>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                        {["IIT JEE", "NEET", "UPSC", "GATE", "SSC", "Banking", "Teaching", "Defence"].map((exam, idx) => (
-                            <div key={idx} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:border-blue-200 transition-all cursor-pointer flex flex-col items-center gap-4 group">
-                                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center group-hover:bg-blue-600 transition-colors">
-                                    <BookOpen size={32} className="text-blue-600 group-hover:text-white transition-colors"/>
-                                </div>
-                                <span className="font-bold text-lg text-slate-800">{exam}</span>
-                            </div>
-                        ))}
+                    <div className="grid md:grid-cols-3 gap-8">
+                        <FeatureCard icon={<BookOpen size={24} className="text-white"/>} color="bg-blue-600" title="Comprehensive Notes" desc="Detailed chapter-wise notes curated by top faculties."/>
+                        <FeatureCard icon={<Clock size={24} className="text-white"/>} color="bg-purple-600" title="Real-time Mock Tests" desc="Practice in an actual exam-like environment with negative marking."/>
+                        <FeatureCard icon={<Trophy size={24} className="text-white"/>} color="bg-emerald-600" title="Performance Analysis" desc="Track your weak areas and improve bit by bit every day."/>
                     </div>
                 </div>
             </section>
 
-            {/* --- SECTION 2: PHILOSOPHY (Enhanced with Image) --- */}
-            <section className="py-24 bg-white px-6 relative overflow-hidden">
-                {/* Background Pattern */}
-                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-50"></div>
-
+             {/* --- PHILOSOPHY SECTION (Dark Mode) --- */}
+             <section className="py-24 bg-white dark:bg-slate-800 px-6 relative overflow-hidden transition-colors">
+                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] dark:bg-[radial-gradient(#374151_1px,transparent_1px)] [background-size:16px_16px] opacity-50"></div>
                 <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16 relative z-10">
-                    
-                    {/* Left: The Image */}
                     <div className="lg:w-1/2 relative group">
                         <div className="absolute -inset-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl blur-xl opacity-30 group-hover:opacity-50 transition-opacity duration-500"></div>
-                        <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-slate-100 bg-white">
-                            {/* Replace src with your local image path */}
-                            <img 
-                                src="/assets/active_learning_comparison.png" 
-                                alt="Active Reading vs Passive Watching Comparison" 
-                                className="w-full h-auto object-cover transform transition-transform duration-700 hover:scale-105"
-                            />
+                        <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900">
+                            <img src="/assets/active_learning_comparison.png" alt="Active vs Passive" className="w-full h-auto object-cover transform transition-transform duration-700 hover:scale-105" />
                             <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-slate-900/90 to-transparent p-6">
                                 <p className="text-white font-bold text-lg">Scientific Fact:</p>
-                                <p className="text-slate-300 text-sm">Active recall (reading & testing) builds stronger neural pathways than passive consumption.</p>
+                                <p className="text-slate-300 text-sm">Active recall builds stronger neural pathways.</p>
                             </div>
                         </div>
                     </div>
-
-                    {/* Right: Persuasive Copy for Parents */}
                     <div className="lg:w-1/2 space-y-8">
-                        <div className="inline-block bg-emerald-100 text-emerald-800 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider">
-                            The Science of Learning
-                        </div>
-                        
-                        <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 leading-tight">
-                            Don't let them just <span className="text-red-500 decoration-wavy underline decoration-2 underline-offset-4">Watch</span>. <br/>
-                            Help them <span className="text-blue-600">Learn.</span>
+                        <div className="inline-block bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider">The Science of Learning</div>
+                        <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white leading-tight">
+                            Don't let them just <span className="text-red-500 decoration-2 underline-offset-4">watch</span>. <br/>
+                            Help them <span className="text-blue-600 dark:text-blue-400">Learn.</span>
                         </h2>
-                        
-                        <p className="text-lg text-slate-600 leading-relaxed">
-                            Video lectures are easy, but **low retention**. Our platform brings back the capability of reading, writing, and practicing—activities proven to increase IQ and cognitive function.
+                        <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
+                            Video lectures are easy, but **low retention**. Our platform brings back active learning to increase IQ and cognitive function.
                         </p>
-
                         <div className="space-y-6">
                             <div className="flex gap-4">
-                                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center shrink-0 text-blue-600">
-                                    <BrainCircuit size={24} />
-                                </div>
+                                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-xl flex items-center justify-center shrink-0 text-blue-600 dark:text-blue-300"><BrainCircuit size={24} /></div>
                                 <div>
-                                    <h3 className="font-bold text-lg text-slate-800">Boosts Cognitive Function</h3>
-                                    <p className="text-slate-500 text-sm">Reading engages the brain's prefrontal cortex, improving focus and critical thinking skills that videos bypass.</p>
+                                    <h3 className="font-bold text-lg text-slate-800 dark:text-white">Boosts Cognitive Function</h3>
+                                    <p className="text-slate-500 dark:text-slate-400 text-sm">Reading engages the prefrontal cortex, improving focus.</p>
                                 </div>
                             </div>
-
-                            <div className="flex gap-4">
-                                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center shrink-0 text-purple-600">
-                                    <Zap size={24} />
-                                </div>
+                             <div className="flex gap-4">
+                                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-xl flex items-center justify-center shrink-0 text-purple-600 dark:text-purple-300"><Zap size={24} /></div>
                                 <div>
-                                    <h3 className="font-bold text-lg text-slate-800">Active vs. Passive</h3>
-                                    <p className="text-slate-500 text-sm">Students who solve problems (Active) score <strong>2x higher</strong> than those who just watch solutions (Passive).</p>
+                                    <h3 className="font-bold text-lg text-slate-800 dark:text-white">Active vs. Passive</h3>
+                                    <p className="text-slate-500 dark:text-slate-400 text-sm">Students who solve problems score <strong>2x higher</strong>.</p>
                                 </div>
                             </div>
                         </div>
-
-                        <div className="pt-4">
-                            <Link to="/register" className="inline-flex items-center gap-2 text-blue-600 font-bold hover:text-blue-800 transition-colors text-lg">
-                                See the difference yourself <ArrowRight size={20} />
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* --- SECTION 3: AI TOOLS --- */}
-            <section className="py-20 bg-slate-50 px-6">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-16">
-                        <div className="inline-block bg-purple-100 text-purple-700 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4">Powered by Gemini</div>
-                        <h2 className="text-3xl font-bold text-slate-900">Smart AI Tools for Students</h2>
-                    </div>
-                    <div className="grid md:grid-cols-4 gap-6">
-                        {[
-                            { title: "AI Summarizer", icon: <FileText className="text-blue-500"/>, desc: "Turn long chapters into short notes." },
-                            { title: "Video to Text", icon: <Monitor className="text-pink-500"/>, desc: "Convert lectures into readable scripts." },
-                            { title: "Mind Maps", icon: <Cpu className="text-purple-500"/>, desc: "Visualize complex topics instantly." },
-                            { title: "Auto Notes", icon: <Zap className="text-yellow-500"/>, desc: "Generate study material from topics." },
-                        ].map((tool, idx) => (
-                            <div key={idx} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:border-purple-200 hover:shadow-lg transition-all group cursor-pointer">
-                                <div className="w-12 h-12 bg-slate-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-purple-50 transition-colors">
-                                    {tool.icon}
-                                </div>
-                                <h3 className="font-bold text-slate-900 mb-2">{tool.title}</h3>
-                                <p className="text-sm text-slate-500">{tool.desc}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* --- SECTION 4: STATS / TRUST --- */}
-            <section className="py-20 bg-white border-t border-slate-100">
-                <div className="max-w-7xl mx-auto px-6">
-                    <div className="text-center mb-12">
-                        <h2 className="text-2xl font-bold text-slate-900">Trusted by Students & Parents</h2>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-                        {[
-                            { num: "150K+", label: "Active Students", icon: <Users className="mx-auto mb-2 text-blue-500"/> },
-                            { num: "4.8/5", label: "App Rating", icon: <Trophy className="mx-auto mb-2 text-yellow-500"/> },
-                            { num: "10M+", label: "Questions Solved", icon: <CheckCircle className="mx-auto mb-2 text-green-500"/> },
-                            { num: "200+", label: "Top Educators", icon: <GraduationCap className="mx-auto mb-2 text-purple-500"/> },
-                        ].map((stat, idx) => (
-                            <div key={idx}>
-                                {stat.icon}
-                                <div className="text-4xl font-extrabold text-slate-900 mb-1">{stat.num}</div>
-                                <div className="text-sm text-slate-500 font-medium uppercase tracking-wide">{stat.label}</div>
-                            </div>
-                        ))}
                     </div>
                 </div>
             </section>
 
             {/* Footer */}
-            <footer className="bg-slate-900 text-slate-400 py-12 px-6">
-                <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-                    <div className="font-bold text-2xl text-white">Bit by Bit</div>
-                    <div className="text-sm">© 2025 Bit by Bit Education. All rights reserved.</div>
-                </div>
+            <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-12 text-center text-slate-500 dark:text-slate-400 text-sm transition-colors">
+                &copy; 2025 Bit by Bit Education. All rights reserved.
             </footer>
         </div>
     );
 };
+
+const FeatureCard = ({ icon, color, title, desc }) => (
+    <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-lg transition-all">
+        <div className={`w-14 h-14 ${color} rounded-xl flex items-center justify-center mb-6 shadow-lg shadow-slate-200 dark:shadow-none`}>
+            {icon}
+        </div>
+        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{title}</h3>
+        <p className="text-slate-500 dark:text-slate-400 leading-relaxed">{desc}</p>
+    </div>
+);
 
 export default LandingPage;

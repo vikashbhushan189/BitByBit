@@ -81,7 +81,7 @@ DJOSER = {
         'current_user': 'exams.serializers.CustomUserSerializer',
     },
     # CRITICAL: This must match your Vercel Domain exactly (no https://)
-    'DOMAIN': 'https://bitbybit-seven.vercel.app/', 
+    'DOMAIN': 'bitbybit-seven.vercel.app', 
     'SITE_NAME': 'Bit By Bit',
 }
 

@@ -12,6 +12,7 @@ from .ai_service import generate_questions_from_text, generate_question_from_ima
 from .permissions import IsPaidSubscriberOrAdmin
 import logging
 from io import TextIOWrapper
+import codecs
 
 logger = logging.getLogger(__name__)
 
@@ -228,22 +229,20 @@ class BulkNotesViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'])
     def upload_csv(self, request):
-        file = request.FILES.get('file')
-        if not file: 
+        file_obj = request.FILES.get('file')
+        if not file_obj: 
             return Response({"error": "No file uploaded"}, status=400)
 
-        if not file.name.endswith('.csv'):
+        if not file_obj.name.endswith('.csv'):
             return Response({"error": "File must be a CSV"}, status=400)
 
         try:
-            # 1. Stream the file (Memory Safe for Render Free Tier)
-            # encoding='utf-8-sig' handles Excel's hidden BOM characters
-            file.seek(0)
-            text_file = TextIOWrapper(file.file, encoding='utf-8-sig', errors='replace')
-            reader = csv.DictReader(text_file)
+            # FIX: Use codecs.iterdecode to stream line-by-line safely
+            # This handles both InMemoryUploadedFile and TemporaryUploadedFile
+            decoded_file = codecs.iterdecode(file_obj, 'utf-8-sig')
+            reader = csv.DictReader(decoded_file)
             
-            # 2. Smart Header Mapping (Case-insensitive)
-            # This allows "course", "Course", "COURSE" to all work
+            # Map Headers (Case-insensitive)
             header_map = {}
             if reader.fieldnames:
                 for field in reader.fieldnames:
@@ -257,25 +256,19 @@ class BulkNotesViewSet(viewsets.ViewSet):
             updated_count = 0
             created_count = 0
             
-            # 3. Process Row by Row
             for row in reader:
-                # Safe extraction
                 c_title = row.get(header_map.get('course'), '').strip()
                 s_title = row.get(header_map.get('subject'), '').strip()
                 ch_title = row.get(header_map.get('chapter'), '').strip()
                 t_title = row.get(header_map.get('topic'), '').strip()
                 notes = row.get(header_map.get('notes'), '').strip()
 
-                # Skip empty/invalid rows
                 if not (c_title and s_title and ch_title and t_title):
                     continue
 
-                # Get or Create Hierarchy
                 course, _ = Course.objects.get_or_create(title=c_title)
                 subject, _ = Subject.objects.get_or_create(title=s_title, course=course)
                 chapter, _ = Chapter.objects.get_or_create(title=ch_title, subject=subject)
-                
-                # Update Topic
                 topic, created = Topic.objects.get_or_create(title=t_title, chapter=chapter)
                 
                 if notes:
@@ -286,12 +279,12 @@ class BulkNotesViewSet(viewsets.ViewSet):
 
             return Response({
                 "status": "success", 
-                "message": f"Upload Complete! Created {created_count} topics, Updated {updated_count} topics."
+                "message": f"Processed successfully! Created {created_count}, Updated {updated_count}."
             })
 
         except Exception as e:
-            print(f"CSV UPLOAD ERROR: {e}")
-            return Response({"error": str(e)}, status=500)
+            print(f"CSV ERROR: {e}")
+            return Response({"error": f"Server Error: {str(e)}"}, status=500)
 
 class AdBannerViewSet(viewsets.ModelViewSet):
     queryset = AdBanner.objects.filter(is_active=True).order_by('-created_at')

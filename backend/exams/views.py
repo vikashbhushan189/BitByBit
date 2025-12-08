@@ -6,11 +6,13 @@ from django.utils import timezone
 from django.db import transaction
 import csv
 import io
-
 from .models import Course, Exam, ExamAttempt, Question, Option, StudentResponse, Topic, Chapter, Subject, AdBanner, UserSubscription
 from .serializers import CourseSerializer, ExamSerializer, ExamAttemptSerializer, TopicSerializer, AdBannerSerializer
 from .ai_service import generate_questions_from_text, generate_question_from_image
 from .permissions import IsPaidSubscriberOrAdmin
+import logging
+
+logger = logging.getLogger(__name__)
 
 class CourseViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Course.objects.all()
@@ -227,20 +229,64 @@ class BulkNotesViewSet(viewsets.ViewSet):
     def upload_csv(self, request):
         file = request.FILES.get('file')
         if not file: return Response({"error": "No file uploaded"}, status=400)
+
         try:
-            decoded_file = file.read().decode('utf-8')
+            # 1. READ & DECODE (Handle Excel BOM issues)
+            decoded_file = file.read().decode('utf-8-sig') 
             io_string = io.StringIO(decoded_file)
             reader = csv.DictReader(io_string)
+            
+            # 2. MAP HEADERS (Case-insensitive matching)
+            # This allows "course", "Course", "COURSE" to all work
+            header_map = {}
+            if reader.fieldnames:
+                print(f"DEBUG: Found CSV Headers: {reader.fieldnames}") # Look for this in Render Logs
+                for field in reader.fieldnames:
+                    clean = field.strip().lower()
+                    if 'course' in clean: header_map['course'] = field
+                    elif 'subject' in clean: header_map['subject'] = field
+                    elif 'chapter' in clean: header_map['chapter'] = field
+                    elif 'topic' in clean: header_map['topic'] = field
+                    elif 'note' in clean: header_map['notes'] = field # Matches "Notes" or "Note"
+
+            updated_count = 0
             created_count = 0
-            for row in reader:
-                # Simplified for brevity, assumes logic from previous step
-                course_title = row.get('Course', '').strip()
-                if not course_title: continue
-                course, _ = Course.objects.get_or_create(title=course_title)
-                # ... rest of logic ...
-                created_count += 1
-            return Response({"status": "success", "message": f"Processed {created_count} rows."})
+            
+            with transaction.atomic():
+                for row in reader:
+                    # Get values safely using the map
+                    c_title = row.get(header_map.get('course'), '').strip()
+                    s_title = row.get(header_map.get('subject'), '').strip()
+                    ch_title = row.get(header_map.get('chapter'), '').strip()
+                    t_title = row.get(header_map.get('topic'), '').strip()
+                    notes = row.get(header_map.get('notes'), '').strip()
+
+                    # Skip empty rows
+                    if not (c_title and s_title and ch_title and t_title):
+                        print(f"SKIPPING: Row missing core fields. {row}")
+                        continue
+
+                    # Create Hierarchy
+                    course, _ = Course.objects.get_or_create(title=c_title)
+                    subject, _ = Subject.objects.get_or_create(title=s_title, course=course)
+                    chapter, _ = Chapter.objects.get_or_create(title=ch_title, subject=subject)
+                    
+                    # Update Topic
+                    topic, created = Topic.objects.get_or_create(title=t_title, chapter=chapter)
+                    
+                    if notes:
+                        topic.study_notes = notes
+                        topic.save()
+                        if created: created_count += 1
+                        else: updated_count += 1
+            
+            return Response({
+                "status": "success", 
+                "message": f"Success! Created {created_count} topics, Updated {updated_count} topics."
+            })
+
         except Exception as e:
+            print(f"CSV ERROR: {e}")
             return Response({"error": str(e)}, status=500)
 
 class AdBannerViewSet(viewsets.ModelViewSet):

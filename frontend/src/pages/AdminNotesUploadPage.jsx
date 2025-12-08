@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import api from '../api/axios';
-import { UploadCloud, FileText, CheckCircle, AlertTriangle, Download } from 'lucide-react';
+import { UploadCloud, FileText, CheckCircle, AlertTriangle, Download, Loader2 } from 'lucide-react';
 
 const AdminNotesUploadPage = () => {
     const [file, setFile] = useState(null);
@@ -16,27 +16,31 @@ const AdminNotesUploadPage = () => {
         if (!file) return alert("Please select a file first");
         
         setUploading(true);
+        setResult(null);
+        
         const formData = new FormData();
         formData.append('file', file);
 
         try {
-            const res = await api.post('bulk-notes/upload_csv/', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            // FIX: Do NOT manually set Content-Type. Let Axios set it with the correct boundary.
+            const res = await api.post('bulk-notes/upload_csv/', formData);
             setResult({ type: 'success', message: res.data.message });
+            setFile(null); // Reset file input
+            // Reset the actual input element
+            document.getElementById('fileInput').value = "";
         } catch (err) {
             console.error(err);
-            setResult({ type: 'error', message: "Upload Failed. Ensure CSV format is correct." });
+            const errorMsg = err.response?.data?.error || "Upload Failed. Check console.";
+            setResult({ type: 'error', message: errorMsg });
         } finally {
             setUploading(false);
         }
     };
 
-    // Helper to download a sample CSV
     const downloadTemplate = () => {
         const csvContent = "data:text/csv;charset=utf-8," 
             + "Course,Subject,Chapter,Topic,Notes\n"
-            + "Computer Science,Operating System,Process Management,Scheduling Algorithms,First Come First Serve (FCFS) is...";
+            + "Computer Science,Operating System,Process Management,Scheduling,Short notes about FCFS...";
         
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
@@ -61,8 +65,7 @@ const AdminNotesUploadPage = () => {
                             Get Template
                         </h2>
                         <p className="text-slate-400 mb-4">
-                            Download the CSV template. Fill it with your hierarchy and Markdown notes. 
-                            If the Course/Subject doesn't exist, it will be created automatically.
+                            Download the CSV template. Fill it with your hierarchy and Markdown notes.
                         </p>
                         <button 
                             onClick={downloadTemplate}
@@ -107,9 +110,9 @@ const AdminNotesUploadPage = () => {
                         <button 
                             onClick={handleUpload}
                             disabled={!file || uploading}
-                            className="w-full mt-6 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center"
+                            className="w-full mt-6 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
                         >
-                            {uploading ? "Processing..." : "Upload & Sync Database"}
+                            {uploading ? <Loader2 className="animate-spin" /> : "Upload & Sync Database"}
                         </button>
                     </div>
                 </div>

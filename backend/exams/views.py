@@ -228,65 +228,68 @@ class BulkNotesViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['post'])
     def upload_csv(self, request):
         file = request.FILES.get('file')
-        if not file: return Response({"error": "No file uploaded"}, status=400)
+        if not file: 
+            return Response({"error": "No file uploaded"}, status=400)
+
+        if not file.name.endswith('.csv'):
+            return Response({"error": "File must be a CSV"}, status=400)
 
         try:
-            # 1. READ & DECODE (Handle Excel BOM issues)
-            decoded_file = file.read().decode('utf-8-sig') 
-            io_string = io.StringIO(decoded_file)
-            reader = csv.DictReader(io_string)
+            # 1. Stream the file (Memory Safe for Render Free Tier)
+            # encoding='utf-8-sig' handles Excel's hidden BOM characters
+            file.seek(0)
+            text_file = TextIOWrapper(file.file, encoding='utf-8-sig', errors='replace')
+            reader = csv.DictReader(text_file)
             
-            # 2. MAP HEADERS (Case-insensitive matching)
+            # 2. Smart Header Mapping (Case-insensitive)
             # This allows "course", "Course", "COURSE" to all work
             header_map = {}
             if reader.fieldnames:
-                print(f"DEBUG: Found CSV Headers: {reader.fieldnames}") # Look for this in Render Logs
                 for field in reader.fieldnames:
                     clean = field.strip().lower()
                     if 'course' in clean: header_map['course'] = field
                     elif 'subject' in clean: header_map['subject'] = field
                     elif 'chapter' in clean: header_map['chapter'] = field
                     elif 'topic' in clean: header_map['topic'] = field
-                    elif 'note' in clean: header_map['notes'] = field # Matches "Notes" or "Note"
+                    elif 'note' in clean: header_map['notes'] = field 
 
             updated_count = 0
             created_count = 0
             
-            with transaction.atomic():
-                for row in reader:
-                    # Get values safely using the map
-                    c_title = row.get(header_map.get('course'), '').strip()
-                    s_title = row.get(header_map.get('subject'), '').strip()
-                    ch_title = row.get(header_map.get('chapter'), '').strip()
-                    t_title = row.get(header_map.get('topic'), '').strip()
-                    notes = row.get(header_map.get('notes'), '').strip()
+            # 3. Process Row by Row
+            for row in reader:
+                # Safe extraction
+                c_title = row.get(header_map.get('course'), '').strip()
+                s_title = row.get(header_map.get('subject'), '').strip()
+                ch_title = row.get(header_map.get('chapter'), '').strip()
+                t_title = row.get(header_map.get('topic'), '').strip()
+                notes = row.get(header_map.get('notes'), '').strip()
 
-                    # Skip empty rows
-                    if not (c_title and s_title and ch_title and t_title):
-                        print(f"SKIPPING: Row missing core fields. {row}")
-                        continue
+                # Skip empty/invalid rows
+                if not (c_title and s_title and ch_title and t_title):
+                    continue
 
-                    # Create Hierarchy
-                    course, _ = Course.objects.get_or_create(title=c_title)
-                    subject, _ = Subject.objects.get_or_create(title=s_title, course=course)
-                    chapter, _ = Chapter.objects.get_or_create(title=ch_title, subject=subject)
-                    
-                    # Update Topic
-                    topic, created = Topic.objects.get_or_create(title=t_title, chapter=chapter)
-                    
-                    if notes:
-                        topic.study_notes = notes
-                        topic.save()
-                        if created: created_count += 1
-                        else: updated_count += 1
-            
+                # Get or Create Hierarchy
+                course, _ = Course.objects.get_or_create(title=c_title)
+                subject, _ = Subject.objects.get_or_create(title=s_title, course=course)
+                chapter, _ = Chapter.objects.get_or_create(title=ch_title, subject=subject)
+                
+                # Update Topic
+                topic, created = Topic.objects.get_or_create(title=t_title, chapter=chapter)
+                
+                if notes:
+                    topic.study_notes = notes
+                    topic.save()
+                    if created: created_count += 1
+                    else: updated_count += 1
+
             return Response({
                 "status": "success", 
-                "message": f"Success! Created {created_count} topics, Updated {updated_count} topics."
+                "message": f"Upload Complete! Created {created_count} topics, Updated {updated_count} topics."
             })
 
         except Exception as e:
-            print(f"CSV ERROR: {e}")
+            print(f"CSV UPLOAD ERROR: {e}")
             return Response({"error": str(e)}, status=500)
 
 class AdBannerViewSet(viewsets.ModelViewSet):

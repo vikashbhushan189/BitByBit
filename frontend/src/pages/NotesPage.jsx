@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math'; // 1. Import remark-math
+import rehypeKatex from 'rehype-katex'; // 2. Import rehype-katex
 import 'katex/dist/katex.min.css';
 import { ArrowLeft, Lock, Loader2, FileText, AlertTriangle } from 'lucide-react';
 
@@ -11,7 +13,7 @@ const NotesPage = () => {
     const navigate = useNavigate();
     const [topic, setTopic] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null); // New Error State
+    const [error, setError] = useState(null);
 
     // 1. Fetch Content
     useEffect(() => {
@@ -111,7 +113,11 @@ const NotesPage = () => {
                     </h1>
                     
                     <div className="prose prose-blue prose-lg max-w-none text-slate-700">
-                        <Markdown remarkPlugins={[remarkGfm]}>
+                        {/* 3. Updated Markdown component with math plugins */}
+                        <Markdown 
+                            remarkPlugins={[remarkGfm, remarkMath]} 
+                            rehypePlugins={[rehypeKatex]}
+                        >
                             {topic.study_notes}
                         </Markdown>
                     </div>

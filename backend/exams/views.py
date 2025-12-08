@@ -11,6 +11,7 @@ from .serializers import CourseSerializer, ExamSerializer, ExamAttemptSerializer
 from .ai_service import generate_questions_from_text, generate_question_from_image
 from .permissions import IsPaidSubscriberOrAdmin
 import logging
+from io import TextIOWrapper
 
 logger = logging.getLogger(__name__)
 

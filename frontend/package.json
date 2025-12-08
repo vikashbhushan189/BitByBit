@@ -13,7 +13,7 @@
     "@tailwindcss/typography": "^0.5.19",
     "axios": "^1.13.2",
     "chart.js": "^4.5.1",
-    "katex": "^0.16.25",
+    "katex": "^0.16.27",
     "lucide-react": "^0.555.0",
     "react": "^19.2.0",
     "react-chartjs-2": "^5.3.1",
@@ -21,7 +21,9 @@
     "react-latex-next": "^3.0.0",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.9.6",
-    "remark-gfm": "^4.0.1"
+    "rehype-katex": "^7.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

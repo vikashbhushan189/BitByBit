@@ -26,4 +26,7 @@ EXPOSE 8080
 
 # 9. The command to start the server (Migrate DB then Start Gunicorn)
 # Note: We bind to 0.0.0.0 and use the PORT environment variable
-CMD ["sh", "-c", "python manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT"]
+# CMD ["sh", "-c", "python manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT"]
+
+# NEW COMMAND (Skip migrate for now):
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8080"]

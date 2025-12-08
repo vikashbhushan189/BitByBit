@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-2g++wmrr6!5_02h)*@z0ktf@b+wt8_kmx_jw=oyo1lvjvycokh
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com', '.run.app']
 
 # NEW: Allow the security headers we added to the frontend
 CORS_ALLOW_HEADERS = list(default_headers) + [
@@ -41,13 +41,13 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
-    "https://bit-by-bit-lemon.vercel.app",  # <--- REPLACE THIS with your actual Vercel URL
+    "https://bitbybit-seven.vercel.app/",  # <--- REPLACE THIS with your actual Vercel URL
 ]
 
 # 2. Trust for POST requests (Login/Register)
 CSRF_TRUSTED_ORIGINS = [
-    "https://bit-by-bit-lemon.vercel.app",  # <--- REPLACE THIS with your actual Vercel URL
-    "https://bitbybit-p3ym.onrender.com",
+    "https://bitbybit-394322708404.us-central1.run.app",
+    "https://bitbybit-seven.vercel.app/", 
 ]
 # Application definition
 
@@ -81,7 +81,7 @@ DJOSER = {
         'current_user': 'exams.serializers.CustomUserSerializer',
     },
     # CRITICAL: This must match your Vercel Domain exactly (no https://)
-    'DOMAIN': 'bit-by-bit-lemon.vercel.app', 
+    'DOMAIN': 'https://bitbybit-seven.vercel.app/', 
     'SITE_NAME': 'Bit By Bit',
 }
 

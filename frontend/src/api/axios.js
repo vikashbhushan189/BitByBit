@@ -1,9 +1,8 @@
 import axios from 'axios';
 
-// Auto-switch between Localhost and Cloud URL
-// (Uses Render URL if VITE_API_URL is not set)
+// UPDATE THIS URL
 const api = axios.create({
-    baseURL: 'https://bitbybit-p3ym.onrender.com/api/',
+    baseURL: 'https://bitbybit-394322708404.us-central1.run.app/api/', 
     headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
@@ -11,7 +10,7 @@ const api = axios.create({
     }
 });
 
-// Add the token to every request
+// Add the token to every request if we have one
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('access_token');
     

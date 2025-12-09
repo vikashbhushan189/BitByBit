@@ -4,12 +4,12 @@ import {
     BookOpen, CheckCircle, Clock, Trophy, ChevronDown, Menu, X, 
     GraduationCap, ArrowRight, Monitor, Cpu, FileText, Cloud,
     Atom, Stethoscope, Building2, Scale, Briefcase, Globe, Code,
-    BrainCircuit, Zap, Users, Moon, Sun // <--- Import Moon/Sun
+    BrainCircuit, Zap, Users, Moon, Sun, LayoutGrid
 } from 'lucide-react';
 import api from '../api/axios';
-import { useTheme } from '../hooks/useTheme'; // <--- Import Hook
+import { useTheme } from '../hooks/useTheme';
 
-// ... [NAV_LINKS constant remains the same] ...
+// ... [NAV_LINKS constant remains exactly the same as your code] ...
 const NAV_LINKS = [
     {
         label: "All Exams",
@@ -114,7 +114,7 @@ const LandingPage = () => {
     const [banners, setBanners] = useState([]);
     const [activeTab, setActiveTab] = useState(0);
     const [currentAdIndex, setCurrentAdIndex] = useState(0);
-    const { theme, toggleTheme } = useTheme(); // <--- Use Theme Hook
+    const { theme, toggleTheme } = useTheme(); 
     
     useEffect(() => {
         api.get('banners/').then(res => setBanners(res.data)).catch(() => {});
@@ -165,7 +165,7 @@ const LandingPage = () => {
                                         {['mega_tabs', 'dropdown'].includes(link.type) && <ChevronDown size={14} className={`mt-0.5 transition-transform duration-200 ${activeDropdown === idx ? 'rotate-180' : ''}`}/>}
                                     </button>
 
-                                    {/* DROPDOWNS (Dark Mode Styled) */}
+                                    {/* DROPDOWNS (Mega Tabs & Simple Dropdowns) */}
                                     {activeDropdown === idx && (
                                         <div className="absolute top-full left-0 pt-2 w-max animate-in fade-in slide-in-from-top-2 duration-200">
                                             
@@ -228,7 +228,6 @@ const LandingPage = () => {
 
                         {/* Right Side: Theme Toggle & Auth */}
                         <div className="hidden lg:flex items-center gap-4">
-                            {/* THEME TOGGLE BUTTON */}
                             <button 
                                 onClick={toggleTheme}
                                 className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -255,7 +254,7 @@ const LandingPage = () => {
                     </div>
                 </div>
 
-                {/* Mobile Menu Drawer (Dark Mode) */}
+                {/* Mobile Menu Drawer */}
                 {isMobileMenuOpen && (
                     <div className="lg:hidden bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 absolute w-full left-0 shadow-xl max-h-[80vh] overflow-y-auto">
                         <div className="p-4 space-y-2">
@@ -309,13 +308,6 @@ const LandingPage = () => {
                             </button>
                         </div>
                     </div>
-                    {banners.length > 1 && (
-                        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1">
-                            {banners.map((_, idx) => (
-                                <div key={idx} className={`w-1.5 h-1.5 rounded-full transition-colors ${idx === currentAdIndex ? 'bg-white' : 'bg-white/30'}`}/>
-                            ))}
-                        </div>
-                    )}
                 </div>
             )}
 
@@ -366,7 +358,64 @@ const LandingPage = () => {
                 </div>
             </header>
 
-            {/* --- FEATURES GRID (Dark Mode Ready) --- */}
+            {/* --- NEW SECTION: ALL EXAM CATEGORIES --- */}
+            <section className="py-24 px-6 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-800">
+                <div className="max-w-7xl mx-auto">
+                    <div className="text-center mb-16">
+                        <div className="inline-flex items-center gap-2 bg-blue-50 dark:bg-slate-700 px-4 py-1.5 rounded-full text-blue-600 dark:text-blue-300 font-bold text-sm mb-4">
+                            <LayoutGrid size={16} /> Exam Categories
+                        </div>
+                        <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white mb-4">
+                            Choose Your Goal
+                        </h2>
+                        <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
+                            Bit by Bit prepares students for a wide range of exams. Find your category and start your journey today.
+                        </p>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {/* Extracting the "All Exams" categories from NAV_LINKS[0] 
+                            and displaying them as Cards 
+                        */}
+                        {NAV_LINKS[0].categories.map((category, idx) => (
+                            <div key={idx} className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl p-6 hover:shadow-xl hover:border-blue-200 dark:hover:border-slate-600 transition-all group relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100/50 dark:bg-blue-900/20 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+                                
+                                <div className="relative z-10">
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+                                        {category.name}
+                                    </h3>
+                                    
+                                    <div className="flex flex-wrap gap-2 mb-6">
+                                        {category.items.map((exam, eIdx) => (
+                                            <span key={eIdx} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5">
+                                                {/* Clone element to force smaller icon size in tags */}
+                                                {React.cloneElement(exam.icon, { size: 14 })}
+                                                {exam.name}
+                                            </span>
+                                        ))}
+                                    </div>
+
+                                    <Link 
+                                        to={`/category/${category.id}`} 
+                                        className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-sm group-hover:translate-x-1 transition-transform"
+                                    >
+                                        Explore Category <ArrowRight size={16} />
+                                    </Link>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    
+                    <div className="mt-12 text-center">
+                         <Link to="/all-exams" className="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-medium text-sm border-b border-transparent hover:border-blue-600 transition-colors">
+                            View All Categories ({NAV_LINKS[0].categories.length})
+                        </Link>
+                    </div>
+                </div>
+            </section>
+
+            {/* --- FEATURES GRID (Existing) --- */}
             <section className="py-24 px-6 bg-slate-50 dark:bg-slate-900 transition-colors">
                 <div className="max-w-6xl mx-auto">
                     <div className="text-center mb-16">
@@ -381,7 +430,7 @@ const LandingPage = () => {
                 </div>
             </section>
 
-             {/* --- PHILOSOPHY SECTION (Dark Mode) --- */}
+             {/* --- PHILOSOPHY SECTION (Existing) --- */}
              <section className="py-24 bg-white dark:bg-slate-800 px-6 relative overflow-hidden transition-colors">
                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] dark:bg-[radial-gradient(#374151_1px,transparent_1px)] [background-size:16px_16px] opacity-50"></div>
                 <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16 relative z-10">

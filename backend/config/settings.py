@@ -41,13 +41,13 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
-    "https://bitbybit-seven.vercel.app/",  # <--- REPLACE THIS with your actual Vercel URL
+    "https://bitbybit-seven.vercel.app",  # <--- REPLACE THIS with your actual Vercel URL
 ]
 
 # 2. Trust for POST requests (Login/Register)
 CSRF_TRUSTED_ORIGINS = [
-    "https://bitbybit-p3ym.onrender.com/",
-    "https://bitbybit-seven.vercel.app/", 
+    "https://bitbybit-p3ym.onrender.com",
+    "https://bitbybit-seven.vercel.app", 
 ]
 # Application definition
 

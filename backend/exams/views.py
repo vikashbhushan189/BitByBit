@@ -30,10 +30,18 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = self.get_serializer(courses, many=True)
         return Response(serializer.data)
 
-class TopicViewSet(viewsets.ReadOnlyModelViewSet):
+class TopicViewSet(viewsets.ModelViewSet):  # <--- Changed from ReadOnlyModelViewSet to ModelViewSet
     queryset = Topic.objects.all()
     serializer_class = TopicSerializer
-    permission_classes = [permissions.IsAuthenticated, IsPaidSubscriberOrAdmin]
+    
+    def get_permissions(self):
+        # Students can only READ (if they subscribed)
+        if self.action in ['list', 'retrieve']:
+            permission_classes = [permissions.IsAuthenticated, IsPaidSubscriberOrAdmin]
+        # Admins can EDIT/DELETE
+        else:
+            permission_classes = [permissions.IsAdminUser]
+        return [permission() for permission in permission_classes]
 
 class ExamViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Exam.objects.all()

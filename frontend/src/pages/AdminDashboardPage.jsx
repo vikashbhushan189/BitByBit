@@ -41,7 +41,14 @@ const AdminDashboardPage = () => {
                     <h2 className="text-xl font-bold mb-2">Bulk Notes Upload</h2>
                     <p className="text-slate-400 text-sm">Upload CSVs to create courses & notes instantly.</p>
                 </Link>
-
+                {/* 4. edit notes */}
+                <Link to="/admin-notes-editor" className="group bg-slate-800 p-6 rounded-2xl border border-slate-700 hover:border-yellow-500 hover:bg-slate-800/80 transition-all shadow-xl">
+                    <div className="bg-yellow-900/50 w-14 h-14 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <FileText className="text-yellow-400" size={28} />
+                    </div>
+                    <h2 className="text-xl font-bold mb-2">Edit Notes</h2>
+                    <p className="text-slate-400 text-sm">Manually update content for existing topics.</p>
+                </Link>
                 {/* 3. Live Site */}
                 <Link to="/courses" className="group bg-slate-800 p-6 rounded-2xl border border-slate-700 hover:border-blue-500 hover:bg-slate-800/80 transition-all shadow-xl">
                     <div className="bg-blue-900/50 w-14 h-14 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">

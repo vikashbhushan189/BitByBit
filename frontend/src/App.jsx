@@ -18,6 +18,7 @@ import CourseStorePage from './pages/CourseStorePage';
 import AdminAdManagerPage from './pages/AdminAdManagerPage';
 import AgniveerPage from './pages/courses/AgniveerPage'; 
 import BpscTrePage from './pages/courses/BpscTrePage';
+import AdminNotesEditorPage from './pages/AdminNotesEditorPage';
 // --- Components ---
 
 const Navbar = () => {
@@ -155,7 +156,8 @@ function App() {
                 <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
                 <Route path="/admin-generator" element={<AdminRoute><AdminGeneratorPage /></AdminRoute>} />
                 <Route path="/admin-notes-upload" element={<AdminRoute><AdminNotesUploadPage /></AdminRoute>} />
-                <Route path="/admin-ads" element={<AdminRoute><AdminAdManagerPage /></AdminRoute>} /> 
+                <Route path="/admin-ads" element={<AdminRoute><AdminAdManagerPage /></AdminRoute>} />
+                <Route path="/admin-notes-editor" element={<AdminRoute><AdminNotesEditorPage /></AdminRoute>} /> 
 
                 {/* Auth Routes */}
                 <Route path="/login" element={<LoginPage />} />

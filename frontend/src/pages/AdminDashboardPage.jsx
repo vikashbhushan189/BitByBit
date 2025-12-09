@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Wand2, Layout, LogOut, ShieldCheck, ExternalLink, UploadCloud } from 'lucide-react';
+import { Wand2, Layout, LogOut, ShieldCheck, ExternalLink, UploadCloud, FileText, Megaphone } from 'lucide-react';
+
 
 const AdminDashboardPage = () => {
     
@@ -33,7 +34,7 @@ const AdminDashboardPage = () => {
                     <p className="text-slate-400 text-sm">Generate questions from notes using Gemini AI.</p>
                 </Link>
 
-                {/* 2. Bulk Notes Uploader (NEW) */}
+                {/* 2. Bulk Notes Uploader */}
                 <Link to="/admin-notes-upload" className="group bg-slate-800 p-6 rounded-2xl border border-slate-700 hover:border-emerald-500 hover:bg-slate-800/80 transition-all shadow-xl">
                     <div className="bg-emerald-900/50 w-14 h-14 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                         <UploadCloud className="text-emerald-400" size={28} />
@@ -41,29 +42,32 @@ const AdminDashboardPage = () => {
                     <h2 className="text-xl font-bold mb-2">Bulk Notes Upload</h2>
                     <p className="text-slate-400 text-sm">Upload CSVs to create courses & notes instantly.</p>
                 </Link>
-                {/* 4. edit notes */}
-                <Link to="/admin-notes-editor" className="group bg-slate-800 p-6 rounded-2xl border border-slate-700 hover:border-yellow-500 hover:bg-slate-800/80 transition-all shadow-xl">
+
+                 {/* 3. Notes Editor (FIXED) */}
+                 <Link to="/admin-notes-editor" className="group bg-slate-800 p-6 rounded-2xl border border-slate-700 hover:border-yellow-500 hover:bg-slate-800/80 transition-all shadow-xl">
                     <div className="bg-yellow-900/50 w-14 h-14 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                         <FileText className="text-yellow-400" size={28} />
                     </div>
                     <h2 className="text-xl font-bold mb-2">Edit Notes</h2>
                     <p className="text-slate-400 text-sm">Manually update content for existing topics.</p>
                 </Link>
-                {/* 3. Live Site */}
+
+                {/* 4. Ad Manager */}
+                <Link to="/admin-ads" className="group bg-slate-800 p-6 rounded-2xl border border-slate-700 hover:border-orange-500 hover:bg-slate-800/80 transition-all shadow-xl">
+                    <div className="bg-orange-900/50 w-14 h-14 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <Megaphone className="text-orange-400" size={28} />
+                    </div>
+                    <h2 className="text-xl font-bold mb-2">Ad Banners</h2>
+                    <p className="text-slate-400 text-sm">Manage sliding promotional banners.</p>
+                </Link>
+
+                {/* 5. Live Site */}
                 <Link to="/courses" className="group bg-slate-800 p-6 rounded-2xl border border-slate-700 hover:border-blue-500 hover:bg-slate-800/80 transition-all shadow-xl">
                     <div className="bg-blue-900/50 w-14 h-14 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                         <Layout className="text-blue-400" size={28} />
                     </div>
                     <h2 className="text-xl font-bold mb-2">Test Live Website</h2>
                     <p className="text-slate-400 text-sm">Explore student view in God Mode.</p>
-                </Link>
-                {/* 4. Ads Banner */}
-                <Link to="/admin-ads" className="group bg-slate-800 p-6 rounded-2xl border border-slate-700 hover:border-blue-500 hover:bg-slate-800/80 transition-all shadow-xl">
-                    <div className="bg-blue-900/50 w-14 h-14 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                        <Layout className="text-blue-400" size={28} />
-                    </div>
-                    <h2 className="text-xl font-bold mb-2">Customise Ads Banner</h2>
-                    <p className="text-slate-400 text-sm">Set and Customise the ads banner in Landing Page.</p>
                 </Link>
             </div>
         </div>

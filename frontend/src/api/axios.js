@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // UPDATE THIS URL
 const api = axios.create({
-    baseURL: 'https://bitbybit-394322708404.us-central1.run.app/api/', 
+    baseURL: 'https://bitbybit-p3ym.onrender.com/api/', 
     headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',

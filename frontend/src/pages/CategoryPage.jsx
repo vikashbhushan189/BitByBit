@@ -21,10 +21,10 @@ const CATEGORY_DATA = {
             { label: "Avg. Starting Salary", value: "₹56,100" }
         ],
         subCategories: [
+            { id: "agniveer", name: "Agniveer", fullName: "Agnipath Scheme" },
             { id: "nda", name: "NDA", fullName: "National Defence Academy" },
             { id: "cds", name: "CDS", fullName: "Combined Defence Services" },
-            { id: "afcat", name: "AFCAT", fullName: "Air Force Common Admission Test" },
-            { id: "agniveer", name: "Agniveer", fullName: "Agnipath Scheme" }
+            { id: "afcat", name: "AFCAT", fullName: "Air Force Common Admission Test" }
         ],
         // Exam Intelligence Data
         examInfo: {
@@ -33,11 +33,13 @@ const CATEGORY_DATA = {
                 dates: "Notification: Feb 2025",
                 eligibility: "10th / 12th Pass",
                 ageLimit: "17.5 - 21 Years",
-                // Chart Data for Agniveer
+                // Chart Data for Agniveer (GD Pattern)
                 pattern: {
                     totalQ: 50,
                     maxMarks: 100,
                     passMarks: 35,
+                    negMark: 0.5,
+                    correctMark: 2,
                     subjects: [
                         { name: "GK", count: 15, color: "#d97706" },
                         { name: "Science", count: 15, color: "#16a34a" },
@@ -45,9 +47,17 @@ const CATEGORY_DATA = {
                         { name: "Reasoning", count: 5, color: "#9333ea" }
                     ]
                 },
+                syllabus: {
+                    "General Knowledge": ["Current Affairs", "History", "Geography", "Indian Constitution", "Awards"],
+                    "General Science": ["Human Body", "Physics Principles", "Chemistry Basics", "Biology (10th)"],
+                    "Maths": ["Number Systems", "HCF/LCM", "Percentage", "Profit & Loss", "Mensuration"],
+                    "Reasoning": ["Number Series", "Coding-Decoding", "Blood Relations", "Direction Sense"]
+                },
                 physical: [
                     { task: "1.6 KM Run", standard: "5 Min 30 Sec" },
-                    { task: "Pull Ups", standard: "10 Reps" }
+                    { task: "Pull Ups", standard: "10 Reps" },
+                    { task: "9 Feet Ditch", standard: "Qualify" },
+                    { task: "Zig-Zag Balance", standard: "Qualify" }
                 ]
             },
             "nda": {
@@ -64,9 +74,15 @@ const CATEGORY_DATA = {
                         { name: "GAT", count: 150, color: "#4f46e5" }
                     ]
                 },
+                syllabus: {
+                    "Maths": ["Algebra", "Matrices", "Trigonometry", "Calculus"],
+                    "GAT": ["English", "Physics", "Chemistry", "General Science", "History", "Geography"]
+                },
                 physical: [
-                    { task: "Height", standard: "157 cm" },
-                    { task: "Running", standard: "2.4 km in 15 min" }
+                    { task: "Height", standard: "157 cm (Min)" },
+                    { task: "Running", standard: "2.4 km in 15 min" },
+                    { task: "Push-ups", standard: "Min 20" },
+                    { task: "Sit-ups", standard: "Min 20" }
                 ]
             }
             // Add CDS, AFCAT data similarly...
@@ -81,7 +97,7 @@ const CATEGORY_DATA = {
                 price: "₹1,499",
                 originalPrice: "₹2,999",
                 features: ["Physical Training Guide", "Weekly Mock Tests"],
-                link: "/course/defence/agniveer", // Link to specific course page
+                link: "/course/defence/agniveer", 
                 image: "bg-emerald-900"
             },
             {
@@ -102,12 +118,22 @@ const CATEGORY_DATA = {
 
 const CategoryPage = () => {
     const { categoryId } = useParams();
-    const [selectedSubCat, setSelectedSubCat] = useState('agniveer'); // Defaulting to Agniveer for demo
+    const [selectedSubCat, setSelectedSubCat] = useState('agniveer'); 
+    const [activeSubject, setActiveSubject] = useState('');
+    const [calculator, setCalculator] = useState({ correct: '', wrong: '', score: null });
+    
     const canvasRef = useRef(null);
     const chartRef = useRef(null);
     
     const data = CATEGORY_DATA[categoryId] || CATEGORY_DATA["defence"];
     const currentInfo = data.examInfo[selectedSubCat] || data.examInfo["nda"];
+
+    // --- EFFECT: Reset Syllabus Tab on Category Change ---
+    useEffect(() => {
+        if(currentInfo.syllabus) {
+            setActiveSubject(Object.keys(currentInfo.syllabus)[0]);
+        }
+    }, [selectedSubCat, currentInfo]);
 
     // --- CHART RENDER LOGIC ---
     useEffect(() => {
@@ -139,10 +165,24 @@ const CategoryPage = () => {
         }
     }, [selectedSubCat, currentInfo]);
 
+    // --- CALCULATOR LOGIC ---
+    const calculateScore = () => {
+        if(!currentInfo.pattern) return;
+        const c = parseInt(calculator.correct) || 0;
+        const w = parseInt(calculator.wrong) || 0;
+        
+        // Basic check
+        if(c+w > currentInfo.pattern.totalQ) return alert("Attempts exceed total questions!");
+        
+        // Calculate
+        const score = (c * (currentInfo.pattern.correctMark || 1)) - (w * (currentInfo.pattern.negMark || 0));
+        setCalculator(prev => ({...prev, score: score.toFixed(2)}));
+    };
+
     // Filter courses based on selected sub-category
     const filteredCourses = data.courses.filter(c => 
         c.exam.toLowerCase() === selectedSubCat.toLowerCase() || 
-        selectedSubCat === 'all' // Optional 'All' tab logic
+        selectedSubCat === 'all' 
     );
 
     return (
@@ -203,13 +243,15 @@ const CategoryPage = () => {
 
             <div className="max-w-7xl mx-auto px-6 py-12">
                 
-                {/* --- 3. COMMAND CENTER DASHBOARD (The "AgniveerPage" Style UI) --- */}
+                {/* --- 3. COMMAND CENTER DASHBOARD --- */}
                 <div className="grid lg:grid-cols-3 gap-8 mb-16 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     
-                    {/* Left Panel: Exam Intel & Pattern */}
+                    {/* Left Panel: Exam Intel, Pattern & Syllabus */}
                     <div className="lg:col-span-2 space-y-6">
+                        
+                        {/* 1. Exam Pattern Card */}
                         <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden relative">
-                            {/* Decorative Background Element */}
+                            {/* Decorative Background */}
                             <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px]"></div>
 
                             <div className="p-8 relative z-10">
@@ -256,35 +298,106 @@ const CategoryPage = () => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* 2. Syllabus Accordion (Added from AgniveerPage) */}
+                        {currentInfo.syllabus && (
+                            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-lg border border-slate-200 dark:border-slate-800 p-6">
+                                <h3 className="text-xl font-bold text-stone-900 dark:text-white mb-6 flex items-center gap-2">
+                                    <BookOpen className="text-amber-500" /> Tactical Syllabus
+                                </h3>
+                                <div className="flex gap-2 overflow-x-auto pb-4 mb-4 no-scrollbar">
+                                    {Object.keys(currentInfo.syllabus).map(sub => (
+                                        <button 
+                                            key={sub}
+                                            onClick={() => setActiveSubject(sub)}
+                                            className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${activeSubject === sub ? 'bg-stone-800 dark:bg-white text-white dark:text-slate-900 shadow-lg' : 'bg-stone-100 dark:bg-slate-800 text-stone-500 dark:text-slate-400 hover:bg-stone-200 dark:hover:bg-slate-700'}`}
+                                        >
+                                            {sub}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    {currentInfo.syllabus[activeSubject]?.map((topic, idx) => (
+                                        <div key={idx} className="flex items-center gap-3 p-3 rounded-lg border border-stone-100 dark:border-slate-700 bg-stone-50/50 dark:bg-slate-800/50">
+                                            <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                                            <span className="text-sm font-medium text-stone-700 dark:text-slate-300">{topic}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
-                    {/* Right Panel: Quick Stats & Physical */}
+                    {/* Right Panel: Quick Stats, Physical & Calculator */}
                     <div className="space-y-6">
-                        {/* Key Dates Card */}
+                        {/* 1. Score Simulator (Added from AgniveerPage) */}
                         <div className="bg-slate-900 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden">
-                            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-blue-500 rounded-full blur-[60px] opacity-30"></div>
-                            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                                <Calendar className="text-blue-400" size={20} /> Mission Timeline
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500 rounded-full blur-[80px] opacity-20"></div>
+                            <h3 className="text-lg font-bold mb-1 flex items-center gap-2 relative z-10">
+                                <BarChart3 size={18} className="text-amber-500" /> Score Simulator
                             </h3>
+                            <p className="text-xs text-stone-400 mb-6 relative z-10">Estimate your written test potential.</p>
+                            
                             <div className="space-y-4 relative z-10">
-                                <div className="flex items-start gap-4 p-3 rounded-xl bg-white/5 border border-white/10">
-                                    <div className="text-center bg-white/10 rounded-lg p-2 min-w-[50px]">
-                                        <div className="text-xs text-white/60 uppercase">Apr</div>
-                                        <div className="text-xl font-bold">21</div>
-                                    </div>
-                                    <div>
-                                        <div className="font-bold text-sm">Written Exam Date</div>
-                                        <div className="text-xs text-white/50 mt-1">Admit cards release 2 weeks prior.</div>
+                                <div>
+                                    <label className="text-[10px] uppercase font-bold text-stone-500 mb-1 block">Correct Attempts</label>
+                                    <input 
+                                        type="number" 
+                                        value={calculator.correct}
+                                        onChange={(e) => setCalculator({...calculator, correct: e.target.value})}
+                                        className="w-full bg-stone-800 border border-stone-700 rounded-lg p-3 text-sm focus:border-amber-500 outline-none transition-colors"
+                                        placeholder="0"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] uppercase font-bold text-stone-500 mb-1 block">Wrong Attempts</label>
+                                    <input 
+                                        type="number" 
+                                        value={calculator.wrong}
+                                        onChange={(e) => setCalculator({...calculator, wrong: e.target.value})}
+                                        className="w-full bg-stone-800 border border-stone-700 rounded-lg p-3 text-sm focus:border-red-500 outline-none transition-colors"
+                                        placeholder="0"
+                                    />
+                                </div>
+                                <button 
+                                    onClick={calculateScore}
+                                    className="w-full bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-lg font-bold text-sm shadow-lg transition-colors"
+                                >
+                                    Calculate Score
+                                </button>
+                            </div>
+
+                            {calculator.score !== null && (
+                                <div className="mt-6 p-4 bg-stone-800 rounded-xl border border-stone-700 text-center animate-in fade-in zoom-in duration-300">
+                                    <div className="text-xs text-stone-400 uppercase font-bold mb-1">Projected Score</div>
+                                    <div className="text-3xl font-black text-white">{calculator.score}</div>
+                                    <div className={`text-xs font-bold mt-1 ${parseFloat(calculator.score) >= (currentInfo.pattern?.passMarks || 35) ? 'text-green-400' : 'text-red-400'}`}>
+                                        {parseFloat(calculator.score) >= (currentInfo.pattern?.passMarks || 35) ? 'PASSING ZONE' : 'NEEDS WORK'}
                                     </div>
                                 </div>
-                                <div className="flex items-center justify-between text-sm px-2">
-                                    <span className="text-white/60">Notification</span>
-                                    <span className="font-mono text-emerald-400">RELEASED</span>
+                            )}
+                        </div>
+
+                        {/* 2. Key Dates */}
+                        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-lg border border-slate-200 dark:border-slate-800">
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                                <Calendar className="text-blue-500" size={20} /> Mission Timeline
+                            </h3>
+                            <div className="space-y-4">
+                                <div className="flex items-start gap-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+                                    <div className="text-center bg-white dark:bg-slate-700 rounded-lg p-2 min-w-[50px] shadow-sm">
+                                        <div className="text-xs text-slate-400 uppercase">Apr</div>
+                                        <div className="text-xl font-bold dark:text-white">21</div>
+                                    </div>
+                                    <div>
+                                        <div className="font-bold text-sm dark:text-white">Written Exam Date</div>
+                                        <div className="text-xs text-slate-500 mt-1">Admit cards release 2 weeks prior.</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Physical Standards */}
+                        {/* 3. Physical Standards */}
                         <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-lg border border-slate-200 dark:border-slate-800">
                             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                                 <Ruler className="text-orange-500" size={20} /> Physical Standards

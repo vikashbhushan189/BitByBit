@@ -15,12 +15,11 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import AdminNotesUploadPage from './pages/AdminNotesUploadPage';
 import CourseStorePage from './pages/CourseStorePage';
-import AdminAdManagerPage from './pages/AdminAdManagerPage';
-import AgniveerPage from './pages/courses/defence/AgniveerPage'; 
+import AdminAdManagerPage from './pages/AdminAdManagerPage'; 
 import BpscTrePage from './pages/courses/teaching/BpscTrePage';
 import AdminNotesEditorPage from './pages/AdminNotesEditorPage';
 import CategoryPage from './pages/CategoryPage';
-import CourseDetailsPage from './pages/CourseDetailsPage';
+import AgniveerPage from './pages/courses/defence/AgniveerPage';
 // --- Components ---
 
 const Navbar = () => {

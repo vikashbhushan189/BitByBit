@@ -253,20 +253,6 @@ const LandingPageContent = () => {
     const [showAllCategories, setShowAllCategories] = useState(false);
     const INITIAL_CATEGORY_COUNT = 6; // Initially show only 6 cards
 
-    useEffect(() => {
-        setBanners(mockBanners);
-    }, []);
-
-    useEffect(() => {
-        if (banners.length <= 1) return;
-        const timer = setInterval(() => {
-            setCurrentAdIndex(prev => (prev + 1) % banners.length);
-        }, 4000); 
-        return () => clearInterval(timer);
-    }, [banners]);
-
-    const activeBanner = banners[currentAdIndex];
-
     // Determine which categories to display based on state
     const allCategories = NAV_LINKS[0].categories;
     const displayedCategories = showAllCategories 

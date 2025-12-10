@@ -5,10 +5,10 @@ import {
     GraduationCap, ArrowRight, Monitor, Cpu, FileText, Cloud,
     Atom, Stethoscope, Building2, Scale, Briefcase, Globe, Code,
     BrainCircuit, Zap, Users, Moon, Sun, LayoutGrid, Calculator,
-    Landmark, Gavel, Plane, Microscope, PenTool, TrendingUp
+    Landmark, Gavel, Plane, Microscope, PenTool, TrendingUp, Search // Added Search Icon
 } from 'lucide-react';
 import api from '../api/axios';
-import { useTheme } from '../hooks/useTheme'; // Imported correctly
+import { useTheme } from '../hooks/useTheme';
 
 const mockBanners = [
     {
@@ -260,6 +260,110 @@ const NAV_LINKS = [
     }
 ];
 
+// --- SEARCH MODAL COMPONENT ---
+const SearchModal = ({ isOpen, onClose, categories }) => {
+    const [query, setQuery] = useState("");
+
+    // Prevent body scroll when modal is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => { document.body.style.overflow = 'unset'; };
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    // Search Logic
+    const filteredCategories = categories.map(cat => ({
+        ...cat,
+        items: cat.items.filter(item => 
+            item.name.toLowerCase().includes(query.toLowerCase()) || 
+            cat.name.toLowerCase().includes(query.toLowerCase())
+        )
+    })).filter(cat => 
+        // Keep category if it matches the query OR if it has matching items
+        (cat.name.toLowerCase().includes(query.toLowerCase()) && cat.items.length > 0) || 
+        cat.items.length > 0
+    );
+
+    return (
+        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-start justify-center pt-20 px-4 animate-in fade-in duration-200">
+            {/* Click outside to close */}
+            <div className="absolute inset-0" onClick={onClose}></div>
+
+            {/* Modal Content */}
+            <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[70vh] relative z-10 animate-in slide-in-from-top-4 duration-300 border border-slate-200 dark:border-slate-700">
+                
+                {/* Header */}
+                <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-20">
+                    <div className="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Select your goal / exam</h2>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">200+ exams available for your preparation</p>
+                        </div>
+                        <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                            <X size={24} className="text-slate-500" />
+                        </button>
+                    </div>
+
+                    <div className="relative group">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={20} />
+                        <input
+                            type="text"
+                            placeholder="Search for your exam (e.g. JEE, NEET, UPSC)..."
+                            className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg text-slate-900 dark:text-white placeholder-slate-400 transition-all"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            autoFocus
+                        />
+                    </div>
+                </div>
+
+                {/* Results Area */}
+                <div className="overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
+                    {filteredCategories.length === 0 ? (
+                        <div className="text-center py-10">
+                            <div className="bg-slate-50 dark:bg-slate-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Search size={32} className="text-slate-300 dark:text-slate-600" />
+                            </div>
+                            <p className="text-slate-500 dark:text-slate-400">No exams found matching "{query}"</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-8">
+                            {filteredCategories.map((cat) => (
+                                <div key={cat.id}>
+                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 pl-1">{cat.name}</h3>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {cat.items.map((item, idx) => (
+                                            <Link
+                                                to={`/category/${cat.id}`} // Or specific exam link
+                                                key={idx}
+                                                onClick={onClose}
+                                                className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-md transition-all cursor-pointer group bg-white dark:bg-slate-800/50"
+                                            >
+                                                <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded-lg text-slate-600 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                    {item.icon}
+                                                </div>
+                                                <span className="font-semibold text-slate-700 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                    {item.name}
+                                                </span>
+                                                <ArrowRight size={16} className="ml-auto opacity-0 group-hover:opacity-100 text-blue-500 -translate-x-2 group-hover:translate-x-0 transition-all" />
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const LandingPage = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState(null);
@@ -269,6 +373,9 @@ const LandingPage = () => {
     const [currentAdIndex, setCurrentAdIndex] = useState(0);
     const { theme, toggleTheme } = useTheme(); 
     
+    // --- NEW: STATE FOR SEARCH MODAL ---
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+
     // --- STATE FOR VIEW MORE/LESS ---
     const [showAllCategories, setShowAllCategories] = useState(false);
     const INITIAL_CATEGORY_COUNT = 6; 
@@ -296,6 +403,13 @@ const LandingPage = () => {
     return (
         <div className="bg-white dark:bg-slate-900 font-sans text-slate-800 dark:text-slate-200 transition-colors duration-300">
             
+            {/* --- SEARCH MODAL --- */}
+            <SearchModal 
+                isOpen={isSearchOpen} 
+                onClose={() => setIsSearchOpen(false)} 
+                categories={allCategories}
+            />
+
             {/* --- NAVIGATION BAR --- */}
             <nav className="sticky top-0 z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -335,7 +449,7 @@ const LandingPage = () => {
                                             {/* TYPE 1: MEGA TABS (Updated with Overflow for many items) */}
                                             {link.type === 'mega_tabs' && (
                                                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 flex overflow-hidden w-[700px] -ml-20 max-h-[500px]">
-                                                    {/* Sidebar */}
+                                                    {/* Sidebar - Added overflow-y-auto for 20+ items */}
                                                     <div className="w-1/3 bg-slate-50 dark:bg-slate-900 border-r border-slate-100 dark:border-slate-700 p-2 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
                                                         {link.categories.map((cat, cIdx) => (
                                                             <div 
@@ -389,8 +503,18 @@ const LandingPage = () => {
                             ))}
                         </div>
 
-                        {/* Right Side: Theme Toggle & Auth */}
+                        {/* Right Side: Search, Theme Toggle & Auth */}
                         <div className="hidden lg:flex items-center gap-4">
+                            
+                            {/* --- DESKTOP SEARCH BUTTON --- */}
+                            <button 
+                                onClick={() => setIsSearchOpen(true)}
+                                className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                title="Search Exams"
+                            >
+                                <Search size={20} />
+                            </button>
+
                             <button 
                                 onClick={toggleTheme}
                                 className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -407,6 +531,11 @@ const LandingPage = () => {
 
                         {/* Mobile Menu Button */}
                         <div className="lg:hidden flex items-center gap-4">
+                             {/* --- MOBILE SEARCH BUTTON --- */}
+                             <button onClick={() => setIsSearchOpen(true)} className="p-2 text-slate-600 dark:text-slate-300">
+                                <Search size={24} />
+                            </button>
+
                              <button onClick={toggleTheme} className="p-2 text-slate-600 dark:text-slate-300">
                                 {theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
                             </button>

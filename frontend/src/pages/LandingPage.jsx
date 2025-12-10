@@ -646,9 +646,9 @@ const FeatureCard = ({ icon, color, title, desc }) => (
 
 // Wrapper to Provide Context
 const LandingPage = () => (
-    <ThemeProvider>
+    <useTheme>
         <LandingPageContent />
-    </ThemeProvider>
+    </useTheme>
 );
 
 export default LandingPage;

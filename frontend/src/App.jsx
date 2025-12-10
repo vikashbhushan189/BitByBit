@@ -16,8 +16,8 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import AdminNotesUploadPage from './pages/AdminNotesUploadPage';
 import CourseStorePage from './pages/CourseStorePage';
 import AdminAdManagerPage from './pages/AdminAdManagerPage';
-import AgniveerPage from './pages/courses/AgniveerPage'; 
-import BpscTrePage from './pages/courses/BpscTrePage';
+import AgniveerPage from './pages/courses/defence/AgniveerPage'; 
+import BpscTrePage from './pages/courses/teaching/BpscTrePage';
 import AdminNotesEditorPage from './pages/AdminNotesEditorPage';
 import CategoryPage from './pages/CategoryPage';
 // --- Components ---

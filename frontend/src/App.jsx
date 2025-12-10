@@ -141,10 +141,6 @@ function App() {
                 {/* Landing / Home */}
                 <Route path="/" element={isLoggedIn ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
 
-                {/* Introduction Pages (Public) */}
-                <Route path="/defence/agniveer" element={<AgniveerPage />} />
-                <Route path="/teaching/bpsc_tre" element={<BpscTrePage />} />
-
                 {/* Student Routes */}
                 <Route path="/courses" element={<PrivateRoute><CourseList /></PrivateRoute>} />
                 <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
@@ -154,7 +150,7 @@ function App() {
                 <Route path="/category/:categoryId" element={<CategoryPage />} />
 
                 {/* NEW ROUTE FOR COURSE DETAILS */}
-                <Route path="/course/:category/:courseId" element={<CourseDetailsPage />} />
+                <Route path="/course/:category/:courseId" element={<AgniveerPage />} />
 
                 {/* Admin Routes */}
                 <Route path="/admin-portal" element={<AdminLoginPage />} />

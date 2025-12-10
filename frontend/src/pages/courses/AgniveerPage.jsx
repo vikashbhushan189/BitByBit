@@ -94,7 +94,7 @@ const COURSE_DETAILS = {
     // Add other IDs (agniveer-tech, agniveer-clerk) here...
 };
 
-const CourseDetailsPage = () => {
+const AgniveerPage = () => {
     const { courseId } = useParams();
     const course = COURSE_DETAILS[courseId] || COURSE_DETAILS["agniveer-ultimate"];
     const [activeSection, setActiveSection] = useState(0);
@@ -254,4 +254,4 @@ const CourseDetailsPage = () => {
     );
 };
 
-export default CourseDetailsPage;
+export default AgniveerPage;

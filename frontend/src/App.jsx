@@ -20,6 +20,7 @@ import AgniveerPage from './pages/courses/defence/AgniveerPage';
 import BpscTrePage from './pages/courses/teaching/BpscTrePage';
 import AdminNotesEditorPage from './pages/AdminNotesEditorPage';
 import CategoryPage from './pages/CategoryPage';
+import CourseDetailsPage from './pages/CourseDetailsPage';
 // --- Components ---
 
 const Navbar = () => {
@@ -152,6 +153,9 @@ function App() {
                 <Route path="/topic/:topicId/notes" element={<PrivateRoute><NotesPage /></PrivateRoute>} />
                 <Route path="/store" element={<PrivateRoute><CourseStorePage /></PrivateRoute>} />
                 <Route path="/category/:categoryId" element={<CategoryPage />} />
+
+                {/* NEW ROUTE FOR COURSE DETAILS */}
+                <Route path="/course/:category/:courseId" element={<CourseDetailsPage />} />
 
                 {/* Admin Routes */}
                 <Route path="/admin-portal" element={<AdminLoginPage />} />

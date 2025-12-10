@@ -19,6 +19,7 @@ import AdminAdManagerPage from './pages/AdminAdManagerPage';
 import AgniveerPage from './pages/courses/AgniveerPage'; 
 import BpscTrePage from './pages/courses/BpscTrePage';
 import AdminNotesEditorPage from './pages/AdminNotesEditorPage';
+import CategoryPage from './pages/CategoryPage';
 // --- Components ---
 
 const Navbar = () => {
@@ -150,7 +151,8 @@ function App() {
                 <Route path="/exam/:examId" element={<PrivateRoute><ExamPage /></PrivateRoute>} />
                 <Route path="/topic/:topicId/notes" element={<PrivateRoute><NotesPage /></PrivateRoute>} />
                 <Route path="/store" element={<PrivateRoute><CourseStorePage /></PrivateRoute>} />
-                
+                <Route path="/category/:categoryId" element={<CategoryPage />} />
+
                 {/* Admin Routes */}
                 <Route path="/admin-portal" element={<AdminLoginPage />} />
                 <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />

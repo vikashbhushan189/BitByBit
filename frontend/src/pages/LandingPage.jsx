@@ -566,11 +566,14 @@ const LandingPage = () => {
                     </div>
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {/* Extracting the "All Exams" categories from NAV_LINKS[0] 
-                            and displaying them as Cards 
+                        {/* Logic: Show 'displayedCategories' based on toggle state.
+                            Includes animation class for smooth entry when expanding.
                         */}
-                        {NAV_LINKS[0].categories.map((category, idx) => (
-                            <div key={idx} className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl p-6 hover:shadow-xl hover:border-blue-200 dark:hover:border-slate-600 transition-all group relative overflow-hidden">
+                        {displayedCategories.map((category, idx) => (
+                            <div 
+                                key={idx} 
+                                className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl p-6 hover:shadow-xl hover:border-blue-200 dark:hover:border-slate-600 transition-all group relative overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300"
+                            >
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100/50 dark:bg-blue-900/20 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
                                 
                                 <div className="relative z-10">
@@ -599,10 +602,18 @@ const LandingPage = () => {
                         ))}
                     </div>
                     
+                    {/* View More / View Less Toggle Button */}
                     <div className="mt-12 text-center">
-                         <Link to="/all-exams" className="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-medium text-sm border-b border-transparent hover:border-blue-600 transition-colors">
-                            View All Categories ({NAV_LINKS[0].categories.length})
-                        </Link>
+                         <button 
+                            onClick={() => setShowAllCategories(!showAllCategories)}
+                            className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-bold text-sm bg-blue-50 dark:bg-slate-800 px-6 py-3 rounded-full transition-all hover:shadow-md"
+                         >
+                            {showAllCategories ? (
+                                <>View Less Categories <ChevronUp size={16}/></>
+                            ) : (
+                                <>View All Categories ({allCategories.length}) <ChevronDown size={16}/></>
+                            )}
+                        </button>
                     </div>
                 </div>
             </section>

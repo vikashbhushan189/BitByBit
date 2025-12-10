@@ -1,7 +1,7 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-    BookOpen, CheckCircle, Clock, Trophy, ChevronDown, Menu, X, 
+    BookOpen, CheckCircle, Clock, Trophy, ChevronDown, ChevronUp, Menu, X, 
     GraduationCap, ArrowRight, Monitor, Cpu, FileText, Cloud,
     Atom, Stethoscope, Building2, Scale, Briefcase, Globe, Code,
     BrainCircuit, Zap, Users, Moon, Sun, LayoutGrid, Calculator,
@@ -239,7 +239,8 @@ const NAV_LINKS = [
     }
 ];
 
-const LandingPage = () => {
+// Inner Content Component
+const LandingPageContent = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState(null);
     const [showAd, setShowAd] = useState(true);
@@ -248,8 +249,12 @@ const LandingPage = () => {
     const [currentAdIndex, setCurrentAdIndex] = useState(0);
     const { theme, toggleTheme } = useTheme(); 
     
+    // --- NEW: STATE FOR VIEW MORE/LESS ---
+    const [showAllCategories, setShowAllCategories] = useState(false);
+    const INITIAL_CATEGORY_COUNT = 6; // Initially show only 6 cards
+
     useEffect(() => {
-        api.get('banners/').then(res => setBanners(res.data)).catch(() => {});
+        setBanners(mockBanners);
     }, []);
 
     useEffect(() => {
@@ -261,6 +266,12 @@ const LandingPage = () => {
     }, [banners]);
 
     const activeBanner = banners[currentAdIndex];
+
+    // Determine which categories to display based on state
+    const allCategories = NAV_LINKS[0].categories;
+    const displayedCategories = showAllCategories 
+        ? allCategories 
+        : allCategories.slice(0, INITIAL_CATEGORY_COUNT);
 
     return (
         <div className="bg-white dark:bg-slate-900 font-sans text-slate-800 dark:text-slate-200 transition-colors duration-300">
@@ -301,11 +312,11 @@ const LandingPage = () => {
                                     {activeDropdown === idx && (
                                         <div className="absolute top-full left-0 pt-2 w-max animate-in fade-in slide-in-from-top-2 duration-200">
                                             
-                                            {/* TYPE 1: MEGA TABS */}
+                                            {/* TYPE 1: MEGA TABS (Updated with Overflow for many items) */}
                                             {link.type === 'mega_tabs' && (
-                                                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 flex overflow-hidden w-[700px] -ml-20">
-                                                    {/* Sidebar */}
-                                                    <div className="w-1/3 bg-slate-50 dark:bg-slate-900 border-r border-slate-100 dark:border-slate-700 p-2">
+                                                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 flex overflow-hidden w-[700px] -ml-20 max-h-[500px]">
+                                                    {/* Sidebar - Added overflow-y-auto for 20+ items */}
+                                                    <div className="w-1/3 bg-slate-50 dark:bg-slate-900 border-r border-slate-100 dark:border-slate-700 p-2 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
                                                         {link.categories.map((cat, cIdx) => (
                                                             <div 
                                                                 key={cIdx}
@@ -323,7 +334,7 @@ const LandingPage = () => {
                                                     </div>
 
                                                     {/* Right Content */}
-                                                    <div className="w-2/3 p-6 bg-white dark:bg-slate-800">
+                                                    <div className="w-2/3 p-6 bg-white dark:bg-slate-800 overflow-y-auto">
                                                         <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">
                                                             {link.categories[activeTab].name}
                                                         </h4>
@@ -489,9 +500,6 @@ const LandingPage = () => {
                     </div>
                 </div>
             </header>
-
-
-
             {/* --- FEATURES GRID (Existing) --- */}
             <section className="py-24 px-6 bg-slate-50 dark:bg-slate-900 transition-colors">
                 <div className="max-w-6xl mx-auto">
@@ -550,7 +558,7 @@ const LandingPage = () => {
                 </div>
             </section>
 
-                        {/* --- NEW SECTION: ALL EXAM CATEGORIES --- */}
+            {/* --- NEW SECTION: ALL EXAM CATEGORIES --- */}
             <section className="py-24 px-6 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-800">
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-16">

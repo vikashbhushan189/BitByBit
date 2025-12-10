@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
     BookOpen, CheckCircle, Clock, Trophy, ChevronDown, ChevronUp, Menu, X, 
@@ -10,66 +10,67 @@ import {
 import api from '../api/axios';
 import { useTheme } from '../hooks/useTheme';
 
-// ... [NAV_LINKS constant remains exactly the same as your code] ...
+// --- NAVIGATION DATA ---
 const NAV_LINKS = [
     {
         label: "All Exams",
         type: "mega_tabs",  
         categories: [
             {
-                id: "neet",
-                name: "NEET",
+                id: "competitive",
+                name: "Competitive Exams",
                 items: [
-                    { name: "Class 11", icon: <Stethoscope size={20} className="text-blue-500"/> },
-                    { name: "Class 12", icon: <Stethoscope size={20} className="text-blue-500"/> },
-                    { name: "Dropper", icon: <Stethoscope size={20} className="text-blue-500"/> }
-                ]
-            },
-            {
-                id: "jee",
-                name: "IIT JEE",
-                items: [
-                    { name: "Class 11", icon: <Atom size={20} className="text-orange-500"/> },
-                    { name: "Class 12", icon: <Atom size={20} className="text-orange-500"/> },
-                    { name: "Dropper", icon: <Atom size={20} className="text-orange-500"/> }
-                ]
-            },
-            {
-                id: "foundation",
-                name: "Pre Foundation",
-                items: [
-                    { name: "Class 9", icon: <BookOpen size={20} className="text-green-500"/> },
-                    { name: "Class 10", icon: <BookOpen size={20} className="text-green-500"/> },
+                    { name: "IIT JEE", icon: <Atom size={20} className="text-orange-500"/> },
+                    { name: "NEET", icon: <Stethoscope size={20} className="text-blue-500"/> },
+                    { name: "GATE", icon: <Cpu size={20} className="text-purple-500"/> },
+                    { name: "UGC NET", icon: <BookOpen size={20} className="text-green-500"/> },
                     { name: "Olympiad", icon: <Trophy size={20} className="text-yellow-500"/> }
+                ]
+            },
+            {
+                id: "govt",
+                name: "Govt Exams",
+                items: [
+                    { name: "SSC CGL", icon: <Building2 size={20} className="text-red-500"/> },
+                    { name: "Banking (IBPS)", icon: <Briefcase size={20} className="text-indigo-500"/> },
+                    { name: "Railways (RRB)", icon: <Monitor size={20} className="text-slate-500"/> },
+                    { name: "Defence", icon: <CheckCircle size={20} className="text-teal-500"/> }
                 ]
             },
             {
                 id: "school",
                 name: "School Boards",
                 items: [
-                    { name: "CBSE", icon: <BookOpen size={20} className="text-purple-500"/> },
-                    { name: "ICSE", icon: <BookOpen size={20} className="text-purple-500"/> },
-                    { name: "UP Board", icon: <Globe size={20} className="text-pink-500"/> },
-                    { name: "Maharashtra Board", icon: <Globe size={20} className="text-pink-500"/> }
+                    { name: "CBSE Class 12", icon: <BookOpen size={20} className="text-blue-400"/> },
+                    { name: "CBSE Class 10", icon: <BookOpen size={20} className="text-blue-400"/> },
+                    { name: "ICSE Board", icon: <BookOpen size={20} className="text-purple-400"/> },
+                    { name: "State Boards", icon: <Globe size={20} className="text-orange-400"/> }
+                ]
+            },
+            {
+                id: "law",
+                name: "Law & Commerce",
+                items: [
+                    { name: "CLAT", icon: <Scale size={20} className="text-slate-700"/> },
+                    { name: "CA Foundation", icon: <FileText size={20} className="text-emerald-600"/> },
+                    { name: "CS Executive", icon: <FileText size={20} className="text-emerald-600"/> }
+                ]
+            },
+            {
+                id: "tech",
+                name: "Upskilling & IT",
+                items: [
+                    { name: "Data Science", icon: <Monitor size={20} className="text-blue-600"/> },
+                    { name: "Full Stack Dev", icon: <Code size={20} className="text-purple-600"/> },
+                    { name: "Generative AI", icon: <Cpu size={20} className="text-pink-600"/> }
                 ]
             },
             {
                 id: "upsc",
-                name: "UPSC",
+                name: "UPSC & IAS",
                 items: [
                     { name: "Prelims", icon: <Landmark size={20} className="text-orange-600"/> },
-                    { name: "Mains", icon: <Landmark size={20} className="text-orange-600"/> },
-                    { name: "Optional", icon: <BookOpen size={20} className="text-orange-600"/> }
-                ]
-            },
-            {
-                id: "govt",
-                name: "Govt Job Exams",
-                items: [
-                    { name: "SSC", icon: <Building2 size={20} className="text-red-500"/> },
-                    { name: "Banking", icon: <Briefcase size={20} className="text-indigo-500"/> },
-                    { name: "Teaching", icon: <Users size={20} className="text-green-600"/> },
-                    { name: "Judiciary", icon: <Gavel size={20} className="text-yellow-600"/> }
+                    { name: "Mains", icon: <Landmark size={20} className="text-orange-600"/> }
                 ]
             },
             {
@@ -83,126 +84,16 @@ const NAV_LINKS = [
                 ]
             },
             {
-                id: "ca",
-                name: "CA",
-                items: [
-                    { name: "Foundation", icon: <Calculator size={20} className="text-blue-600"/> },
-                    { name: "Intermediate", icon: <Calculator size={20} className="text-blue-600"/> },
-                    { name: "Final", icon: <Calculator size={20} className="text-blue-600"/> }
-                ]
-            },
-            {
-                id: "olympiad",
-                name: "Olympiad",
-                items: [
-                    { name: "NSO", icon: <Trophy size={20} className="text-yellow-500"/> },
-                    { name: "IMO", icon: <Trophy size={20} className="text-yellow-500"/> },
-                    { name: "NTSE", icon: <Trophy size={20} className="text-yellow-500"/> }
-                ]
-            },
-            {
-                id: "mba",
-                name: "MBA",
-                items: [
-                    { name: "CAT", icon: <TrendingUp size={20} className="text-purple-600"/> },
-                    { name: "XAT", icon: <TrendingUp size={20} className="text-purple-600"/> },
-                    { name: "MAT", icon: <TrendingUp size={20} className="text-purple-600"/> }
-                ]
-            },
-            {
-                id: "psc",
-                name: "State PSC",
-                items: [
-                    { name: "UPPSC", icon: <Landmark size={20} className="text-orange-500"/> },
-                    { name: "BPSC", icon: <Landmark size={20} className="text-orange-500"/> },
-                    { name: "MPPSC", icon: <Landmark size={20} className="text-orange-500"/> }
-                ]
-            },
-            {
                 id: "commerce",
                 name: "Commerce",
                 items: [
                     { name: "Class 11", icon: <Calculator size={20} className="text-green-500"/> },
-                    { name: "Class 12", icon: <Calculator size={20} className="text-green-500"/> },
-                    { name: "CUET Commerce", icon: <Calculator size={20} className="text-green-500"/> }
-                ]
-            },
-            {
-                id: "gate",
-                name: "GATE",
-                items: [
-                    { name: "CS & IT", icon: <Cpu size={20} className="text-red-500"/> },
-                    { name: "Mechanical", icon: <Cpu size={20} className="text-red-500"/> },
-                    { name: "Civil", icon: <Cpu size={20} className="text-red-500"/> },
-                    { name: "Electrical", icon: <Zap size={20} className="text-yellow-500"/> }
-                ]
-            },
-            {
-                id: "cuet",
-                name: "CUET",
-                items: [
-                    { name: "Science", icon: <Atom size={20} className="text-blue-500"/> },
-                    { name: "Commerce", icon: <Calculator size={20} className="text-green-500"/> },
-                    { name: "Arts", icon: <PenTool size={20} className="text-pink-500"/> }
-                ]
-            },
-            {
-                id: "aeje",
-                name: "AE/JE",
-                items: [
-                    { name: "SSC JE", icon: <Cpu size={20} className="text-slate-600"/> },
-                    { name: "RRB JE", icon: <Monitor size={20} className="text-slate-600"/> }
-                ]
-            },
-            {
-                id: "jam",
-                name: "IIT JAM & CSIR NET",
-                items: [
-                    { name: "Physics", icon: <Atom size={20} className="text-indigo-500"/> },
-                    { name: "Maths", icon: <Calculator size={20} className="text-indigo-500"/> },
-                    { name: "Life Sciences", icon: <Microscope size={20} className="text-green-500"/> }
-                ]
-            },
-            {
-                id: "law",
-                name: "LAW",
-                items: [
-                    { name: "CLAT", icon: <Scale size={20} className="text-slate-700"/> },
-                    { name: "AILET", icon: <Scale size={20} className="text-slate-700"/> },
-                    { name: "Judiciary", icon: <Gavel size={20} className="text-yellow-700"/> }
-                ]
-            },
-            {
-                id: "ese",
-                name: "ESE GATE",
-                items: [
-                    { name: "Prelims", icon: <Cpu size={20} className="text-blue-700"/> },
-                    { name: "Mains", icon: <Cpu size={20} className="text-blue-700"/> }
-                ]
-            },
-            {
-                id: "ipmat",
-                name: "IPMAT",
-                items: [
-                    { name: "IIM Indore", icon: <GraduationCap size={20} className="text-blue-800"/> },
-                    { name: "IIM Rohtak", icon: <GraduationCap size={20} className="text-blue-800"/> }
-                ]
-            },
-            {
-                id: "ielts",
-                name: "IELTS",
-                items: [
-                    { name: "Academic", icon: <Globe size={20} className="text-cyan-500"/> },
-                    { name: "General", icon: <Globe size={20} className="text-cyan-500"/> }
+                    { name: "Class 12", icon: <Calculator size={20} className="text-green-500"/> }
                 ]
             }
         ]
     },
-    {
-        label: "India's Update",
-        type: "link",
-        to: "/news"
-    },
+    { label: "India's Update", type: "link", to: "/news" },
     {
         label: "AI Tools",
         type: "dropdown",
@@ -233,14 +124,10 @@ const NAV_LINKS = [
             { name: "GATE CS 2010-2024" }
         ]
     },
-    {
-        label: "Power Batch",
-        type: "text",
-    }
+    { label: "Power Batch", type: "text" }
 ];
 
-// Inner Content Component
-const LandingPageContent = () => {
+const LandingPage = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState(null);
     const [showAd, setShowAd] = useState(true);
@@ -249,15 +136,29 @@ const LandingPageContent = () => {
     const [currentAdIndex, setCurrentAdIndex] = useState(0);
     const { theme, toggleTheme } = useTheme(); 
     
-    // --- NEW: STATE FOR VIEW MORE/LESS ---
+    // --- STATE FOR VIEW MORE/LESS ---
     const [showAllCategories, setShowAllCategories] = useState(false);
-    const INITIAL_CATEGORY_COUNT = 6; // Initially show only 6 cards
+    const INITIAL_CATEGORY_COUNT = 6; 
 
-    // Determine which categories to display based on state
+    // Determine which categories to display
     const allCategories = NAV_LINKS[0].categories;
     const displayedCategories = showAllCategories 
         ? allCategories 
         : allCategories.slice(0, INITIAL_CATEGORY_COUNT);
+
+    useEffect(() => {
+        api.get('banners/').then(res => setBanners(res.data)).catch(() => {});
+    }, []);
+
+    useEffect(() => {
+        if (banners.length <= 1) return;
+        const timer = setInterval(() => {
+            setCurrentAdIndex(prev => (prev + 1) % banners.length);
+        }, 4000); 
+        return () => clearInterval(timer);
+    }, [banners]);
+
+    const activeBanner = banners[currentAdIndex];
 
     return (
         <div className="bg-white dark:bg-slate-900 font-sans text-slate-800 dark:text-slate-200 transition-colors duration-300">
@@ -294,15 +195,14 @@ const LandingPageContent = () => {
                                         {['mega_tabs', 'dropdown'].includes(link.type) && <ChevronDown size={14} className={`mt-0.5 transition-transform duration-200 ${activeDropdown === idx ? 'rotate-180' : ''}`}/>}
                                     </button>
 
-                                    {/* DROPDOWNS (Mega Tabs & Simple Dropdowns) */}
+                                    {/* DROPDOWNS */}
                                     {activeDropdown === idx && (
                                         <div className="absolute top-full left-0 pt-2 w-max animate-in fade-in slide-in-from-top-2 duration-200">
                                             
-                                            {/* TYPE 1: MEGA TABS (Updated with Overflow for many items) */}
+                                            {/* TYPE 1: MEGA TABS */}
                                             {link.type === 'mega_tabs' && (
                                                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 flex overflow-hidden w-[700px] -ml-20 max-h-[500px]">
-                                                    {/* Sidebar - Added overflow-y-auto for 20+ items */}
-                                                    <div className="w-1/3 bg-slate-50 dark:bg-slate-900 border-r border-slate-100 dark:border-slate-700 p-2 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
+                                                    <div className="w-1/3 bg-slate-50 dark:bg-slate-900 border-r border-slate-100 dark:border-slate-700 p-2 overflow-y-auto scrollbar-thin">
                                                         {link.categories.map((cat, cIdx) => (
                                                             <div 
                                                                 key={cIdx}
@@ -318,8 +218,6 @@ const LandingPageContent = () => {
                                                             </div>
                                                         ))}
                                                     </div>
-
-                                                    {/* Right Content */}
                                                     <div className="w-2/3 p-6 bg-white dark:bg-slate-800 overflow-y-auto">
                                                         <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">
                                                             {link.categories[activeTab].name}
@@ -355,20 +253,13 @@ const LandingPageContent = () => {
                             ))}
                         </div>
 
-                        {/* Right Side: Theme Toggle & Auth */}
+                        {/* Right Side */}
                         <div className="hidden lg:flex items-center gap-4">
-                            <button 
-                                onClick={toggleTheme}
-                                className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                                title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
-                            >
+                            <button onClick={toggleTheme} className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                                 {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
                             </button>
-
                             <Link to="/login" className="text-slate-600 dark:text-slate-300 font-bold hover:text-blue-600 dark:hover:text-blue-400 px-4 py-2 transition-colors">Login</Link>
-                            <Link to="/register" className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-200 dark:shadow-none hover:-translate-y-0.5">
-                                Register
-                            </Link>
+                            <Link to="/register" className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-200 dark:shadow-none hover:-translate-y-0.5">Register</Link>
                         </div>
 
                         {/* Mobile Menu Button */}
@@ -390,7 +281,6 @@ const LandingPageContent = () => {
                             {NAV_LINKS.map((link, idx) => (
                                 <div key={idx} className="border-b border-slate-50 dark:border-slate-800 pb-2 last:border-0">
                                     <div className="font-bold text-slate-800 dark:text-slate-200 py-2">{link.label}</div>
-                                    
                                     {link.type === 'mega_tabs' && (
                                         <div className="pl-4 space-y-4 mt-2">
                                             {link.categories.map((cat, cIdx) => (
@@ -398,9 +288,7 @@ const LandingPageContent = () => {
                                                     <div className="text-xs font-bold text-blue-500 uppercase mb-2">{cat.name}</div>
                                                     <div className="grid grid-cols-2 gap-2">
                                                         {cat.items.map((item, iIdx) => (
-                                                            <div key={iIdx} className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded">
-                                                                {item.name}
-                                                            </div>
+                                                            <div key={iIdx} className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded">{item.name}</div>
                                                         ))}
                                                     </div>
                                                 </div>
@@ -437,6 +325,13 @@ const LandingPageContent = () => {
                             </button>
                         </div>
                     </div>
+                    {banners.length > 1 && (
+                        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1">
+                            {banners.map((_, idx) => (
+                                <div key={idx} className={`w-1.5 h-1.5 rounded-full transition-colors ${idx === currentAdIndex ? 'bg-white' : 'bg-white/30'}`}/>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -464,7 +359,6 @@ const LandingPageContent = () => {
                         </div>
                     </div>
                     <div className="md:w-1/2">
-                        {/* 3D Floating Elements */}
                         <div className="relative bg-gradient-to-br from-slate-800 to-slate-900 p-8 rounded-3xl border border-slate-700 shadow-2xl">
                             <div className="flex items-center justify-between mb-8">
                                 <div className="flex gap-2"><div className="w-3 h-3 rounded-full bg-red-500"/><div className="w-3 h-3 rounded-full bg-yellow-500"/><div className="w-3 h-3 rounded-full bg-green-500"/></div>
@@ -476,32 +370,59 @@ const LandingPageContent = () => {
                                     <div className="w-0 h-0 border-t-[10px] border-t-transparent border-l-[20px] border-l-white border-b-[10px] border-b-transparent ml-1"></div>
                                 </div>
                             </div>
-                            <div className="mt-6 flex gap-4">
-                                <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
-                                    <div className="h-full w-2/3 bg-blue-500"></div>
-                                </div>
-                                <span className="text-xs text-slate-400">65% Complete</span>
-                            </div>
                         </div>
                     </div>
                 </div>
             </header>
-            {/* --- FEATURES GRID (Existing) --- */}
+
+            {/* --- EXAM CATEGORIES --- */}
             <section className="py-24 px-6 bg-slate-50 dark:bg-slate-900 transition-colors">
                 <div className="max-w-6xl mx-auto">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Why Choose Bit by Bit?</h2>
-                        <p className="text-slate-500 dark:text-slate-400">Structured courses, endless practice, and AI-powered insights.</p>
+                        <div className="inline-flex items-center gap-2 bg-blue-50 dark:bg-slate-700 px-4 py-1.5 rounded-full text-blue-600 dark:text-blue-300 font-bold text-sm mb-4">
+                            <LayoutGrid size={16} /> Exam Categories
+                        </div>
+                        <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white mb-4">
+                            Choose Your Goal
+                        </h2>
+                        <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
+                            Bit by Bit prepares students for a wide range of exams. Find your category and start your journey today.
+                        </p>
                     </div>
-                    <div className="grid md:grid-cols-3 gap-8">
-                        <FeatureCard icon={<BookOpen size={24} className="text-white"/>} color="bg-blue-600" title="Comprehensive Notes" desc="Detailed chapter-wise notes curated by top faculties."/>
-                        <FeatureCard icon={<Clock size={24} className="text-white"/>} color="bg-purple-600" title="Real-time Mock Tests" desc="Practice in an actual exam-like environment with negative marking."/>
-                        <FeatureCard icon={<Trophy size={24} className="text-white"/>} color="bg-emerald-600" title="Performance Analysis" desc="Track your weak areas and improve bit by bit every day."/>
+
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {displayedCategories.map((category, idx) => (
+                            <div key={idx} className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-6 hover:shadow-xl hover:border-blue-200 dark:hover:border-slate-600 transition-all group relative overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100/50 dark:bg-blue-900/20 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+                                <div className="relative z-10">
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+                                        {category.name}
+                                    </h3>
+                                    <div className="flex flex-wrap gap-2 mb-6">
+                                        {category.items.map((exam, eIdx) => (
+                                            <span key={eIdx} className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5">
+                                                {React.cloneElement(exam.icon, { size: 14 })}
+                                                {exam.name}
+                                            </span>
+                                        ))}
+                                    </div>
+                                    <Link to={`/category/${category.id}`} className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-sm group-hover:translate-x-1 transition-transform">
+                                        Explore Category <ArrowRight size={16} />
+                                    </Link>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    
+                    <div className="mt-12 text-center">
+                         <button onClick={() => setShowAllCategories(!showAllCategories)} className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-bold text-sm bg-blue-50 dark:bg-slate-800 px-6 py-3 rounded-full transition-all hover:shadow-md">
+                            {showAllCategories ? <>View Less Categories <ChevronUp size={16}/></> : <>View All Categories ({allCategories.length}) <ChevronDown size={16}/></>}
+                        </button>
                     </div>
                 </div>
             </section>
 
-             {/* --- PHILOSOPHY SECTION (Existing) --- */}
+             {/* --- PHILOSOPHY SECTION --- */}
              <section className="py-24 bg-white dark:bg-slate-800 px-6 relative overflow-hidden transition-colors">
                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] dark:bg-[radial-gradient(#374151_1px,transparent_1px)] [background-size:16px_16px] opacity-50"></div>
                 <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16 relative z-10">
@@ -518,7 +439,7 @@ const LandingPageContent = () => {
                     <div className="lg:w-1/2 space-y-8">
                         <div className="inline-block bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider">The Science of Learning</div>
                         <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white leading-tight">
-                            Don't let them just <span className="text-red-500 decoration-2 underline-offset-4">watch</span>. <br/>
+                            Don't let them just <span className="text-red-500 font-bold">watch</span>. <br/>
                             Help them <span className="text-blue-600 dark:text-blue-400">Learn.</span>
                         </h2>
                         <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -540,74 +461,25 @@ const LandingPageContent = () => {
                                 </div>
                             </div>
                         </div>
+                        <div className="pt-4">
+                            <Link to="/register" className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold hover:text-blue-800 transition-colors text-lg">
+                                See the difference yourself <ArrowRight size={20} />
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            {/* --- NEW SECTION: ALL EXAM CATEGORIES --- */}
-            <section className="py-24 px-6 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-800">
-                <div className="max-w-7xl mx-auto">
+            {/* --- STATS & TESTIMONIALS --- */}
+            <section className="py-24 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-800 transition-colors">
+                <div className="max-w-6xl mx-auto px-6">
                     <div className="text-center mb-16">
-                        <div className="inline-flex items-center gap-2 bg-blue-50 dark:bg-slate-700 px-4 py-1.5 rounded-full text-blue-600 dark:text-blue-300 font-bold text-sm mb-4">
-                            <LayoutGrid size={16} /> Exam Categories
-                        </div>
-                        <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white mb-4">
-                            Choose Your Goal
-                        </h2>
-                        <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
-                            Bit by Bit prepares students for a wide range of exams. Find your category and start your journey today.
-                        </p>
+                        <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Our students and parents love us</h2>
                     </div>
-
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {/* Logic: Show 'displayedCategories' based on toggle state.
-                            Includes animation class for smooth entry when expanding.
-                        */}
-                        {displayedCategories.map((category, idx) => (
-                            <div 
-                                key={idx} 
-                                className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl p-6 hover:shadow-xl hover:border-blue-200 dark:hover:border-slate-600 transition-all group relative overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300"
-                            >
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100/50 dark:bg-blue-900/20 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
-                                
-                                <div className="relative z-10">
-                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                                        {category.name}
-                                    </h3>
-                                    
-                                    <div className="flex flex-wrap gap-2 mb-6">
-                                        {category.items.map((exam, eIdx) => (
-                                            <span key={eIdx} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5">
-                                                {/* Clone element to force smaller icon size in tags */}
-                                                {React.cloneElement(exam.icon, { size: 14 })}
-                                                {exam.name}
-                                            </span>
-                                        ))}
-                                    </div>
-
-                                    <Link 
-                                        to={`/category/${category.id}`} 
-                                        className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-sm group-hover:translate-x-1 transition-transform"
-                                    >
-                                        Explore Category <ArrowRight size={16} />
-                                    </Link>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                    
-                    {/* View More / View Less Toggle Button */}
-                    <div className="mt-12 text-center">
-                         <button 
-                            onClick={() => setShowAllCategories(!showAllCategories)}
-                            className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-bold text-sm bg-blue-50 dark:bg-slate-800 px-6 py-3 rounded-full transition-all hover:shadow-md"
-                         >
-                            {showAllCategories ? (
-                                <>View Less Categories <ChevronUp size={16}/></>
-                            ) : (
-                                <>View All Categories ({allCategories.length}) <ChevronDown size={16}/></>
-                            )}
-                        </button>
+                    <div className="grid md:grid-cols-3 gap-8">
+                        <FeatureCard icon={<BookOpen size={24} className="text-white"/>} color="bg-blue-600" title="Comprehensive Notes" desc="Detailed chapter-wise notes curated by top faculties."/>
+                        <FeatureCard icon={<Clock size={24} className="text-white"/>} color="bg-purple-600" title="Real-time Mock Tests" desc="Practice in an actual exam-like environment with negative marking."/>
+                        <FeatureCard icon={<Trophy size={24} className="text-white"/>} color="bg-emerald-600" title="Performance Analysis" desc="Track your weak areas and improve bit by bit every day."/>
                     </div>
                 </div>
             </section>
@@ -628,13 +500,6 @@ const FeatureCard = ({ icon, color, title, desc }) => (
         <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{title}</h3>
         <p className="text-slate-500 dark:text-slate-400 leading-relaxed">{desc}</p>
     </div>
-);
-
-// Wrapper to Provide Context
-const LandingPage = () => (
-    <useTheme>
-        <LandingPageContent />
-    </useTheme>
 );
 
 export default LandingPage;

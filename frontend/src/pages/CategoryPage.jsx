@@ -5,7 +5,7 @@ import {
     ChevronRight, Calendar, Users, Award, BookOpen, 
     CheckCircle, Clock, Shield, Star, Zap, Target, 
     ArrowRight, Layout, PlayCircle, FileText, Ruler, 
-    BarChart3, AlertTriangle, Lock
+    BarChart3, AlertTriangle, Lock, Infinity, Layers
 } from 'lucide-react';
 
 // --- MOCK DATA ---
@@ -33,7 +33,6 @@ const CATEGORY_DATA = {
                 dates: "Notification: Feb 2025",
                 eligibility: "Varies by Trade",
                 ageLimit: "17.5 - 21 Years",
-                // Specific Roles Data
                 roles: {
                     "gd": {
                         title: "General Duty (GD)",
@@ -116,7 +115,7 @@ const CATEGORY_DATA = {
                 }
             },
             "nda": {
-                description: "The National Defence Academy (NDA) is the joint defence service training institute of the Indian Armed Forces, where cadets of the three services train together.",
+                description: "The National Defence Academy (NDA) is the joint defence service training institute of the Indian Armed Forces.",
                 dates: "Exam: April 21, 2025",
                 eligibility: "12th Pass (PCM)",
                 ageLimit: "16.5 - 19.5 Years",
@@ -130,51 +129,61 @@ const CATEGORY_DATA = {
                     ]
                 },
                 syllabus: {
-                    "Maths": ["Algebra", "Matrices", "Trigonometry", "Calculus"],
-                    "GAT": ["English", "Physics", "Chemistry", "General Science", "History", "Geography"]
+                    "Maths": ["Algebra", "Matrices", "Trigonometry"],
+                    "GAT": ["English", "Physics", "Chemistry", "General Science"]
                 },
                 physical: [
                     { task: "Height", standard: "157 cm (Min)" },
-                    { task: "Running", standard: "2.4 km in 15 min" },
-                    { task: "Push-ups", standard: "Min 20" },
-                    { task: "Sit-ups", standard: "Min 20" }
+                    { task: "Running", standard: "2.4 km in 15 min" }
                 ]
             }
-            // Add CDS, AFCAT data similarly...
         },
-        courses: [
-            {
-                id: "agniveer-vayu",
-                title: "Agniveer Vayu 1.0",
+        // "One Course Per Exam" Approach
+        courses: {
+            "agniveer": {
+                id: "agniveer-pass",
+                title: "Agniveer Complete Access",
+                subtitle: "Unlock GD, Tech & Clerk Content",
                 exam: "Agniveer",
-                type: "Live Batch",
+                type: "Self-Paced Bundle",
                 rating: 4.8,
-                price: "₹1,499",
-                originalPrice: "₹2,999",
-                features: ["Physical Training Guide", "Weekly Mock Tests"],
-                link: "/course/defence/agniveer", 
+                price: "₹999",
+                originalPrice: "₹2,499",
+                features: [
+                    "5000+ Practice Questions",
+                    "Chapter-wise Notes (GD/Tech/Clerk)",
+                    "20+ Full Length Mock Tests", 
+                    "Previous Year Papers (Solved)"
+                ],
+                link: "/course/defence/agniveer",
                 image: "bg-emerald-900"
             },
-            {
-                id: "nda-shaurya",
-                title: "Shaurya Batch 2.0",
+            "nda": {
+                id: "nda-pass",
+                title: "NDA Ultimate Pass",
+                subtitle: "Maths + GAT Comprehensive",
                 exam: "NDA",
-                type: "Complete Course",
+                type: "Self-Paced Bundle",
                 rating: 4.9,
-                price: "₹2,999",
-                originalPrice: "₹5,999",
-                features: ["SSB Interview Guide", "Maths Short Tricks"],
+                price: "₹1,499",
+                originalPrice: "₹3,999",
+                features: [
+                    "Maths Concept Videos", 
+                    "GAT Rapid Revision Notes",
+                    "10 Years PYQ Analysis", 
+                    "SSB Interview Guide"
+                ],
                 link: "/course/defence/nda",
                 image: "bg-indigo-900"
             }
-        ]
+        }
     }
 };
 
 const CategoryPage = () => {
     const { categoryId } = useParams();
     const [selectedSubCat, setSelectedSubCat] = useState('agniveer'); 
-    const [agniveerRole, setAgniveerRole] = useState('gd'); // NEW STATE for Agniveer Roles
+    const [agniveerRole, setAgniveerRole] = useState('gd'); 
     const [activeSubject, setActiveSubject] = useState('');
     const [calculator, setCalculator] = useState({ correct: '', wrong: '', score: null });
     
@@ -183,10 +192,8 @@ const CategoryPage = () => {
     
     const data = CATEGORY_DATA[categoryId] || CATEGORY_DATA["defence"];
     
-    // Determine Current Info based on selection
     let currentInfo = data.examInfo[selectedSubCat] || data.examInfo["nda"];
     
-    // If Agniveer is selected, drill down to specific role data
     if (selectedSubCat === 'agniveer' && currentInfo.roles) {
         const roleData = currentInfo.roles[agniveerRole];
         currentInfo = { 
@@ -197,15 +204,13 @@ const CategoryPage = () => {
         };
     }
 
-    // --- EFFECT: Reset Syllabus Tab on Category Change ---
     useEffect(() => {
         if(currentInfo.syllabus) {
             setActiveSubject(Object.keys(currentInfo.syllabus)[0]);
         }
-        setCalculator({ correct: '', wrong: '', score: null }); // Reset calculator
-    }, [selectedSubCat, agniveerRole]); // Trigger on role change too
+        setCalculator({ correct: '', wrong: '', score: null });
+    }, [selectedSubCat, agniveerRole]); 
 
-    // --- CHART RENDER LOGIC ---
     useEffect(() => {
         if (currentInfo?.pattern && canvasRef.current) {
             if (chartRef.current) chartRef.current.destroy();
@@ -235,34 +240,25 @@ const CategoryPage = () => {
         }
     }, [selectedSubCat, agniveerRole, currentInfo]);
 
-    // --- CALCULATOR LOGIC ---
     const calculateScore = () => {
         if(!currentInfo.pattern) return;
         const c = parseInt(calculator.correct) || 0;
         const w = parseInt(calculator.wrong) || 0;
-        
-        // Basic check
         if(c+w > currentInfo.pattern.totalQ) return alert("Attempts exceed total questions!");
-        
-        // Calculate
         const score = (c * (currentInfo.pattern.correctMark || 1)) - (w * (currentInfo.pattern.negMark || 0));
         setCalculator(prev => ({...prev, score: score.toFixed(2)}));
     };
 
-    // Filter courses based on selected sub-category
-    const filteredCourses = data.courses.filter(c => 
-        c.exam.toLowerCase() === selectedSubCat.toLowerCase() || 
-        selectedSubCat === 'all' 
-    );
+    // --- GET THE SINGLE COURSE FOR THE SELECTED EXAM ---
+    const activeCourse = data.courses[selectedSubCat];
 
     return (
         <div className="min-h-screen bg-stone-50 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-200">
             
-            {/* --- 1. HERO SECTION (Command Center Header) --- */}
+            {/* HERO SECTION */}
             <div className={`relative ${data.heroImage} text-white pt-32 pb-24 px-6 overflow-hidden`}>
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-[100px] pointer-events-none"></div>
-                
                 <div className="max-w-7xl mx-auto relative z-10">
                     <div className="flex flex-col md:flex-row justify-between items-end gap-8">
                         <div>
@@ -276,21 +272,11 @@ const CategoryPage = () => {
                             </h1>
                             <p className="text-xl text-white/70 max-w-2xl font-light leading-relaxed">{data.tagline}</p>
                         </div>
-                        
-                        {/* Live Stats Widget */}
-                        <div className="flex gap-6 bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10 shadow-2xl">
-                            {data.stats.map((stat, idx) => (
-                                <div key={idx} className="text-center">
-                                    <div className="font-black text-2xl md:text-3xl text-white">{stat.value}</div>
-                                    <div className="text-[10px] uppercase tracking-widest text-emerald-400 font-bold mt-1">{stat.label}</div>
-                                </div>
-                            ))}
-                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* --- 2. TACTICAL NAVIGATOR (Sticky Tabs) --- */}
+            {/* NAVIGATOR */}
             <div className="sticky top-20 z-40 bg-white/80 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 shadow-sm">
                 <div className="max-w-7xl mx-auto px-6 overflow-x-auto no-scrollbar">
                     <div className="flex gap-8">
@@ -313,7 +299,7 @@ const CategoryPage = () => {
 
             <div className="max-w-7xl mx-auto px-6 py-12">
                 
-                {/* --- NEW: AGNIVEER ROLE SELECTOR (Only Visible when Agniveer is selected) --- */}
+                {/* AGNIVEER ROLE SELECTOR */}
                 {selectedSubCat === 'agniveer' && (
                     <div className="flex justify-center mb-12 animate-in fade-in slide-in-from-top-4 duration-500">
                         <div className="inline-flex bg-white dark:bg-slate-800 p-1.5 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700">
@@ -338,17 +324,15 @@ const CategoryPage = () => {
                     </div>
                 )}
 
-                {/* --- 3. COMMAND CENTER DASHBOARD --- */}
+                {/* COMMAND CENTER DASHBOARD */}
                 <div className="grid lg:grid-cols-3 gap-8 mb-16 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     
-                    {/* Left Panel: Exam Intel, Pattern & Syllabus */}
+                    {/* Left Panel */}
                     <div className="lg:col-span-2 space-y-6">
                         
                         {/* 1. Exam Pattern Card */}
                         <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden relative">
-                            {/* Decorative Background */}
                             <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px]"></div>
-
                             <div className="p-8 relative z-10">
                                 <div className="flex items-center gap-3 mb-6">
                                     <div className="p-3 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
@@ -361,13 +345,10 @@ const CategoryPage = () => {
                                         </p>
                                     </div>
                                 </div>
-                                
                                 <p className="text-slate-600 dark:text-slate-300 text-base leading-relaxed mb-8 border-l-4 border-emerald-500 pl-4">
                                     {currentInfo.description}
                                 </p>
-
                                 <div className="grid md:grid-cols-2 gap-8 items-center bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-6 border border-slate-100 dark:border-slate-700">
-                                    {/* Chart Area */}
                                     <div className="relative h-40 w-40 mx-auto">
                                         <canvas ref={canvasRef}></canvas>
                                         <div className="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
@@ -375,8 +356,6 @@ const CategoryPage = () => {
                                             <span className="text-[9px] uppercase font-bold text-slate-400">Questions</span>
                                         </div>
                                     </div>
-
-                                    {/* Subject List */}
                                     <div className="space-y-3">
                                         {currentInfo.pattern?.subjects.map((sub, i) => (
                                             <div key={i} className="flex items-center justify-between">
@@ -425,9 +404,9 @@ const CategoryPage = () => {
                         )}
                     </div>
 
-                    {/* Right Panel: Quick Stats, Physical & Calculator */}
+                    {/* Right Panel */}
                     <div className="space-y-6">
-                        {/* 1. Score Simulator */}
+                        {/* Calculator */}
                         <div className="bg-slate-900 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500 rounded-full blur-[80px] opacity-20"></div>
                             <h3 className="text-lg font-bold mb-1 flex items-center gap-2 relative z-10">
@@ -475,26 +454,7 @@ const CategoryPage = () => {
                             )}
                         </div>
 
-                        {/* 2. Key Dates */}
-                        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-lg border border-slate-200 dark:border-slate-800">
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                                <Calendar className="text-blue-500" size={20} /> Mission Timeline
-                            </h3>
-                            <div className="space-y-4">
-                                <div className="flex items-start gap-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
-                                    <div className="text-center bg-white dark:bg-slate-700 rounded-lg p-2 min-w-[50px] shadow-sm">
-                                        <div className="text-xs text-slate-400 uppercase">Apr</div>
-                                        <div className="text-xl font-bold dark:text-white">21</div>
-                                    </div>
-                                    <div>
-                                        <div className="font-bold text-sm dark:text-white">Written Exam Date</div>
-                                        <div className="text-xs text-slate-500 mt-1">Admit cards release 2 weeks prior.</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* 3. Physical Standards */}
+                        {/* Physical Standards */}
                         <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-lg border border-slate-200 dark:border-slate-800">
                             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                                 <Ruler className="text-orange-500" size={20} /> Physical Standards
@@ -509,83 +469,92 @@ const CategoryPage = () => {
                                     </div>
                                 ))}
                             </div>
-                            <div className="mt-4 flex gap-2">
-                                <span className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-500 uppercase tracking-wide">Age: {currentInfo.ageLimit}</span>
-                                <span className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-500 uppercase tracking-wide">Elig: {currentInfo.eligibility}</span>
-                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* --- 4. RECOMMENDED BATCHES (Dossier Style) --- */}
-                <div className="mb-8">
-                    <div className="flex items-center justify-between mb-8">
-                        <h2 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-                            <Zap className="text-yellow-500 fill-yellow-500" size={28} /> 
-                            Mission Batches
-                        </h2>
-                        <div className="hidden md:flex gap-2">
-                            <span className="px-4 py-1.5 rounded-full bg-slate-900 text-white text-xs font-bold shadow-lg">All</span>
-                            <span className="px-4 py-1.5 rounded-full bg-white dark:bg-slate-800 text-slate-500 text-xs font-bold border border-slate-200 dark:border-slate-700 hover:border-emerald-500 cursor-pointer transition-all">Live</span>
+                {/* --- 4. START LEARNING (The "One Enrollment" Card) --- */}
+                {activeCourse ? (
+                    <div className="mb-16">
+                        <div className="flex items-center justify-between mb-8">
+                            <h2 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                                <Zap className="text-yellow-500 fill-yellow-500" size={28} /> 
+                                Start Your Prep
+                            </h2>
                         </div>
-                    </div>
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {/* Dynamic Course Cards */}
-                        {filteredCourses.length > 0 ? (
-                            filteredCourses.map((course) => (
-                                <div key={course.id} className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-                                    {/* Image/Header Area */}
-                                    <div className={`h-40 ${course.image} relative p-6 flex flex-col justify-between overflow-hidden`}>
-                                        {/* Background Pattern */}
-                                        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/diagmonds-light.png')] opacity-10"></div>
-                                        <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
-                                        
-                                        <div className="relative z-10 flex justify-between items-start">
-                                            <span className="bg-white/20 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide border border-white/10">
-                                                {course.type}
-                                            </span>
-                                            <span className="bg-yellow-400 text-yellow-950 text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1 shadow-sm">
-                                                <Star size={10} fill="currentColor" /> {course.rating}
-                                            </span>
-                                        </div>
-                                        <h3 className="relative z-10 text-white font-bold text-xl tracking-tight">{course.title}</h3>
+                        {/* PREMIUM "ALL ACCESS" CARD */}
+                        <div className="relative group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-300">
+                            
+                            {/* Decorative Blur */}
+                            <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-3xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                            
+                            <div className="relative flex flex-col md:flex-row h-full bg-white dark:bg-slate-900 rounded-3xl">
+                                
+                                {/* Image / Banner Side */}
+                                <div className={`md:w-2/5 ${activeCourse.image} relative p-8 flex flex-col justify-between overflow-hidden`}>
+                                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/diagmonds-light.png')] opacity-10"></div>
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-[80px]"></div>
+                                    
+                                    <div className="relative z-10">
+                                        <span className="inline-block bg-white/20 backdrop-blur-md border border-white/10 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-4">
+                                            {activeCourse.type}
+                                        </span>
+                                        <h3 className="text-3xl font-black text-white leading-tight mb-2">{activeCourse.title}</h3>
+                                        <p className="text-white/80 text-sm font-medium">{activeCourse.subtitle}</p>
                                     </div>
 
-                                    {/* Body */}
-                                    <div className="p-6">
-                                        <div className="space-y-3 mb-6">
-                                            {course.features.map((feat, i) => (
-                                                <div key={i} className="flex items-center gap-3 text-xs font-medium text-slate-600 dark:text-slate-400">
-                                                    <CheckCircle size={14} className="text-emerald-500 shrink-0" /> 
-                                                    {feat}
-                                                </div>
-                                            ))}
-                                        </div>
-
-                                        <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                                            <div>
-                                                <div className="text-xs text-slate-400 line-through font-medium">{course.originalPrice}</div>
-                                                <div className="text-2xl font-black text-slate-900 dark:text-white">{course.price}</div>
-                                            </div>
-                                            <Link 
-                                                to={course.link} 
-                                                className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-lg hover:shadow-xl flex items-center gap-2 group-hover:gap-3"
-                                            >
-                                                Explore <ArrowRight size={16} />
-                                            </Link>
+                                    <div className="relative z-10 mt-8">
+                                        <div className="flex items-center gap-2 text-white/90 text-sm font-bold">
+                                            <Infinity size={18} className="text-yellow-400" />
+                                            Unlimited Access
                                         </div>
                                     </div>
                                 </div>
-                            ))
-                        ) : (
-                            <div className="col-span-full py-12 text-center text-slate-400 bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800">
-                                <Lock className="mx-auto mb-4 opacity-50" size={32} />
-                                <p>No batches currently active for this category.</p>
+
+                                {/* Content Side */}
+                                <div className="md:w-3/5 p-8 flex flex-col justify-between">
+                                    <div>
+                                        <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                                            <Layers className="text-blue-500" /> What's Included?
+                                        </h4>
+                                        <div className="grid sm:grid-cols-2 gap-4">
+                                            {activeCourse.features.map((feat, i) => (
+                                                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+                                                    <div className="bg-green-100 dark:bg-green-900/30 p-1.5 rounded-full text-green-600 dark:text-green-400">
+                                                        <CheckCircle size={14} />
+                                                    </div>
+                                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{feat}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                                        <div className="text-center sm:text-left">
+                                            <div className="text-sm text-slate-400 line-through font-medium">Original Price: {activeCourse.originalPrice}</div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-3xl font-black text-slate-900 dark:text-white">{activeCourse.price}</span>
+                                                <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold px-2 py-1 rounded">60% OFF</span>
+                                            </div>
+                                        </div>
+                                        <Link 
+                                            to={activeCourse.link} 
+                                            className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 text-white px-8 py-4 rounded-xl font-bold text-base transition-all shadow-xl hover:shadow-2xl flex items-center justify-center gap-2 group"
+                                        >
+                                            Start Learning Now <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                                        </Link>
+                                    </div>
+                                </div>
                             </div>
-                        )}
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    <div className="mb-16 py-12 text-center text-slate-400 bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800">
+                        <Lock className="mx-auto mb-4 opacity-50" size={32} />
+                        <p>Access for this exam category is opening soon.</p>
+                    </div>
+                )}
 
             </div>
         </div>

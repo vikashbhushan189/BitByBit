@@ -29,36 +29,91 @@ const CATEGORY_DATA = {
         // Exam Intelligence Data
         examInfo: {
             "agniveer": {
-                description: "The Agnipath Scheme allows patriotic youth to serve in the Armed Forces for a period of four years. It is designed to create a youthful and technically adept war-fighting force.",
+                description: "The Agnipath Scheme allows patriotic youth to serve in the Armed Forces for a period of four years. Select a trade below to view specific details.",
                 dates: "Notification: Feb 2025",
-                eligibility: "10th / 12th Pass",
+                eligibility: "Varies by Trade",
                 ageLimit: "17.5 - 21 Years",
-                // Chart Data for Agniveer (GD Pattern)
-                pattern: {
-                    totalQ: 50,
-                    maxMarks: 100,
-                    passMarks: 35,
-                    negMark: 0.5,
-                    correctMark: 2,
-                    subjects: [
-                        { name: "GK", count: 15, color: "#d97706" },
-                        { name: "Science", count: 15, color: "#16a34a" },
-                        { name: "Maths", count: 15, color: "#2563eb" },
-                        { name: "Reasoning", count: 5, color: "#9333ea" }
-                    ]
-                },
-                syllabus: {
-                    "General Knowledge": ["Current Affairs", "History", "Geography", "Indian Constitution", "Awards"],
-                    "General Science": ["Human Body", "Physics Principles", "Chemistry Basics", "Biology (10th)"],
-                    "Maths": ["Number Systems", "HCF/LCM", "Percentage", "Profit & Loss", "Mensuration"],
-                    "Reasoning": ["Number Series", "Coding-Decoding", "Blood Relations", "Direction Sense"]
-                },
-                physical: [
-                    { task: "1.6 KM Run", standard: "5 Min 30 Sec" },
-                    { task: "Pull Ups", standard: "10 Reps" },
-                    { task: "9 Feet Ditch", standard: "Qualify" },
-                    { task: "Zig-Zag Balance", standard: "Qualify" }
-                ]
+                // Specific Roles Data
+                roles: {
+                    "gd": {
+                        title: "General Duty (GD)",
+                        pattern: {
+                            totalQ: 50,
+                            maxMarks: 100,
+                            passMarks: 35,
+                            negMark: 0.5,
+                            correctMark: 2,
+                            subjects: [
+                                { name: "GK", count: 15, color: "#d97706" },
+                                { name: "Science", count: 15, color: "#16a34a" },
+                                { name: "Maths", count: 15, color: "#2563eb" },
+                                { name: "Reasoning", count: 5, color: "#9333ea" }
+                            ]
+                        },
+                        syllabus: {
+                            "GK": ["Current Affairs", "History", "Geography"],
+                            "Science": ["Physics", "Chemistry", "Biology (10th)"],
+                            "Maths": ["Arithmetic", "Algebra", "Geometry"],
+                            "Reasoning": ["Verbal", "Non-Verbal"]
+                        },
+                        physical: [
+                            { task: "1.6 KM Run", standard: "5 Min 30 Sec" },
+                            { task: "Pull Ups", standard: "10 Reps" }
+                        ]
+                    },
+                    "tech": {
+                        title: "Technical",
+                        pattern: {
+                            totalQ: 50,
+                            maxMarks: 200,
+                            passMarks: 80,
+                            negMark: 1.0,
+                            correctMark: 4,
+                            subjects: [
+                                { name: "GK", count: 10, color: "#d97706" },
+                                { name: "Maths", count: 15, color: "#2563eb" },
+                                { name: "Physics", count: 15, color: "#0891b2" },
+                                { name: "Chemistry", count: 10, color: "#be123c" }
+                            ]
+                        },
+                        syllabus: {
+                            "Physics": ["Mechanics", "Thermodynamics"],
+                            "Maths": ["Calculus", "Vectors", "Trigonometry"],
+                            "Chemistry": ["Physical", "Organic", "Inorganic"],
+                            "GK": ["General Awareness"]
+                        },
+                        physical: [
+                            { task: "1.6 KM Run", standard: "5 Min 45 Sec" },
+                            { task: "Pull Ups", standard: "10 Reps" }
+                        ]
+                    },
+                    "clerk": {
+                        title: "Clerk / SKT",
+                        pattern: {
+                            totalQ: 50,
+                            maxMarks: 200,
+                            passMarks: 80,
+                            negMark: 1.0,
+                            correctMark: 4,
+                            subjects: [
+                                { name: "GK & Sci", count: 10, color: "#d97706" },
+                                { name: "Maths", count: 10, color: "#2563eb" },
+                                { name: "Comp Sci", count: 5, color: "#4f46e5" },
+                                { name: "English", count: 25, color: "#059669" }
+                            ]
+                        },
+                        syllabus: {
+                            "English": ["Grammar", "Comprehension"],
+                            "Computer": ["MS Office", "Windows"],
+                            "Maths": ["Arithmetic", "Algebra"],
+                            "GK": ["Current Affairs"]
+                        },
+                        physical: [
+                            { task: "1.6 KM Run", standard: "5 Min 45 Sec" },
+                            { task: "Pull Ups", standard: "10 Reps" }
+                        ]
+                    }
+                }
             },
             "nda": {
                 description: "The National Defence Academy (NDA) is the joint defence service training institute of the Indian Armed Forces, where cadets of the three services train together.",
@@ -119,6 +174,7 @@ const CATEGORY_DATA = {
 const CategoryPage = () => {
     const { categoryId } = useParams();
     const [selectedSubCat, setSelectedSubCat] = useState('agniveer'); 
+    const [agniveerRole, setAgniveerRole] = useState('gd'); // NEW STATE for Agniveer Roles
     const [activeSubject, setActiveSubject] = useState('');
     const [calculator, setCalculator] = useState({ correct: '', wrong: '', score: null });
     
@@ -126,14 +182,28 @@ const CategoryPage = () => {
     const chartRef = useRef(null);
     
     const data = CATEGORY_DATA[categoryId] || CATEGORY_DATA["defence"];
-    const currentInfo = data.examInfo[selectedSubCat] || data.examInfo["nda"];
+    
+    // Determine Current Info based on selection
+    let currentInfo = data.examInfo[selectedSubCat] || data.examInfo["nda"];
+    
+    // If Agniveer is selected, drill down to specific role data
+    if (selectedSubCat === 'agniveer' && currentInfo.roles) {
+        const roleData = currentInfo.roles[agniveerRole];
+        currentInfo = { 
+            ...currentInfo, 
+            pattern: roleData.pattern, 
+            syllabus: roleData.syllabus,
+            physical: roleData.physical
+        };
+    }
 
     // --- EFFECT: Reset Syllabus Tab on Category Change ---
     useEffect(() => {
         if(currentInfo.syllabus) {
             setActiveSubject(Object.keys(currentInfo.syllabus)[0]);
         }
-    }, [selectedSubCat, currentInfo]);
+        setCalculator({ correct: '', wrong: '', score: null }); // Reset calculator
+    }, [selectedSubCat, agniveerRole]); // Trigger on role change too
 
     // --- CHART RENDER LOGIC ---
     useEffect(() => {
@@ -163,7 +233,7 @@ const CategoryPage = () => {
                 }
             });
         }
-    }, [selectedSubCat, currentInfo]);
+    }, [selectedSubCat, agniveerRole, currentInfo]);
 
     // --- CALCULATOR LOGIC ---
     const calculateScore = () => {
@@ -243,6 +313,31 @@ const CategoryPage = () => {
 
             <div className="max-w-7xl mx-auto px-6 py-12">
                 
+                {/* --- NEW: AGNIVEER ROLE SELECTOR (Only Visible when Agniveer is selected) --- */}
+                {selectedSubCat === 'agniveer' && (
+                    <div className="flex justify-center mb-12 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="inline-flex bg-white dark:bg-slate-800 p-1.5 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700">
+                            {[
+                                { id: 'gd', label: 'General Duty (GD)' },
+                                { id: 'tech', label: 'Technical' },
+                                { id: 'clerk', label: 'Clerk / SKT' }
+                            ].map((role) => (
+                                <button
+                                    key={role.id}
+                                    onClick={() => setAgniveerRole(role.id)}
+                                    className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                                        agniveerRole === role.id
+                                        ? 'bg-emerald-600 text-white shadow-md'
+                                        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                                    }`}
+                                >
+                                    {role.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {/* --- 3. COMMAND CENTER DASHBOARD --- */}
                 <div className="grid lg:grid-cols-3 gap-8 mb-16 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     
@@ -261,7 +356,9 @@ const CategoryPage = () => {
                                     </div>
                                     <div>
                                         <h2 className="text-2xl font-bold dark:text-white">Exam Intelligence</h2>
-                                        <p className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide font-bold">{data.subCategories.find(s => s.id === selectedSubCat)?.fullName}</p>
+                                        <p className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wide font-bold">
+                                            {selectedSubCat === 'agniveer' ? `Agniveer - ${CATEGORY_DATA.defence.examInfo.agniveer.roles[agniveerRole].title}` : data.subCategories.find(s => s.id === selectedSubCat)?.fullName}
+                                        </p>
                                     </div>
                                 </div>
                                 
@@ -299,7 +396,7 @@ const CategoryPage = () => {
                             </div>
                         </div>
 
-                        {/* 2. Syllabus Accordion (Added from AgniveerPage) */}
+                        {/* 2. Syllabus Accordion */}
                         {currentInfo.syllabus && (
                             <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-lg border border-slate-200 dark:border-slate-800 p-6">
                                 <h3 className="text-xl font-bold text-stone-900 dark:text-white mb-6 flex items-center gap-2">
@@ -330,7 +427,7 @@ const CategoryPage = () => {
 
                     {/* Right Panel: Quick Stats, Physical & Calculator */}
                     <div className="space-y-6">
-                        {/* 1. Score Simulator (Added from AgniveerPage) */}
+                        {/* 1. Score Simulator */}
                         <div className="bg-slate-900 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500 rounded-full blur-[80px] opacity-20"></div>
                             <h3 className="text-lg font-bold mb-1 flex items-center gap-2 relative z-10">

@@ -1,346 +1,257 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { Chart } from 'chart.js/auto';
+import React, { useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { 
+    CheckCircle, PlayCircle, FileText, Lock, Clock, 
+    Calendar, Award, Star, ChevronDown, ChevronUp, 
+    Shield, ArrowLeft, Zap, Users
+} from 'lucide-react';
 
-// --- EXAM DATA (Updated with Detailed Syllabus) ---
-const EXAM_DATA = {
-    gd: {
-        title: "General Duty (GD)",
-        totalQ: 50,
-        maxMarks: 100,
-        passMarks: 35,
-        negMark: 0.5,
-        correctMark: 2,
-        subjects: [
-            { name: "General Knowledge", questions: 15, marks: 30, color: "#d97706" }, // Amber 600
-            { name: "General Science", questions: 15, marks: 30, color: "#16a34a" },   // Green 600
-            { name: "Maths", questions: 15, marks: 30, color: "#2563eb" },             // Blue 600
-            { name: "Logical Reasoning", questions: 5, marks: 10, color: "#9333ea" }    // Purple 600
+// --- MOCK COURSE DATA ---
+// Ideally, this comes from an API based on the ID
+const COURSE_DETAILS = {
+    "agniveer-ultimate": {
+        title: "Agniveer Ultimate Access",
+        subtitle: "Complete Preparation for GD, Technical & Clerk",
+        price: "₹999",
+        originalPrice: "₹2,499",
+        discount: "60% OFF",
+        rating: 4.8,
+        students: "15,000+",
+        validity: "Valid till Exam Date (April 2025)",
+        language: "Hinglish (Hindi + English)",
+        theme: "emerald",
+        syllabus: [
+            {
+                title: "General Knowledge (GD/Clerk/Tech)",
+                lectures: 45,
+                notes: 20,
+                topics: ["History of India", "Geography", "Indian Polity", "Current Affairs (Last 6 Months)"]
+            },
+            {
+                title: "General Science (GD)",
+                lectures: 30,
+                notes: 15,
+                topics: ["Physics Basics", "Chemistry in Everyday Life", "Biology - Human Body"]
+            },
+            {
+                title: "Mathematics (Tech/Clerk)",
+                lectures: 50,
+                notes: 25,
+                topics: ["Algebra & Trigonometry", "Calculus (12th Level)", "Mensuration", "Arithmetic"]
+            },
+            {
+                title: "Mock Test Series",
+                lectures: 0,
+                notes: 50,
+                topics: ["20 Full Length Mocks (GD)", "15 Full Length Mocks (Tech)", "15 Full Length Mocks (Clerk)", "Previous Year Papers"]
+            }
         ],
-        syllabus: {
-            "General Knowledge": [
-                "Current Affairs (National & International)", "Sports Terminology", "Awards and Honors",
-                "History (India & World)", "Geography", "Indian Constitution", "Books and Authors",
-                "Inventions & Discoveries", "Abbreviations"
-            ],
-            "General Science": [
-                "Basic Physics, Chemistry, Biology (10th Level)", "Human Body & Diseases",
-                "Everyday Science Principles", "Scientific Instruments"
-            ],
-            "Maths": [
-                "Number Systems", "HCF & LCM", "Decimal Fractions", "Square Roots", 
-                "Percentage", "Average", "Ratio & Proportion", "Profit & Loss", 
-                "Partnership", "Time & Work", "Pipes & Cisterns", "Time & Distance",
-                "Mensuration", "Trigonometry", "Geometry", "Algebraic Expressions"
-            ],
-            "Logical Reasoning": [
-                "Coding-Decoding", "Number Series", "Blood Relations", "Direction Sense",
-                "Analogy", "Odd One Out", "Logical Sequence of Words", "Venn Diagrams"
-            ]
-        }
+        features: [
+            "Access to ALL Trade Content",
+            "50+ Full Length Mock Tests",
+            "Physical Training Guide (PDF)",
+            "Live Doubt Sessions",
+            "Downloadable Notes"
+        ]
     },
-    tech: {
-        title: "Technical",
-        totalQ: 50,
-        maxMarks: 200,
-        passMarks: 80,
-        negMark: 1.0,
-        correctMark: 4,
-        subjects: [
-            { name: "General Knowledge", questions: 10, marks: 40, color: "#d97706" },
-            { name: "Maths", questions: 15, marks: 60, color: "#2563eb" },
-            { name: "Physics", questions: 15, marks: 60, color: "#0891b2" }, // Cyan 600
-            { name: "Chemistry", questions: 10, marks: 40, color: "#be123c" } // Rose 700
+    "agniveer-gd": {
+        title: "Agniveer GD Special Pass",
+        subtitle: "Targeted Prep for General Duty",
+        price: "₹499",
+        originalPrice: "₹999",
+        discount: "50% OFF",
+        rating: 4.7,
+        students: "8,500+",
+        validity: "Valid till Exam Date",
+        language: "Hinglish",
+        theme: "blue",
+        syllabus: [
+            {
+                title: "GD Science & Maths",
+                lectures: 30,
+                notes: 15,
+                topics: ["10th Level Maths", "General Science Basics"]
+            },
+            {
+                title: "General Knowledge",
+                lectures: 25,
+                notes: 10,
+                topics: ["Static GK", "Current Affairs"]
+            },
+            {
+                title: "GD Mock Tests",
+                lectures: 0,
+                notes: 20,
+                topics: ["20 Full Length GD Mocks", "10 Sectional Tests"]
+            }
         ],
-        syllabus: {
-            "General Knowledge": [
-                "History", "Geography", "Current Affairs", "Awards & Sports", "Indian Armed Forces Facts"
-            ],
-            "Maths (12th Level)": [
-                "Algebra", "Matrices & Determinants", "Analytical Geometry", "Trigonometry", 
-                "Integral & Differential Calculus", "Probability", "Statistics", "Number Systems", "Vector Algebra"
-            ],
-            "Physics": [
-                "Physical World & Measurement", "Kinematics", "Laws of Motion", "Work, Energy & Power", 
-                "Motion of System of Particles", "Gravitation", "Thermodynamics", "Properties of Bulk Matter"
-            ],
-            "Chemistry": [
-                "Physical Chemistry", "Inorganic Chemistry", "Organic Chemistry", 
-                "Atomic Structure", "Chemical Bonding", "States of Matter", "Elements & Compounds"
-            ]
-        }
-    },
-    clerk: {
-        title: "Clerk / Store Keeper",
-        totalQ: 50,
-        maxMarks: 200,
-        passMarks: "80 (32 in each part)",
-        negMark: 1.0,
-        correctMark: 4,
-        subjects: [
-            { name: "GK & Science (Part 1)", questions: 10, marks: 40, color: "#d97706" }, 
-            { name: "Maths (Part 1)", questions: 10, marks: 40, color: "#2563eb" },
-            { name: "Computer Science (Part 1)", questions: 5, marks: 20, color: "#4f46e5" }, // Indigo 600
-            { name: "General English (Part 2)", questions: 25, marks: 100, color: "#059669" } // Emerald 600
-        ],
-        syllabus: {
-            "Part 1: General Knowledge": ["Current Affairs", "History", "Geography", "Civics"],
-            "Part 1: General Science": ["Basic Physics", "Chemistry", "Biology standards"],
-            "Part 1: Maths": ["Arithmetic", "Algebra", "Mensuration (Area/Volume)", "Trigonometry", "Basic Geometry", "Statistics"],
-            "Part 1: Computer Science": [
-                "Computer System", "Input/Output Devices", "Memory (RAM/ROM)", 
-                "MS Office (Word, Excel, PPT)", "Windows OS", "Basic Internet concepts"
-            ],
-            "Part 2: General English": [
-                "Comprehension (Unseen Passages)", 
-                "Parts of Speech (Noun, Pronoun, Verb, Adverb, Preposition, Conjunction)", 
-                "Tenses & Articles", 
-                "Vocab (Synonyms, Antonyms, One Word Substitution, Idioms)", 
-                "Sentence (Jumbled, Active/Passive Voice, Direct/Indirect Speech, Spotting Errors)"
-            ]
-        }
+        features: [
+            "GD Specific Syllabus",
+            "20 Mock Tests",
+            "Basic Science Notes"
+        ]
     }
+    // Add other IDs (agniveer-tech, agniveer-clerk) here...
 };
 
 const AgniveerPage = () => {
-    const [role, setRole] = useState('gd');
-    const [activeSubject, setActiveSubject] = useState(Object.keys(EXAM_DATA['gd'].syllabus)[0]);
-    const [calculator, setCalculator] = useState({ correct: '', wrong: '', score: null });
-    const chartRef = useRef(null);
-    const canvasRef = useRef(null);
-
-    // --- CHART LOGIC ---
-    useEffect(() => {
-        if (chartRef.current) {
-            chartRef.current.destroy(); 
-        }
-
-        const data = EXAM_DATA[role];
-        const ctx = canvasRef.current.getContext('2d');
-
-        chartRef.current = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: data.subjects.map(s => s.name),
-                datasets: [{
-                    data: data.subjects.map(s => s.questions),
-                    backgroundColor: data.subjects.map(s => s.color),
-                    borderWidth: 2,
-                    borderColor: '#ffffff',
-                    hoverOffset: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { boxWidth: 12, padding: 15, font: { size: 11 } }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.label || '';
-                                if (label) label += ': ';
-                                let val = context.raw;
-                                let marks = data.subjects[context.dataIndex].marks;
-                                return `${label}${val} Qs (${marks} Marks)`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        setActiveSubject(Object.keys(data.syllabus)[0]);
-        setCalculator({ correct: '', wrong: '', score: null });
-    }, [role]);
-
-    // --- CALCULATOR LOGIC ---
-    const handleCalculate = () => {
-        const data = EXAM_DATA[role];
-        const correct = parseInt(calculator.correct) || 0;
-        const wrong = parseInt(calculator.wrong) || 0;
-
-        if (correct + wrong > 50) {
-            alert("Total attempts cannot exceed 50 questions!");
-            return;
-        }
-
-        const score = (correct * data.correctMark) - (wrong * Math.abs(data.negMark)); // Ensure positive negMark for subtraction logic
-        setCalculator(prev => ({ ...prev, score }));
-    };
-
-    const currentData = EXAM_DATA[role];
+    const { courseId } = useParams();
+    const course = COURSE_DETAILS[courseId] || COURSE_DETAILS["agniveer-ultimate"];
+    const [activeSection, setActiveSection] = useState(0);
 
     return (
-        <div className="bg-stone-50 min-h-screen text-stone-800 font-sans pb-20">
-            {/* Header */}
-            <header className="bg-stone-900 text-stone-100 shadow-lg">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div>
-                            <h1 className="text-3xl font-bold tracking-tight text-amber-500 uppercase">Agniveer 2025</h1>
-                            <p className="text-stone-400 text-sm mt-1">Indian Army Recruitment • Interactive Preparation Guide</p>
-                        </div>
-                        <div className="text-center md:text-right">
-                            <span className="inline-block bg-green-800 text-green-100 text-xs px-3 py-1 rounded-full uppercase tracking-wider font-semibold">25,000+ Vacancies</span>
-                            <p className="text-xs text-stone-500 mt-1">Source: Official Notification 2025</p>
-                        </div>
-                    </div>
-                </div>
-            </header>
+        <div className="min-h-screen bg-stone-50 dark:bg-slate-950 font-sans text-stone-800 dark:text-slate-200">
+            
+            {/* Sticky Header for Mobile */}
+            <div className="md:hidden sticky top-0 z-50 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 flex justify-between items-center">
+                <Link to={-1} className="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><ArrowLeft size={20}/></Link>
+                <span className="font-bold text-sm truncate w-40">{course.title}</span>
+                <button className={`bg-${course.theme}-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold`}>Buy {course.price}</button>
+            </div>
 
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
-                
-                {/* Introduction & Role Selector */}
-                <section className="max-w-4xl mx-auto text-center">
-                    <h2 className="text-2xl font-semibold text-stone-800 mb-3">Mission Briefing</h2>
-                    <p className="text-stone-600 mb-8">
-                        Select your target post below to unlock role-specific intelligence, visualize subject weightage, and plan your preparation strategy.
-                    </p>
-                    <div className="flex flex-wrap justify-center gap-4">
-                        {['gd', 'tech', 'clerk'].map((r) => (
-                            <button 
-                                key={r}
-                                onClick={() => setRole(r)}
-                                className={`px-6 py-3 rounded-lg border-2 font-bold shadow-sm transition-all transform hover:-translate-y-1 ${role === r ? 'bg-green-900 text-white border-green-900' : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-100'}`}
-                            >
-                                {r === 'gd' ? 'General Duty (GD)' : r === 'tech' ? 'Technical' : 'Clerk / SKT'}
-                            </button>
-                        ))}
-                    </div>
-                </section>
-
-                {/* Intelligence Brief */}
-                <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+                <div className="grid lg:grid-cols-3 gap-8">
                     
-                    {/* Left: Exam Pattern */}
-                    <div className="bg-white rounded-xl shadow-md border border-stone-200 p-6">
-                        <div className="mb-4">
-                            <h3 className="text-xl font-bold text-stone-800 flex items-center gap-2">
-                                <span className="text-amber-600 text-2xl">⦿</span> Exam Pattern Analysis
-                            </h3>
-                            <p className="text-stone-500 text-sm mt-1">Breakdown for <span className="font-bold text-green-800">{currentData.title}</span>.</p>
-                        </div>
-
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                            <StatBox label="Questions" value={currentData.totalQ} />
-                            <StatBox label="Max Marks" value={currentData.maxMarks} />
-                            <StatBox label="Pass Marks" value={currentData.passMarks} color="text-green-700" />
-                            <StatBox label="Neg. Mark" value={currentData.negMark} color="text-red-600" />
-                        </div>
-
-                        <div className="h-[300px] w-full flex justify-center">
-                            <canvas ref={canvasRef}></canvas>
-                        </div>
-                    </div>
-
-                    {/* Right: Syllabus */}
-                    <div className="bg-white rounded-xl shadow-md border border-stone-200 p-6 flex flex-col h-full min-h-[400px]">
-                        <div className="mb-4">
-                            <h3 className="text-xl font-bold text-stone-800 flex items-center gap-2">
-                                <span className="text-amber-600 text-2xl">☰</span> Syllabus Topics
-                            </h3>
-                            <p className="text-stone-500 text-sm mt-1">Detailed curriculum for the written test.</p>
-                        </div>
-
-                        <div className="flex space-x-2 mb-4 overflow-x-auto pb-2 border-b border-stone-100 no-scrollbar">
-                            {Object.keys(currentData.syllabus).map(subject => (
-                                <button
-                                    key={subject}
-                                    onClick={() => setActiveSubject(subject)}
-                                    className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold transition-colors border ${activeSubject === subject ? 'bg-green-100 text-green-800 border-green-200' : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-50'}`}
-                                >
-                                    {subject}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="flex-grow bg-stone-50 rounded-lg p-4 border border-stone-100 overflow-y-auto max-h-[300px]">
-                            <h4 className="font-bold text-stone-800 mb-3 sticky top-0 bg-stone-50 py-2 border-b border-stone-200">{activeSubject} Topics</h4>
-                            <ul className="grid grid-cols-1 gap-2">
-                                {currentData.syllabus[activeSubject]?.map((topic, i) => (
-                                    <li key={i} className="flex items-start gap-2 text-sm text-stone-600 bg-white p-2 rounded shadow-sm border border-stone-100">
-                                        <span className="text-green-600 font-bold mt-0.5">›</span> {topic}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Strategy Room (Calculator) */}
-                <section className="bg-stone-800 rounded-xl shadow-lg p-6 md:p-8 text-stone-100">
-                    <div className="flex flex-col md:flex-row gap-8 items-center">
-                        <div className="md:w-1/2 space-y-4">
-                            <h3 className="text-2xl font-bold text-amber-500">Strategy Room: Score Simulator</h3>
-                            <p className="text-stone-300">
-                                Negative marking ({currentData.negMark} marks) is the biggest threat. Use this tool to estimate your score.
-                                <br/><br/>
-                                <strong className="text-white">Note:</strong> {role === 'clerk' ? "For Clerk, you must score at least 32 marks in Part 1 and 32 marks in Part 2 individually to pass." : "Ensure you clear the aggregate cut-off."}
-                            </p>
+                    {/* --- LEFT COLUMN: CONTENT --- */}
+                    <div className="lg:col-span-2 space-y-8">
+                        
+                        {/* 1. Hero Card */}
+                        <div className={`bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 shadow-xl border border-slate-200 dark:border-slate-800 relative overflow-hidden`}>
+                            <div className={`absolute top-0 right-0 w-64 h-64 bg-${course.theme}-500/10 rounded-full blur-[80px]`}></div>
                             
-                            {calculator.score !== null && (
-                                <div className="p-4 bg-stone-700 rounded-lg border-l-4 border-amber-500 animate-in fade-in slide-in-from-left-4 duration-500">
-                                    <div className="flex justify-between items-end border-b border-stone-500 pb-2 mb-2">
-                                        <span className="text-stone-300 text-sm">Projected Score</span>
-                                        <span className={`font-bold tracking-wider text-lg ${calculator.score >= (typeof currentData.passMarks === 'number' ? currentData.passMarks : 80) ? 'text-green-400' : 'text-red-400'}`}>
-                                            {calculator.score >= (typeof currentData.passMarks === 'number' ? currentData.passMarks : 80) ? "SAFE ZONE" : "RISKY"}
-                                        </span>
+                            <div className="relative z-10">
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full bg-${course.theme}-50 dark:bg-${course.theme}-900/30 text-${course.theme}-600 dark:text-${course.theme}-400 text-xs font-bold uppercase tracking-wider`}>
+                                        <Shield size={12} /> {course.validity}
                                     </div>
-                                    <div className="text-3xl font-bold text-white">{calculator.score} <span className="text-base text-stone-400 font-normal">/ {currentData.maxMarks}</span></div>
+                                    <div className="flex items-center gap-1 text-yellow-500 text-sm font-bold">
+                                        <Star fill="currentColor" size={16} /> {course.rating} ({course.students})
+                                    </div>
                                 </div>
-                            )}
-                        </div>
+                                
+                                <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2 leading-tight">
+                                    {course.title}
+                                </h1>
+                                <p className="text-lg text-slate-500 dark:text-slate-400 mb-6">
+                                    {course.subtitle}
+                                </p>
 
-                        <div className="md:w-1/2 w-full bg-stone-900 p-6 rounded-lg border border-stone-700">
-                            <div className="grid grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <label className="block text-xs uppercase tracking-wide text-stone-400 mb-1">Correct Attempts</label>
-                                    <input 
-                                        type="number" 
-                                        className="w-full bg-stone-800 border border-stone-600 rounded p-2 text-white focus:border-amber-500 outline-none"
-                                        value={calculator.correct}
-                                        onChange={e => setCalculator({...calculator, correct: e.target.value})}
-                                        placeholder="0"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs uppercase tracking-wide text-stone-400 mb-1">Wrong Attempts</label>
-                                    <input 
-                                        type="number" 
-                                        className="w-full bg-stone-800 border border-stone-600 rounded p-2 text-white focus:border-red-500 outline-none"
-                                        value={calculator.wrong}
-                                        onChange={e => setCalculator({...calculator, wrong: e.target.value})}
-                                        placeholder="0"
-                                    />
+                                <div className="flex flex-wrap gap-4 text-sm font-medium text-slate-600 dark:text-slate-300">
+                                    <span className="flex items-center gap-1.5"><PlayCircle size={16} className="text-blue-500"/> Recorded Lectures</span>
+                                    <span className="flex items-center gap-1.5"><FileText size={16} className="text-green-500"/> PDF Notes</span>
+                                    <span className="flex items-center gap-1.5"><Clock size={16} className="text-orange-500"/> {course.language}</span>
                                 </div>
                             </div>
-                            <button onClick={handleCalculate} className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 rounded transition-colors shadow-lg">
-                                Calculate Potential Score
-                            </button>
+                        </div>
+
+                        {/* 2. What's Inside (Features) */}
+                        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 shadow-lg border border-slate-200 dark:border-slate-800">
+                            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                                <Zap className="text-yellow-500" /> What you get
+                            </h2>
+                            <div className="grid sm:grid-cols-2 gap-4">
+                                {course.features.map((feat, idx) => (
+                                    <div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                                        <CheckCircle size={18} className={`text-${course.theme}-500 shrink-0`} />
+                                        <span className="text-sm font-medium">{feat}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* 3. Curriculum / Syllabus */}
+                        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                            <div className="p-6 md:p-8 border-b border-slate-100 dark:border-slate-800">
+                                <h2 className="text-xl font-bold flex items-center gap-2">
+                                    <BookOpen className="text-blue-500" /> Course Curriculum
+                                </h2>
+                            </div>
+                            
+                            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                                {course.syllabus.map((subject, idx) => (
+                                    <div key={idx} className="group">
+                                        <button 
+                                            onClick={() => setActiveSection(activeSection === idx ? -1 : idx)}
+                                            className="w-full flex items-center justify-between p-6 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-left"
+                                        >
+                                            <div>
+                                                <h3 className="font-bold text-slate-900 dark:text-white mb-1">{subject.title}</h3>
+                                                <p className="text-xs text-slate-500">
+                                                    {subject.lectures > 0 && `${subject.lectures} Lectures • `} 
+                                                    {subject.notes} Notes
+                                                </p>
+                                            </div>
+                                            {activeSection === idx ? <ChevronUp size={20} className="text-slate-400"/> : <ChevronDown size={20} className="text-slate-400"/>}
+                                        </button>
+                                        
+                                        {/* Dropdown Content */}
+                                        {activeSection === idx && (
+                                            <div className="bg-slate-50 dark:bg-slate-800/30 px-6 pb-6 animate-in fade-in slide-in-from-top-2 duration-200">
+                                                <ul className="space-y-3 pt-2">
+                                                    {subject.topics.map((topic, tIdx) => (
+                                                        <li key={tIdx} className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
+                                                            <div className="w-6 h-6 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm border border-slate-200 dark:border-slate-700">
+                                                                <Lock size={12} className="opacity-50" />
+                                                            </div>
+                                                            {topic}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                    </div>
+
+                    {/* --- RIGHT COLUMN: CHECKOUT (Sticky) --- */}
+                    <div className="lg:col-span-1">
+                        <div className="sticky top-24 space-y-6">
+                            
+                            {/* Price Card */}
+                            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative overflow-hidden">
+                                <div className={`absolute top-0 left-0 w-full h-1 bg-${course.theme}-500`}></div>
+                                
+                                <div className="mb-6">
+                                    <p className="text-sm text-slate-500 mb-1">Total Price</p>
+                                    <div className="flex items-end gap-3">
+                                        <span className="text-4xl font-black text-slate-900 dark:text-white">{course.price}</span>
+                                        <span className="text-lg text-slate-400 line-through mb-1">{course.originalPrice}</span>
+                                        <span className={`text-xs font-bold text-${course.theme}-600 bg-${course.theme}-100 dark:bg-${course.theme}-900/30 px-2 py-1 rounded mb-1.5`}>
+                                            {course.discount}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <button className={`w-full bg-${course.theme}-600 hover:bg-${course.theme}-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all active:scale-95 mb-4 flex items-center justify-center gap-2`}>
+                                    Enroll Now <ArrowRight size={20} />
+                                </button>
+
+                                <p className="text-center text-xs text-slate-400">
+                                    30-Day Money Back Guarantee • Secure Payment
+                                </p>
+                            </div>
+
+                            {/* Help / Support */}
+                            <div className="bg-slate-100 dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm">
+                                    <Users size={20} className="text-slate-600" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold uppercase text-slate-400">Need Help?</p>
+                                    <p className="text-sm font-bold text-blue-600 cursor-pointer">Talk to our Counsellor</p>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
-                </section>
 
-            </main>
-
-            <footer className="bg-stone-900 text-stone-400 py-8 mt-12 border-t border-stone-800">
-                <div className="max-w-7xl mx-auto px-4 text-center">
-                    <p className="mb-2">&copy; 2025 Indian Army Agniveer Guide. Educational Purpose Only.</p>
-                    <p className="text-xs">Based on "Indian Army Agniveer Syllabus 2025" notification.</p>
                 </div>
-            </footer>
+            </div>
         </div>
     );
 };
-
-const StatBox = ({ label, value, color = "text-stone-800" }) => (
-    <div className="bg-stone-50 p-3 rounded-lg text-center border border-stone-100">
-        <div className="text-xs text-stone-500 uppercase tracking-wide">{label}</div>
-        <div className={`text-xl font-bold ${color}`}>{value}</div>
-    </div>
-);
 
 export default AgniveerPage;

@@ -29,7 +29,27 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
         courses = Course.objects.filter(id__in=subscribed_ids)
         serializer = self.get_serializer(courses, many=True)
         return Response(serializer.data)
-
+    
+    
+    @action(detail=True, methods=['post'])
+    def subscribe(self, request, pk=None):
+        """Simulate successful payment and enroll user"""
+        course = self.get_object()
+        
+        # Create or Get Subscription
+        subscription, created = UserSubscription.objects.get_or_create(
+            user=request.user,
+            course=course,
+            defaults={'active': True}
+        )
+        
+        # If it existed but was inactive, reactivate it
+        if not subscription.active:
+            subscription.active = True
+            subscription.save()
+            
+        return Response({"status": "success", "message": f"Enrolled in {course.title}"})
+    
 class TopicViewSet(viewsets.ModelViewSet):  # <--- Changed from ReadOnlyModelViewSet to ModelViewSet
     queryset = Topic.objects.all()
     serializer_class = TopicSerializer

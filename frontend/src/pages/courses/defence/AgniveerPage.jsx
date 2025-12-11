@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Chart } from 'chart.js/auto';
+import api from '../../../../api/axios';
 import { 
     CheckCircle, FileText, Lock, Clock, 
     Calendar, Award, Star, ChevronDown, ChevronUp, 
@@ -166,6 +167,7 @@ const COURSE_DETAILS = {
     },
 
     "agniveer-tech": {
+        id: 26,
         title: "Agniveer Technical Special",
         subtitle: "Physics & Maths Deep Dive (12th Level)",
         price: "₹599",
@@ -307,18 +309,39 @@ const COURSE_DETAILS = {
 
 // --- PAYMENT MODAL COMPONENT ---
 const PaymentModal = ({ isOpen, onClose, course }) => {
-    const [step, setStep] = useState(1); // 1: Details, 2: Payment, 3: Success
+    const [step, setStep] = useState(1); 
     const [loading, setLoading] = useState(false);
+    const navigate = useNavigate(); // <--- Init Hook
 
     if (!isOpen) return null;
 
-    const handlePayment = () => {
+    const handlePayment = async () => {
         setLoading(true);
-        // Simulate API Call
-        setTimeout(() => {
+        
+        try {
+            // 1. Simulate Gateway Time
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // 2. Call Backend to Subscribe (Real Logic)
+            // Note: course.id MUST match the ID in your Django Database
+            // If you haven't created it in DB yet, this will fail. 
+            // For now, let's assume course.id = 1 (or whatever matches your DB).
+            if (course.id) {
+                await api.post(`courses/${course.id}/subscribe/`);
+            }
+
             setLoading(false);
-            setStep(3); // Success
-        }, 2000);
+            setStep(3); // Success Screen
+        } catch (err) {
+            console.error("Subscription failed", err);
+            alert("Payment simulation failed. Ensure you are logged in.");
+            setLoading(false);
+        }
+    };
+
+    const handleStartLearning = () => {
+        onClose();
+        navigate('/dashboard'); // <--- Redirect to Dashboard
     };
 
     return (
@@ -403,10 +426,7 @@ const PaymentModal = ({ isOpen, onClose, course }) => {
                         </div>
                         <h2 className="text-2xl font-black text-stone-900 dark:text-white mb-2">Payment Successful!</h2>
                         <p className="text-stone-500 text-sm mb-6">Welcome to the elite force. Your course content is now unlocked.</p>
-                        <button 
-                            onClick={onClose}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-transform active:scale-95"
-                        >
+                        <button onClick={handleStartLearning} className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-transform active:scale-95">
                             Start Learning
                         </button>
                     </div>

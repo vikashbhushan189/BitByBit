@@ -5,7 +5,7 @@ import {
     CheckCircle, FileText, Lock, Clock, 
     Calendar, Award, Star, ChevronDown, ChevronUp, 
     Shield, ArrowLeft, Zap, Users, BookOpen, BrainCircuit, 
-    Calculator, Globe, Microscope, Target, X, CreditCard
+    Calculator, Globe, Microscope, Target, X, CreditCard, ArrowRight
 } from 'lucide-react';
 
 // --- DETAILED COURSE DATA ---

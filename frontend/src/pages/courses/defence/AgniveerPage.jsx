@@ -4,7 +4,7 @@ import {
     CheckCircle, FileText, Lock, Clock, 
     Calendar, Award, Star, ChevronDown, ChevronUp, 
     Shield, ArrowLeft, Zap, Users, BookOpen, BrainCircuit, 
-    Calculator, Globe, Microscope, Target
+    Calculator, Globe, Microscope, Target, ArrowRight
 } from 'lucide-react';
 
 // --- DETAILED COURSE DATA (Syllabus from your input) ---

@@ -427,8 +427,13 @@ const AgniveerPage = () => {
     const handleEnrollClick = () => {
         const token = localStorage.getItem('access_token');
         if (!token) {
-            // User is NOT logged in -> Redirect to Login
-            navigate('/login');
+            // User is NOT logged in -> Redirect to Login with State
+            // 'from' state tells Login page where to go back to
+            navigate('/login', { 
+                state: { 
+                    from: `${location.pathname}?enroll=true` 
+                } 
+            });
         } else {
             // User IS logged in -> Open Payment Modal
             setIsPaymentOpen(true);
@@ -448,8 +453,8 @@ const AgniveerPage = () => {
             <div className="md:hidden sticky top-0 z-50 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 flex justify-between items-center shadow-sm">
                 <Link to={-1} className="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><ArrowLeft size={20}/></Link>
                 <span className="font-bold text-sm truncate w-40">{course.title}</span>
-                <button 
-                    onClick={() => setIsPaymentOpen(true)}
+                                <button 
+                    onClick={handleEnrollClick} // <--- Gatekeeper Here
                     className={`bg-${course.theme}-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold`}
                 >
                     Enroll {course.price}

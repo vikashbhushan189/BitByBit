@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import api from '../api/axios';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { AlertCircle, LogIn, Lock, User } from 'lucide-react';
 
 const LoginPage = () => {
@@ -8,6 +8,7 @@ const LoginPage = () => {
     const [error, setError] = useState(''); 
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation();
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -36,12 +37,20 @@ const LoginPage = () => {
                 return; // Stop execution
             }
 
-            // 3. If Student, Proceed
+            // 3. If Student, Proceed -> Save Data
             localStorage.setItem('access_token', token);
             localStorage.setItem('refresh_token', res.data.refresh);
             localStorage.setItem('user_role', 'student');
-            navigate('/dashboard'); 
-            window.location.reload(); 
+
+            // 4. Smart Redirect
+            // Check if we have a saved location (e.g. from clicking "Enroll" on a course page)
+            const from = location.state?.from || '/dashboard';
+            
+            // We use window.location.href instead of navigate() here because
+            // we want to FORCE A RELOAD. This ensures the Navbar updates its state 
+            // (Login button -> Logout button) immediately.
+            window.location.href = from;
+            
         } catch (err) {
             console.error("Login Error:", err);
             if (err.response && err.response.status === 401) {

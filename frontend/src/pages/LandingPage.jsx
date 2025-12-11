@@ -96,6 +96,7 @@ const NAV_LINKS = [
             {
                 id: "defence",
                 name: "Defence",
+                link: "/defence/agniveer", // <--- DIRECT LINK TO AGNIVEER PAGE
                 items: [
                     { name: "NDA", icon: <CheckCircle size={20} className="text-teal-500"/> },
                     { name: "CDS", icon: <CheckCircle size={20} className="text-teal-500"/> },
@@ -219,11 +220,7 @@ const NAV_LINKS = [
             }
         ]
     },
-    {
-        label: "India's Update",
-        type: "link",
-        to: "/news"
-    },
+    { label: "India's Update", type: "link", to: "/news" },
     {
         label: "AI Tools",
         type: "dropdown",
@@ -254,10 +251,7 @@ const NAV_LINKS = [
             { name: "GATE CS 2010-2024" }
         ]
     },
-    {
-        label: "Power Batch",
-        type: "text",
-    }
+    { label: "Power Batch", type: "text" }
 ];
 
 // --- SEARCH MODAL COMPONENT ---
@@ -339,17 +333,13 @@ const SearchModal = ({ isOpen, onClose, categories }) => {
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {cat.items.map((item, idx) => (
                                             <Link
-                                                to={`/category/${cat.id}`} // Or specific exam link
+                                                to={cat.link || `/category/${cat.id}`} // FIX: Use cat.link if available
                                                 key={idx}
                                                 onClick={onClose}
                                                 className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-md transition-all cursor-pointer group bg-white dark:bg-slate-800/50"
                                             >
-                                                <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded-lg text-slate-600 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                                    {item.icon}
-                                                </div>
-                                                <span className="font-semibold text-slate-700 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                                    {item.name}
-                                                </span>
+                                                <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded-lg text-slate-600 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{item.icon}</div>
+                                                <span className="font-semibold text-slate-700 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{item.name}</span>
                                                 <ArrowRight size={16} className="ml-auto opacity-0 group-hover:opacity-100 text-blue-500 -translate-x-2 group-hover:translate-x-0 transition-all" />
                                             </Link>
                                         ))}
@@ -372,29 +362,17 @@ const LandingPage = () => {
     const [activeTab, setActiveTab] = useState(0);
     const [currentAdIndex, setCurrentAdIndex] = useState(0);
     const { theme, toggleTheme } = useTheme(); 
-    
-    // --- NEW: STATE FOR SEARCH MODAL ---
     const [isSearchOpen, setIsSearchOpen] = useState(false);
-
-    // --- STATE FOR VIEW MORE/LESS ---
     const [showAllCategories, setShowAllCategories] = useState(false);
     const INITIAL_CATEGORY_COUNT = 6; 
 
-    // Determine which categories to display based on state
     const allCategories = NAV_LINKS[0].categories;
-    const displayedCategories = showAllCategories 
-        ? allCategories 
-        : allCategories.slice(0, INITIAL_CATEGORY_COUNT);
+    const displayedCategories = showAllCategories ? allCategories : allCategories.slice(0, INITIAL_CATEGORY_COUNT);
 
-    useEffect(() => {
-        setBanners(mockBanners);
-    }, []);
-
+    useEffect(() => { setBanners(mockBanners); }, []);
     useEffect(() => {
         if (banners.length <= 1) return;
-        const timer = setInterval(() => {
-            setCurrentAdIndex(prev => (prev + 1) % banners.length);
-        }, 4000); 
+        const timer = setInterval(() => { setCurrentAdIndex(prev => (prev + 1) % banners.length); }, 4000); 
         return () => clearInterval(timer);
     }, [banners]);
 
@@ -691,8 +669,9 @@ const LandingPage = () => {
                                         ))}
                                     </div>
 
+                                    {/* FIX: Use category.link (if exists) OR fallback to /category/:id */}
                                     <Link 
-                                        to={`/category/${category.id}`} 
+                                        to={category.link || `/category/${category.id}`} 
                                         className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-sm group-hover:translate-x-1 transition-transform"
                                     >
                                         Explore Category <ArrowRight size={16} />

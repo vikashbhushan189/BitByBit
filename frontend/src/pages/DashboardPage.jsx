@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { 
     BookOpen, CheckCircle, TrendingUp, Layout, 
-    ChevronRight, ShoppingCart, MoreVertical, RefreshCw, Zap
+    ChevronRight, ShoppingCart, MoreVertical, RefreshCw, Zap, Clock
 } from 'lucide-react';
 
 const DashboardPage = () => {

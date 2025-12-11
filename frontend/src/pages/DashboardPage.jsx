@@ -12,22 +12,19 @@ const DashboardPage = () => {
     const [stats, setStats] = useState({ total: 0, passed: 0, avgScore: 0 });
     const [attempts, setAttempts] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [showBatchMenu, setShowBatchMenu] = useState(false); // State for dropdown
+    const [showBatchMenu, setShowBatchMenu] = useState(false); 
     const navigate = useNavigate();
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // 1. Fetch Enrolled Courses
                 const courseRes = await api.get('courses/enrolled/');
                 setEnrolledCourses(courseRes.data);
                 
-                // Set initial active course
                 if (courseRes.data.length > 0) {
                     setActiveCourse(courseRes.data[0]);
                 }
 
-                // 2. Fetch History (Mocked for now or from API)
                 const histRes = await api.get('history/');
                 setAttempts(histRes.data);
                 
@@ -89,7 +86,7 @@ const DashboardPage = () => {
                                     <ChevronRight className="text-slate-600" size={24}/>
                                 </h1>
                                 
-                                {/* BATCH SWITCHER DROPDOWN */}
+                                {/* BATCH SWITCHER */}
                                 {showBatchMenu && (
                                     <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                                         <div className="p-3 border-b border-slate-100 bg-slate-50 text-xs font-bold text-slate-500 uppercase">
@@ -142,7 +139,7 @@ const DashboardPage = () => {
                         bg="bg-blue-600"
                         title="Start Learning" 
                         desc="Access Chapters & Notes"
-                        onClick={() => navigate('/courses')} 
+                        onClick={() => navigate('/courses?mode=enrolled')} // <--- UPDATED: Pass mode=enrolled
                     />
                     <ActionCard 
                         icon={<CheckCircle size={24} className="text-white"/>} 

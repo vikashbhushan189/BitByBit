@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'; 
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
-import { LogOut, LayoutDashboard, BookOpen } from 'lucide-react';
+import { LogOut, LayoutDashboard, BookOpen, ArrowLeft } from 'lucide-react';
 
 // --- CORE PAGES ---
 import CourseList from './components/CourseList';
@@ -26,7 +26,6 @@ import AdminNotesEditorPage from './pages/AdminNotesEditorPage';
 // --- COURSE INTRO PAGES ---
 import AgniveerPage from './pages/courses/defence/AgniveerPage';
 import BpscTrePage from './pages/courses/teaching/BpscTrePage';
-// You can uncomment these as you build the files:
 // import NeetPage from './pages/courses/medical/NeetPage';
 // import JeePage from './pages/courses/engineering/JeePage';
 
@@ -34,6 +33,7 @@ import BpscTrePage from './pages/courses/teaching/BpscTrePage';
 
 const Navbar = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const isLoggedIn = !!localStorage.getItem('access_token');
     
     // SMART LOGOUT LOGIC
@@ -50,11 +50,28 @@ const Navbar = () => {
         }
     };
 
+    // Determine if Back Button should be shown
+    // We hide it on main dashboard to prevent confusion
+    const showBackButton = location.pathname !== '/dashboard' && location.pathname !== '/';
+
     return (
         <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
-            <Link to="/" className="font-black text-2xl text-slate-900 tracking-tight flex items-center gap-2">
-                <span className="text-blue-600 text-3xl">Bit</span>byBit
-            </Link>
+            <div className="flex items-center gap-4">
+                {/* BACK BUTTON */}
+                {showBackButton && (
+                    <button 
+                        onClick={() => navigate(-1)}
+                        className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors"
+                        title="Go Back"
+                    >
+                        <ArrowLeft size={20} />
+                    </button>
+                )}
+                
+                <Link to="/" className="font-black text-2xl text-slate-900 tracking-tight flex items-center gap-2">
+                    <span className="text-blue-600 text-3xl">Bit</span>byBit
+                </Link>
+            </div>
             
             <div>
                 {isLoggedIn ? (
@@ -102,14 +119,15 @@ const AdminRoute = ({ children }) => {
 const Layout = ({ children }) => {
     const location = useLocation();
     
-    // Hide Student Navbar on Admin Pages AND Landing Page (since Landing has its own)
-    // Also hide on specific Course Intro pages that have their own headers
+    // LOGIC: When to HIDE the Global Navbar
+    // 1. Admin Pages (They have their own sidebar/header)
+    // 2. Landing Page '/' (It has the Mega Menu Navbar)
+    // 3. Study Sections: Exam Page & Notes Reader (Distraction-free mode)
     const hideNavbar = 
         location.pathname.startsWith('/admin') || 
         location.pathname === '/' ||
-        location.pathname.startsWith('/course/') || // Hides on dynamic course pages
-        location.pathname === '/defence/agniveer' ||
-        location.pathname === '/teaching/bpsc_tre';
+        location.pathname.startsWith('/exam/') || 
+        (location.pathname.startsWith('/topic/') && location.pathname.endsWith('/notes'));
 
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-100">
@@ -125,13 +143,15 @@ function App() {
   // FIX: Force re-validation on history navigation (Back Button)
   useEffect(() => {
     const handleFocus = () => {
+        // List of public paths that don't require login
         const isPublic = [
             '/login', '/register', '/', '/forgot-password', 
-            '/defence/agniveer', '/teaching/bpsc_tre', 
             '/store'
         ].includes(window.location.pathname) || 
         window.location.pathname.startsWith('/category/') ||
         window.location.pathname.startsWith('/course/') ||
+        window.location.pathname.startsWith('/defence/') ||
+        window.location.pathname.startsWith('/teaching/') ||
         window.location.pathname.startsWith('/password-reset');
 
         const hasToken = !!localStorage.getItem('access_token');
@@ -167,8 +187,9 @@ function App() {
                 <Route path="/store" element={<PrivateRoute><CourseStorePage /></PrivateRoute>} />
                 <Route path="/category/:categoryId" element={<CategoryPage />} />
                 
-                {/* Detailed Course Pages (Dynamic & Static) */}
+                {/* Detailed Course Pages (Publicly accessible now for browsing) */}
                 <Route path="/course/:category/:courseId" element={<AgniveerPage />} />
+                <Route path="/defence/agniveer" element={<AgniveerPage />} />
                 <Route path="/teaching/bpsc_tre" element={<BpscTrePage />} />
 
                 {/* Admin Routes */}

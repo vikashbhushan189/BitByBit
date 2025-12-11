@@ -1,5 +1,8 @@
 import React, { useEffect } from 'react'; 
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
+import { LogOut, LayoutDashboard, BookOpen } from 'lucide-react';
+
+// --- CORE PAGES ---
 import CourseList from './components/CourseList';
 import ExamPage from './pages/ExamPage';
 import LoginPage from './pages/LoginPage';
@@ -7,19 +10,26 @@ import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import LandingPage from './pages/LandingPage';
 import NotesPage from './pages/NotesPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import CategoryPage from './pages/CategoryPage';
+import CourseStorePage from './pages/CourseStorePage';
+
+// --- ADMIN PAGES ---
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminGeneratorPage from './pages/AdminGeneratorPage';
-import { LogOut, LayoutDashboard, BookOpen } from 'lucide-react';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
 import AdminNotesUploadPage from './pages/AdminNotesUploadPage';
-import CourseStorePage from './pages/CourseStorePage';
-import AdminAdManagerPage from './pages/AdminAdManagerPage'; 
-import BpscTrePage from './pages/courses/teaching/BpscTrePage';
+import AdminAdManagerPage from './pages/AdminAdManagerPage';
 import AdminNotesEditorPage from './pages/AdminNotesEditorPage';
-import CategoryPage from './pages/CategoryPage';
+
+// --- COURSE INTRO PAGES ---
 import AgniveerPage from './pages/courses/defence/AgniveerPage';
+import BpscTrePage from './pages/courses/teaching/BpscTrePage';
+// You can uncomment these as you build the files:
+// import NeetPage from './pages/courses/medical/NeetPage';
+// import JeePage from './pages/courses/engineering/JeePage';
+
 // --- Components ---
 
 const Navbar = () => {
@@ -28,15 +38,11 @@ const Navbar = () => {
     
     // SMART LOGOUT LOGIC
     const handleLogout = () => {
-        // 1. Check Role BEFORE clearing data
         const role = localStorage.getItem('user_role');
-
-        // 2. Clear Data
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('user_role');
         
-        // 3. Redirect based on Role
         if (role === 'admin') {
             window.location.href = '/admin-portal'; 
         } else {
@@ -53,11 +59,9 @@ const Navbar = () => {
             <div>
                 {isLoggedIn ? (
                     <div className="flex items-center gap-6">
-                        {/* STORE LINK */}
                         <Link to="/courses" className="text-slate-600 hover:text-blue-600 font-semibold flex items-center gap-2">
                             <BookOpen size={18}/> All Courses
                         </Link>
-                        {/* DASHBOARD LINK (Primary) */}
                         <Link to="/dashboard" className="text-blue-600 font-bold flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-lg">
                             <LayoutDashboard size={18}/> My Learning
                         </Link>
@@ -99,7 +103,13 @@ const Layout = ({ children }) => {
     const location = useLocation();
     
     // Hide Student Navbar on Admin Pages AND Landing Page (since Landing has its own)
-    const hideNavbar = location.pathname.startsWith('/admin') || location.pathname === '/';
+    // Also hide on specific Course Intro pages that have their own headers
+    const hideNavbar = 
+        location.pathname.startsWith('/admin') || 
+        location.pathname === '/' ||
+        location.pathname.startsWith('/course/') || // Hides on dynamic course pages
+        location.pathname === '/defence/agniveer' ||
+        location.pathname === '/teaching/bpsc_tre';
 
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-100">
@@ -115,9 +125,15 @@ function App() {
   // FIX: Force re-validation on history navigation (Back Button)
   useEffect(() => {
     const handleFocus = () => {
-        // If we are on a protected page but have no token, force reload
-        const isPublic = ['/login', '/register', '/', '/defence/agniveer', 
-            '/teaching/bpsc_tre'].includes(window.location.pathname);
+        const isPublic = [
+            '/login', '/register', '/', '/forgot-password', 
+            '/defence/agniveer', '/teaching/bpsc_tre', 
+            '/store'
+        ].includes(window.location.pathname) || 
+        window.location.pathname.startsWith('/category/') ||
+        window.location.pathname.startsWith('/course/') ||
+        window.location.pathname.startsWith('/password-reset');
+
         const hasToken = !!localStorage.getItem('access_token');
         
         if (!isPublic && !hasToken) {
@@ -125,8 +141,8 @@ function App() {
         }
     };
 
-    window.addEventListener('pageshow', handleFocus); // Standard navigation
-    window.addEventListener('popstate', handleFocus); // Back button navigation
+    window.addEventListener('pageshow', handleFocus);
+    window.addEventListener('popstate', handleFocus);
     
     return () => {
         window.removeEventListener('pageshow', handleFocus);
@@ -140,25 +156,28 @@ function App() {
             <Routes>
                 {/* Landing / Home */}
                 <Route path="/" element={isLoggedIn ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
-
+                
                 {/* Student Routes */}
                 <Route path="/courses" element={<PrivateRoute><CourseList /></PrivateRoute>} />
                 <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
                 <Route path="/exam/:examId" element={<PrivateRoute><ExamPage /></PrivateRoute>} />
                 <Route path="/topic/:topicId/notes" element={<PrivateRoute><NotesPage /></PrivateRoute>} />
+                
+                {/* Store & Categories */}
                 <Route path="/store" element={<PrivateRoute><CourseStorePage /></PrivateRoute>} />
                 <Route path="/category/:categoryId" element={<CategoryPage />} />
-
-                {/* NEW ROUTE FOR COURSE DETAILS */}
+                
+                {/* Detailed Course Pages (Dynamic & Static) */}
                 <Route path="/course/:category/:courseId" element={<AgniveerPage />} />
+                <Route path="/teaching/bpsc_tre" element={<BpscTrePage />} />
 
                 {/* Admin Routes */}
                 <Route path="/admin-portal" element={<AdminLoginPage />} />
                 <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
                 <Route path="/admin-generator" element={<AdminRoute><AdminGeneratorPage /></AdminRoute>} />
                 <Route path="/admin-notes-upload" element={<AdminRoute><AdminNotesUploadPage /></AdminRoute>} />
-                <Route path="/admin-ads" element={<AdminRoute><AdminAdManagerPage /></AdminRoute>} />
-                <Route path="/admin-notes-editor" element={<AdminRoute><AdminNotesEditorPage /></AdminRoute>} /> 
+                <Route path="/admin-notes-editor" element={<AdminRoute><AdminNotesEditorPage /></AdminRoute>} />
+                <Route path="/admin-ads" element={<AdminRoute><AdminAdManagerPage /></AdminRoute>} /> 
 
                 {/* Auth Routes */}
                 <Route path="/login" element={<LoginPage />} />
@@ -172,4 +191,3 @@ function App() {
 }
 
 export default App;
-

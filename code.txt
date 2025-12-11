@@ -1,0 +1,6 @@
+Folder PATH listing for volume New Volume
+Volume serial number is FC8F-4CC0
+E:\WEB_DEV_PROJECT\BITBYBIT\ECHO
+Invalid path - \WEB_DEV_PROJECT\BITBYBIT\ECHO
+No subfolders exist 
+

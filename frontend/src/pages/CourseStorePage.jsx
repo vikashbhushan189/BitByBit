@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
+import { useNavigate } from 'react-router-dom';
 import { CheckCircle, Circle, ShoppingCart, Loader2 } from 'lucide-react';
 
 const CourseStorePage = () => {
@@ -8,12 +9,10 @@ const CourseStorePage = () => {
     const [selectedCourseId, setSelectedCourseId] = useState(null);
 
     useEffect(() => {
-        api.get('courses/')
-            .then(res => {
+        api.get('courses/').then(res => {
                 setCourses(res.data);
                 setLoading(false);
-            })
-            .catch(err => console.error(err));
+            }).catch(err => console.error(err));
     }, []);
 
     if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-blue-600"/></div>;
@@ -23,7 +22,15 @@ const CourseStorePage = () => {
 
     const handleEnroll = () => {
         if(!selectedCourseId) return alert("Please select a batch first.");
-        alert(`Redirecting to payment for Course ID: ${selectedCourseId} (Payment Gateway coming soon!)`);
+        
+        const isLoggedIn = !!localStorage.getItem('access_token');
+        
+        if (!isLoggedIn) {
+            navigate('/login'); // Send guest to login
+        } else {
+            // User is logged in -> Proceed to Payment
+            alert(`Redirecting to payment for Course ID: ${selectedCourseId} (Payment Gateway integration pending)`);
+        }
     };
 
     return (

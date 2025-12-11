@@ -208,6 +208,19 @@ const AgniveerPage = () => {
     const [activeSection, setActiveSection] = useState(0);
     const [isPaymentOpen, setIsPaymentOpen] = useState(false); // STATE FOR MODAL
 
+    // --- LOGIC: GATEKEEPER ---
+    const handleEnrollClick = () => {
+        const isLoggedIn = !!localStorage.getItem('access_token');
+        
+        if (!isLoggedIn) {
+            // User is Guest -> Send to Login
+            // Optional: You could save the current URL to redirect back after login
+            navigate('/login');
+        } else {
+            // User is Logged In -> Open Payment
+            setIsPaymentOpen(true);
+        }
+    };
     return (
         <div className="min-h-screen bg-stone-50 dark:bg-slate-950 font-sans text-stone-800 dark:text-slate-200">
             
@@ -352,7 +365,7 @@ const AgniveerPage = () => {
                                 </div>
 
                                 <button 
-                                    onClick={() => setIsPaymentOpen(true)}
+                                    onClick={handleEnrollClick}
                                     className={`w-full bg-${course.theme}-600 hover:bg-${course.theme}-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all active:scale-95 mb-4 flex items-center justify-center gap-2`}
                                 >
                                     Unlock Access <ArrowRight size={20} />

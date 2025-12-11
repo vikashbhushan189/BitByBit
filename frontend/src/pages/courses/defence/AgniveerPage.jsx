@@ -88,7 +88,7 @@ const COURSE_DETAILS = {
             "Daily Quiz & Practice Sets",
             "Physical Training Guide included"
         ]
-    }
+    },
     "agniveer-gd": {
         title: "Agniveer GD Special Pass",
         subtitle: "Targeted Prep for General Duty (GD)",

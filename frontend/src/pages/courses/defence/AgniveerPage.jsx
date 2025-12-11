@@ -1,64 +1,41 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Chart } from 'chart.js/auto';
+import React, { useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { 
-    Target, Shield, Award, Clock, CheckCircle, 
-    BookOpen, BarChart3, AlertTriangle, ChevronRight,
-    Ruler, Calendar, Zap, Lock, FileText,
-    BrainCircuit, Calculator, Globe, Microscope, 
-    ChevronDown, ChevronUp
+    CheckCircle, FileText, Lock, Clock, 
+    Calendar, Award, Star, ChevronDown, ChevronUp, 
+    Shield, ArrowLeft, Zap, Users, BookOpen, BrainCircuit, 
+    Calculator, Globe, Microscope, Target
 } from 'lucide-react';
 
-// --- DATA: EXAM PATTERN & SYLLABUS (Detailed from your input) ---
-const EXAM_DATA = {
-    gd: {
-        title: "General Duty (GD)",
-        desc: "The backbone of the Indian Army. Requires high physical endurance and 10th-level academics.",
-        totalQ: 50,
-        maxMarks: 100,
-        passMarks: 35,
-        negMark: 0.5,
-        correctMark: 2,
-        color: "emerald",
-        subjects: [
-            { name: "General Knowledge", questions: 15, marks: 30, color: "#d97706" },
-            { name: "General Science", questions: 15, marks: 30, color: "#16a34a" },
-            { name: "Maths", questions: 15, marks: 30, color: "#2563eb" },
-            { name: "Logical Reasoning", questions: 5, marks: 10, color: "#9333ea" }
+// --- DETAILED COURSE DATA (Syllabus from your input) ---
+const COURSE_DETAILS = {
+    // Default fallback if ID matches nothing
+    "agniveer-ultimate": {
+        title: "Agniveer Ultimate Access 2025",
+        subtitle: "Complete Prep: GD, Technical & Clerk",
+        price: "₹999",
+        originalPrice: "₹2,499",
+        discount: "60% OFF",
+        rating: 4.8,
+        students: "25,000+",
+        validity: "Valid till Exam Date",
+        language: "Hinglish",
+        theme: "emerald",
+        dates: {
+            notification: "Released (25,000+ Vacancies)",
+            exam: "Online CEE 2025"
+        },
+        stats: [
+            { label: "Mock Tests", value: "50+" },
+            { label: "Chapter Notes", value: "120+" },
+            { label: "PYQs Solved", value: "5 Years" }
         ],
-        // Detailed Syllabus Structure
-        syllabus: {
-            "General Knowledge": {
-                icon: <Globe size={18} />,
-                topics: [
-                    "Abbreviations", "Science – Inventions & Discoveries", "Current Important Events",
-                    "Current Affairs – National & International", "Awards and Honors", "Important Financial",
-                    "Economic News", "Banking News", "Indian Constitution", "Books and Authors",
-                    "Important Days", "History", "Sports Terminology", "Geography",
-                    "Solar System", "Indian states and capitals", "Countries and Currencies"
-                ]
-            },
-            "General Science": {
-                icon: <Microscope size={18} />,
-                topics: [
-                    "Biology (10th / 12th Level)",
-                    "Chemistry (10th / 12th Level)",
-                    "Physics (10th / 12th Level)",
-                    "Human Body & Diseases", "Everyday Science Principles"
-                ]
-            },
-            "Maths": {
-                icon: <Calculator size={18} />,
-                topics: [
-                    "Mixture & Allegations", "Pipes and Cisterns", "Speed, Time & Distance (Train, Boats & Stream)",
-                    "Mensuration", "Trigonometry", "Geometry", "Time and Work", "Probability",
-                    "HCF & LCM", "Algebraic Expressions and Inequalities", "Average", "Percentage",
-                    "Profit and Loss", "Number System", "Simple & Compound interest", 
-                    "Ratio and Proportion", "Partnership", "Data Interpretation", "Number Series"
-                ]
-            },
-            "Logical Reasoning": {
-                icon: <BrainCircuit size={18} />,
-                topics: [
+        syllabus: [
+            {
+                title: "General Reasoning",
+                icon: <BrainCircuit size={18} className="text-purple-500"/>,
+                desc: "Verbal & Non-Verbal Logic",
+                content: [
                     "Number, Ranking & Time Sequence", "Deriving Conclusions from Passages",
                     "Logical Sequence of Words", "Alphabet Test Series", "Arithmetical Reasoning",
                     "Situation Reaction Test", "Coding-Decoding", "Direction Sense Test", "Analogy",
@@ -66,251 +43,160 @@ const EXAM_DATA = {
                     "Logical Venn Diagrams", "Statement – Arguments", "Inserting The Missing Character",
                     "Puzzles", "Alpha-Numeric Sequence Puzzle"
                 ]
+            },
+            {
+                title: "Mathematics",
+                icon: <Calculator size={18} className="text-blue-500"/>,
+                desc: "Arithmetic & Advanced Maths",
+                content: [
+                    "Mixture & Allegations", "Pipes and Cisterns", "Speed, Time & Distance (Train, Boats & Stream)",
+                    "Mensuration", "Trigonometry", "Geometry", "Time and Work", "Probability",
+                    "HCF & LCM", "Algebraic Expressions and Inequalities", "Average", "Percentage",
+                    "Profit and Loss", "Number System", "Simple & Compound Interest", 
+                    "Ratio and Proportion", "Partnership", "Data Interpretation", "Number Series"
+                ]
+            },
+            {
+                title: "General Knowledge (GK)",
+                icon: <Globe size={18} className="text-orange-500"/>,
+                desc: "Static GK & Current Affairs",
+                content: [
+                    "Abbreviations", "Science – Inventions & Discoveries", "Current Important Events",
+                    "Current Affairs – National & International", "Awards and Honors", "Important Financial",
+                    "Economic News", "Banking News", "Indian Constitution", "Books and Authors",
+                    "Important Days", "History", "Sports Terminology", "Geography",
+                    "Solar System", "Indian states and capitals", "Countries and Currencies"
+                ]
+            },
+            {
+                title: "General Science",
+                icon: <Microscope size={18} className="text-green-500"/>,
+                desc: "Physics, Chem & Bio",
+                content: [
+                    "Biology (10th / 12th Level)",
+                    "Chemistry (10th / 12th Level)",
+                    "Physics (10th / 12th Level)",
+                    "Human Body & Diseases",
+                    "Everyday Science Principles"
+                ]
             }
-        },
-        physical: [
-            { task: "1.6 KM Run", standard: "5 Min 30 Sec", marks: "60 Marks" },
-            { task: "Pull Ups", standard: "10 Reps", marks: "40 Marks" },
-            { task: "9 Feet Ditch", standard: "Qualify", marks: "-" },
-            { task: "Zig-Zag Balance", standard: "Qualify", marks: "-" }
+        ],
+        features: [
+            "Access to ALL Trade Content (GD/Tech/Clerk)",
+            "50+ Full Length Mock Tests with Analysis",
+            "Detailed PDF Notes for Fast Revision",
+            "Daily Quiz & Practice Sets",
+            "Physical Training Guide included"
         ]
     },
-    tech: {
-        title: "Technical",
-        desc: "For the tech-savvy. Focuses on technical maintenance and handling of army equipment.",
-        totalQ: 50,
-        maxMarks: 200,
-        passMarks: 80,
-        negMark: 1.0,
-        correctMark: 4,
-        color: "blue",
-        subjects: [
-            { name: "GK", questions: 10, marks: 40, color: "#d97706" },
-            { name: "Maths", questions: 15, marks: 60, color: "#2563eb" },
-            { name: "Physics", questions: 15, marks: 60, color: "#0891b2" },
-            { name: "Chemistry", questions: 10, marks: 40, color: "#be123c" }
-        ],
-        syllabus: {
-            "Physics": { icon: <Zap size={18}/>, topics: ["Mechanics", "Thermodynamics", "Electricity", "Optics", "Modern Physics"] },
-            "Maths": { icon: <Calculator size={18}/>, topics: ["Algebra", "Calculus", "Vectors", "Trigonometry", "Geometry"] },
-            "Chemistry": { icon: <Microscope size={18}/>, topics: ["Physical Chem", "Organic Chem", "Inorganic Chem"] },
-            "GK": { icon: <Globe size={18}/>, topics: ["History", "Defence News", "Sports"] }
-        },
-        physical: [
-            { task: "1.6 KM Run", standard: "5 Min 45 Sec", marks: "Qualify" },
-            { task: "Pull Ups", standard: "10 Reps", marks: "Qualify" },
-            { task: "9 Feet Ditch", standard: "Qualify", marks: "-" },
-            { task: "Zig-Zag Balance", standard: "Qualify", marks: "-" }
-        ]
-    },
-    clerk: {
-        title: "Clerk / SKT",
-        desc: "Administrative role. Requires strong command over English and Computer proficiency.",
-        totalQ: 50,
-        maxMarks: 200,
-        passMarks: "80 (32 each part)",
-        negMark: 1.0,
-        correctMark: 4,
-        color: "amber",
-        subjects: [
-            { name: "GK & Science", questions: 10, marks: 40, color: "#d97706" },
-            { name: "Maths", questions: 10, marks: 40, color: "#2563eb" },
-            { name: "Comp. Science", questions: 5, marks: 20, color: "#4f46e5" },
-            { name: "English", questions: 25, marks: 100, color: "#059669" }
-        ],
-        syllabus: {
-            "English": { icon: <BookOpen size={18}/>, topics: ["Grammar", "Comprehension", "Vocabulary", "Sentence Structure"] },
-            "Computer": { icon: <Target size={18}/>, topics: ["MS Office", "Windows", "Hardware", "Internet"] },
-            "Maths": { icon: <Calculator size={18}/>, topics: ["Arithmetic", "Basic Algebra", "Mensuration"] },
-            "GK & GS": { icon: <Globe size={18}/>, topics: ["Current Affairs", "Basic Science", "Civics"] }
-        },
-        physical: [
-            { task: "1.6 KM Run", standard: "5 Min 45 Sec", marks: "Qualify" },
-            { task: "Pull Ups", standard: "10 Reps", marks: "Qualify" },
-            { task: "9 Feet Ditch", standard: "Qualify", marks: "-" },
-            { task: "Zig-Zag Balance", standard: "Qualify", marks: "-" }
-        ]
-    }
+    // You can add "agniveer-gd", "agniveer-tech" here with specific subsets of the syllabus if needed
 };
 
 const AgniveerPage = () => {
-    const [role, setRole] = useState('gd');
-    const [activeSubject, setActiveSubject] = useState('');
-    const [calculator, setCalculator] = useState({ correct: '', wrong: '', score: null });
-    const [expandedTopic, setExpandedTopic] = useState(null); // For accordion
-    
-    const chartRef = useRef(null);
-    const canvasRef = useRef(null);
-
-    const currentData = EXAM_DATA[role];
-
-    // Reset subject when role changes
-    useEffect(() => {
-        setActiveSubject(Object.keys(currentData.syllabus)[0]);
-    }, [role]);
-
-    // Chart Logic
-    useEffect(() => {
-        if (chartRef.current) chartRef.current.destroy();
-        const ctx = canvasRef.current.getContext('2d');
-        
-        chartRef.current = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: currentData.subjects.map(s => s.name),
-                datasets: [{
-                    data: currentData.subjects.map(s => s.questions),
-                    backgroundColor: currentData.subjects.map(s => s.color),
-                    borderWidth: 0,
-                    hoverOffset: 10
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '75%',
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: '#1c1917',
-                        padding: 12,
-                        bodyFont: { size: 14 }
-                    }
-                }
-            }
-        });
-    }, [role]);
-
-    const calculateScore = () => {
-        const c = parseInt(calculator.correct) || 0;
-        const w = parseInt(calculator.wrong) || 0;
-        if(c+w > currentData.totalQ) return alert("Attempts exceed total questions!");
-        
-        const score = (c * currentData.correctMark) - (w * currentData.negMark);
-        setCalculator(prev => ({...prev, score: score.toFixed(2)}));
-    };
+    const { courseId } = useParams();
+    // Default to 'agniveer-ultimate' if ID not found or generic
+    const course = COURSE_DETAILS[courseId] || COURSE_DETAILS["agniveer-ultimate"];
+    const [activeSection, setActiveSection] = useState(0);
 
     return (
-        <div className="bg-stone-50 min-h-screen font-sans text-stone-800 pb-20">
+        <div className="min-h-screen bg-stone-50 dark:bg-slate-950 font-sans text-stone-800 dark:text-slate-200">
             
-            {/* --- HERO SECTION --- */}
-            <div className="relative bg-stone-900 text-white pt-28 pb-32 overflow-hidden">
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
-                <div className="absolute top-0 right-0 w-96 h-96 bg-green-600 rounded-full blur-[128px] opacity-20"></div>
-                
-                <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
-                    <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-6 text-green-400">
-                        <Shield size={14} /> Mission Agniveer 2025
-                    </div>
-                    <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tight uppercase">
-                        Join the <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600">Elite Force</span>
-                    </h1>
-                    <p className="text-xl text-stone-400 max-w-2xl mx-auto mb-10">
-                        Detailed intelligence on Syllabus, Exam Pattern, and Physical Standards. Choose your trade and start training.
-                    </p>
-                    
-                    {/* Role Toggles */}
-                    <div className="inline-flex bg-stone-800 p-1 rounded-xl shadow-2xl border border-stone-700">
-                        {Object.keys(EXAM_DATA).map((r) => (
-                            <button
-                                key={r}
-                                onClick={() => setRole(r)}
-                                className={`px-6 py-3 rounded-lg text-sm font-bold transition-all ${
-                                    role === r 
-                                    ? 'bg-gradient-to-b from-green-600 to-green-700 text-white shadow-lg' 
-                                    : 'text-stone-400 hover:text-white hover:bg-stone-700'
-                                }`}
-                            >
-                                {EXAM_DATA[r].title}
-                            </button>
-                        ))}
-                    </div>
-                </div>
+            {/* Mobile Header (Sticky) */}
+            <div className="md:hidden sticky top-0 z-50 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 flex justify-between items-center shadow-sm">
+                <Link to={-1} className="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><ArrowLeft size={20}/></Link>
+                <span className="font-bold text-sm truncate w-40">{course.title}</span>
+                <button className={`bg-${course.theme}-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold`}>Enroll {course.price}</button>
             </div>
 
-            <div className="max-w-7xl mx-auto px-6 -mt-20 relative z-20">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
                 <div className="grid lg:grid-cols-3 gap-8">
                     
-                    {/* --- LEFT COLUMN: EXAM INTEL --- */}
+                    {/* --- LEFT COLUMN: CONTENT --- */}
                     <div className="lg:col-span-2 space-y-8">
                         
-                        {/* 1. Exam Pattern Card */}
-                        <div className="bg-white rounded-2xl shadow-xl border border-stone-200 overflow-hidden">
-                            <div className="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50/50">
-                                <div>
-                                    <h3 className="text-xl font-bold text-stone-900 flex items-center gap-2">
-                                        <Target className="text-green-600" /> Pattern Analysis
-                                    </h3>
-                                    <p className="text-stone-500 text-xs mt-1">Written Test Structure for {currentData.title}</p>
-                                </div>
-                                <div className="text-right">
-                                    <div className="text-2xl font-black text-stone-900">{currentData.maxMarks}</div>
-                                    <div className="text-[10px] uppercase font-bold text-stone-400">Max Marks</div>
-                                </div>
-                            </div>
+                        {/* 1. Hero Card */}
+                        <div className={`bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 shadow-xl border border-slate-200 dark:border-slate-800 relative overflow-hidden`}>
+                            <div className={`absolute top-0 right-0 w-64 h-64 bg-${course.theme}-500/10 rounded-full blur-[80px]`}></div>
                             
-                            <div className="p-8 grid md:grid-cols-2 gap-8 items-center">
-                                <div className="relative h-48 w-48 mx-auto">
-                                    <canvas ref={canvasRef}></canvas>
-                                    <div className="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
-                                        <span className="text-3xl font-black text-stone-800">{currentData.totalQ}</span>
-                                        <span className="text-[9px] uppercase font-bold text-stone-400">Questions</span>
+                            <div className="relative z-10">
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full bg-${course.theme}-50 dark:bg-${course.theme}-900/30 text-${course.theme}-600 dark:text-${course.theme}-400 text-xs font-bold uppercase tracking-wider`}>
+                                        <Shield size={12} /> {course.validity}
+                                    </div>
+                                    <div className="flex items-center gap-1 text-yellow-500 text-sm font-bold">
+                                        <Star fill="currentColor" size={16} /> {course.rating} ({course.students})
                                     </div>
                                 </div>
-                                <div className="space-y-3">
-                                    {currentData.subjects.map((sub, i) => (
-                                        <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-stone-50 border border-stone-100">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-3 h-3 rounded-full" style={{backgroundColor: sub.color}}></div>
-                                                <span className="font-bold text-sm text-stone-700">{sub.name}</span>
-                                            </div>
-                                            <span className="text-xs font-bold text-stone-500 bg-white px-2 py-1 rounded border border-stone-200">{sub.questions} Qs</span>
+                                
+                                <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2 leading-tight">
+                                    {course.title}
+                                </h1>
+                                <p className="text-lg text-slate-500 dark:text-slate-400 mb-6">
+                                    {course.subtitle}
+                                </p>
+
+                                {/* Course Stats Grid */}
+                                <div className="grid grid-cols-3 gap-4 border-t border-slate-100 dark:border-slate-800 pt-6">
+                                    {course.stats.map((stat, idx) => (
+                                        <div key={idx}>
+                                            <div className="text-xl font-bold text-slate-900 dark:text-white">{stat.value}</div>
+                                            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase">{stat.label}</div>
                                         </div>
                                     ))}
-                                    <div className="flex gap-4 mt-4 pt-4 border-t border-dashed border-stone-200">
-                                        <div className="flex items-center gap-2 text-xs font-bold text-green-700 bg-green-50 px-3 py-1.5 rounded">
-                                            <CheckCircle size={14} /> +{currentData.correctMark} Correct
-                                        </div>
-                                        <div className="flex items-center gap-2 text-xs font-bold text-red-600 bg-red-50 px-3 py-1.5 rounded">
-                                            <AlertTriangle size={14} /> -{currentData.negMark} Wrong
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* 2. Detailed Syllabus Accordion (UPDATED) */}
-                        <div className="bg-white rounded-2xl shadow-xl border border-stone-200 overflow-hidden">
-                            <div className="p-6 border-b border-stone-100 bg-stone-50/50">
-                                <h3 className="text-xl font-bold text-stone-900 flex items-center gap-2">
-                                    <BookOpen className="text-amber-500" /> Tactical Syllabus
-                                </h3>
-                                <p className="text-stone-500 text-xs mt-1">Complete topic breakdown for written exam.</p>
+                        {/* 2. What's Inside (Features) */}
+                        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 shadow-lg border border-slate-200 dark:border-slate-800">
+                            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                                <Zap className="text-yellow-500" /> Fast-Pace Learning
+                            </h2>
+                            <div className="grid sm:grid-cols-2 gap-4">
+                                {course.features.map((feat, idx) => (
+                                    <div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                                        <CheckCircle size={18} className={`text-${course.theme}-500 shrink-0`} />
+                                        <span className="text-sm font-medium">{feat}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* 3. Detailed Curriculum (Checklist Style) */}
+                        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                            <div className="p-6 md:p-8 border-b border-slate-100 dark:border-slate-800">
+                                <h2 className="text-xl font-bold flex items-center gap-2">
+                                    <BookOpen className="text-blue-500" /> Syllabus & Curriculum
+                                </h2>
+                                <p className="text-sm text-slate-500 mt-1">Topic-wise breakdown for Written Test</p>
                             </div>
                             
-                            <div className="divide-y divide-stone-100">
-                                {Object.keys(currentData.syllabus).map((subject, idx) => (
+                            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                                {course.syllabus.map((subject, idx) => (
                                     <div key={idx} className="group">
                                         <button 
-                                            onClick={() => setExpandedTopic(expandedTopic === idx ? null : idx)}
-                                            className="w-full flex items-center justify-between p-5 hover:bg-stone-50 transition-colors text-left"
+                                            onClick={() => setActiveSection(activeSection === idx ? -1 : idx)}
+                                            className="w-full flex items-center justify-between p-6 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-left"
                                         >
-                                            <div className="flex items-center gap-3">
-                                                <div className={`p-2 rounded-lg ${expandedTopic === idx ? 'bg-amber-100 text-amber-700' : 'bg-stone-100 text-stone-500'}`}>
-                                                    {currentData.syllabus[subject].icon}
+                                            <div className="flex items-center gap-4">
+                                                <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                                                    {subject.icon}
                                                 </div>
-                                                <span className="font-bold text-stone-800">{subject}</span>
+                                                <div>
+                                                    <h3 className="font-bold text-slate-900 dark:text-white">{subject.title}</h3>
+                                                    <p className="text-xs text-slate-500">{subject.desc}</p>
+                                                </div>
                                             </div>
-                                            {expandedTopic === idx ? <ChevronUp size={20} className="text-stone-400"/> : <ChevronDown size={20} className="text-stone-400"/>}
+                                            {activeSection === idx ? <ChevronUp size={20} className="text-slate-400"/> : <ChevronDown size={20} className="text-slate-400"/>}
                                         </button>
                                         
                                         {/* Dropdown Content */}
-                                        {expandedTopic === idx && (
-                                            <div className="bg-stone-50 px-5 pb-5 animate-in fade-in slide-in-from-top-1 duration-200">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-                                                    {currentData.syllabus[subject].topics.map((topic, tIdx) => (
-                                                        <div key={tIdx} className="flex items-start gap-2 text-sm text-stone-600 bg-white p-3 rounded-lg border border-stone-100 shadow-sm">
-                                                            <div className="h-1.5 w-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0"></div>
+                                        {activeSection === idx && (
+                                            <div className="bg-slate-50 dark:bg-slate-800/30 px-6 pb-6 animate-in fade-in slide-in-from-top-2 duration-200">
+                                                <div className="grid sm:grid-cols-2 gap-3 pt-2">
+                                                    {subject.content.map((topic, tIdx) => (
+                                                        <div key={tIdx} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-800 p-2 rounded border border-slate-100 dark:border-slate-700">
+                                                            <div className="h-1.5 w-1.5 rounded-full bg-slate-400 mt-1.5 shrink-0"></div>
                                                             {topic}
                                                         </div>
                                                     ))}
@@ -322,142 +208,68 @@ const AgniveerPage = () => {
                             </div>
                         </div>
 
-                        {/* 3. Recommended Batches Section (Kept as requested) */}
-                        <div className="mb-8">
-                            {/* ... (Existing Batch cards code if you want it here, or handled by CategoryPage) ... */}
-                            <div className="p-6 bg-stone-100 rounded-xl border border-stone-200 text-center">
-                                <Lock className="mx-auto text-stone-400 mb-2" />
-                                <p className="text-stone-500 text-sm">Course Enrollment is managed via the <strong>Command Center</strong> (Category Page).</p>
-                                <p className="text-xs text-stone-400 mt-1">Navigate back to view available passes.</p>
-                            </div>
-                        </div>
-
                     </div>
 
-                    {/* --- RIGHT COLUMN: TOOLS & UTILITIES --- */}
-                    <div className="space-y-8">
-                        
-                        {/* 1. Score Simulator */}
-                        <div className="bg-stone-900 text-white rounded-2xl p-6 shadow-2xl relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500 rounded-full blur-[80px] opacity-20"></div>
-                            <h3 className="text-lg font-bold mb-1 flex items-center gap-2 relative z-10">
-                                <BarChart3 size={18} className="text-amber-500" /> Score Simulator
-                            </h3>
-                            <p className="text-xs text-stone-400 mb-6 relative z-10">Estimate your written test potential.</p>
+                    {/* --- RIGHT COLUMN: CHECKOUT & DATES (Sticky) --- */}
+                    <div className="lg:col-span-1">
+                        <div className="sticky top-24 space-y-6">
                             
-                            <div className="space-y-4 relative z-10">
-                                <div>
-                                    <label className="text-[10px] uppercase font-bold text-stone-500 mb-1 block">Correct Attempts</label>
-                                    <input 
-                                        type="number" 
-                                        value={calculator.correct}
-                                        onChange={(e) => setCalculator({...calculator, correct: e.target.value})}
-                                        className="w-full bg-stone-800 border border-stone-700 rounded-lg p-3 text-sm focus:border-amber-500 outline-none transition-colors"
-                                        placeholder="0"
-                                    />
+                            {/* Price Card */}
+                            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative overflow-hidden">
+                                <div className={`absolute top-0 left-0 w-full h-1 bg-${course.theme}-500`}></div>
+                                
+                                <div className="mb-6">
+                                    <p className="text-sm text-slate-500 mb-1">One-Time Payment</p>
+                                    <div className="flex items-end gap-3">
+                                        <span className="text-4xl font-black text-slate-900 dark:text-white">{course.price}</span>
+                                        <span className="text-lg text-slate-400 line-through mb-1">{course.originalPrice}</span>
+                                        <span className={`text-xs font-bold text-${course.theme}-600 bg-${course.theme}-100 dark:bg-${course.theme}-900/30 px-2 py-1 rounded mb-1.5`}>
+                                            {course.discount}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="text-[10px] uppercase font-bold text-stone-500 mb-1 block">Wrong Attempts</label>
-                                    <input 
-                                        type="number" 
-                                        value={calculator.wrong}
-                                        onChange={(e) => setCalculator({...calculator, wrong: e.target.value})}
-                                        className="w-full bg-stone-800 border border-stone-700 rounded-lg p-3 text-sm focus:border-red-500 outline-none transition-colors"
-                                        placeholder="0"
-                                    />
-                                </div>
-                                <button 
-                                    onClick={calculateScore}
-                                    className="w-full bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-lg font-bold text-sm shadow-lg transition-colors"
-                                >
-                                    Calculate Score
+
+                                <button className={`w-full bg-${course.theme}-600 hover:bg-${course.theme}-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all active:scale-95 mb-4 flex items-center justify-center gap-2`}>
+                                    Unlock Access <ArrowRight size={20} />
                                 </button>
+
+                                <p className="text-center text-xs text-slate-400 flex items-center justify-center gap-1">
+                                    <Lock size={10} /> Secure Checkout
+                                </p>
                             </div>
 
-                            {calculator.score !== null && (
-                                <div className="mt-6 p-4 bg-stone-800 rounded-xl border border-stone-700 text-center animate-in fade-in zoom-in duration-300">
-                                    <div className="text-xs text-stone-400 uppercase font-bold mb-1">Projected Score</div>
-                                    <div className="text-3xl font-black text-white">{calculator.score}</div>
-                                    <div className={`text-xs font-bold mt-1 ${parseFloat(calculator.score) >= 35 ? 'text-green-400' : 'text-red-400'}`}>
-                                        {parseFloat(calculator.score) >= 35 ? 'PASSING ZONE' : 'NEEDS WORK'}
+                            {/* Mission Dates */}
+                            <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-lg relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600 rounded-full blur-[60px] opacity-20"></div>
+                                <h3 className="font-bold mb-4 flex items-center gap-2 relative z-10">
+                                    <Calendar size={18} className="text-blue-400"/> Important Dates
+                                </h3>
+                                <div className="space-y-4 relative z-10">
+                                    <div className="flex justify-between items-center text-sm border-b border-white/10 pb-2">
+                                        <span className="text-white/60">Notification</span>
+                                        <span className="font-medium text-emerald-400">{course.dates.notification}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-white/60">Exam Date</span>
+                                        <span className="font-medium text-white">{course.dates.exam}</span>
                                     </div>
                                 </div>
-                            )}
+                            </div>
+
+                            {/* Help / Support */}
+                            <div className="bg-slate-100 dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm">
+                                    <Users size={20} className="text-slate-600" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold uppercase text-slate-400">Need Help?</p>
+                                    <p className="text-sm font-bold text-blue-600 cursor-pointer hover:underline">Talk to Counsellor</p>
+                                </div>
+                            </div>
+
                         </div>
-
-                        {/* 2. Physical Standards Card */}
-                        <div className="bg-white rounded-2xl shadow-lg border border-stone-200 p-6">
-                            <h3 className="text-lg font-bold text-stone-900 mb-4 flex items-center gap-2">
-                                <Award className="text-blue-600" size={20} /> Physical Standards
-                            </h3>
-                            <div className="space-y-4">
-                                {currentData.physical.map((item, i) => (
-                                    <div key={i} className="flex items-center justify-between pb-3 border-b border-stone-100 last:border-0">
-                                        <div className="text-sm font-medium text-stone-700">{item.task}</div>
-                                        <div className="text-right">
-                                            <div className="text-xs font-bold text-stone-900">{item.standard}</div>
-                                            <div className="text-[10px] font-bold text-stone-400">{item.marks}</div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="mt-4 pt-4 bg-blue-50 rounded-lg p-3 text-xs text-blue-800 font-medium flex gap-2">
-                                <Clock size={14} className="shrink-0 mt-0.5" />
-                                <span>Physical test marks are added to your final merit list for GD. Prepare well!</span>
-                            </div>
-                        </div>
-
-                        {/* 3. Important Dates (Mission Timeline) */}
-                        <div className="bg-white rounded-2xl shadow-lg border border-stone-200 p-6">
-                            <h3 className="text-lg font-bold text-stone-900 mb-4 flex items-center gap-2">
-                                <Calendar className="text-red-500" size={20} /> Mission Timeline
-                            </h3>
-                            <div className="space-y-4">
-                                <div className="flex items-start gap-3">
-                                    <div className="bg-red-50 text-red-600 rounded-lg p-2 text-center min-w-[50px]">
-                                        <div className="text-[10px] uppercase font-bold">Feb</div>
-                                        <div className="text-xl font-bold">13</div>
-                                    </div>
-                                    <div>
-                                        <div className="text-sm font-bold text-stone-800">Notification Released</div>
-                                        <div className="text-xs text-stone-500">Official notification for 2025 intake.</div>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                    <div className="bg-stone-100 text-stone-600 rounded-lg p-2 text-center min-w-[50px]">
-                                        <div className="text-[10px] uppercase font-bold">Apr</div>
-                                        <div className="text-xl font-bold">21</div>
-                                    </div>
-                                    <div>
-                                        <div className="text-sm font-bold text-stone-800">Online CEE Exam</div>
-                                        <div className="text-xs text-stone-500">Phase 1 Written Examination.</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* 4. Eligibility Quick Check */}
-                        <div className="bg-emerald-50 rounded-2xl border border-emerald-100 p-6">
-                            <h3 className="text-lg font-bold text-emerald-900 mb-2 flex items-center gap-2">
-                                <Ruler size={18} /> Eligibility Check
-                            </h3>
-                            <div className="space-y-3 mt-4">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-stone-600">Age Limit</span>
-                                    <span className="font-bold text-stone-900">17.5 - 21 Years</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-stone-600">Height (Avg)</span>
-                                    <span className="font-bold text-stone-900">170 cm (GD)</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-stone-600">Chest</span>
-                                    <span className="font-bold text-stone-900">77 cm (+5 exp)</span>
-                                </div>
-                            </div>
-                        </div>
-
                     </div>
+
                 </div>
             </div>
         </div>
@@ -465,4 +277,3 @@ const AgniveerPage = () => {
 };
 
 export default AgniveerPage;
-//dtgsrs

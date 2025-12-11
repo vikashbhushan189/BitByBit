@@ -2,25 +2,41 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { 
-    BookOpen, CheckCircle, Clock, MoreVertical, 
-    PlayCircle, HelpCircle, FileText, Layout, 
-    ChevronRight, ShoppingCart
+    BookOpen, CheckCircle, TrendingUp, Layout, 
+    ChevronRight, ShoppingCart, MoreVertical, RefreshCw, Zap
 } from 'lucide-react';
 
 const DashboardPage = () => {
     const [enrolledCourses, setEnrolledCourses] = useState([]);
     const [activeCourse, setActiveCourse] = useState(null);
+    const [stats, setStats] = useState({ total: 0, passed: 0, avgScore: 0 });
+    const [attempts, setAttempts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [showBatchMenu, setShowBatchMenu] = useState(false); // State for dropdown
     const navigate = useNavigate();
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const res = await api.get('courses/enrolled/');
-                setEnrolledCourses(res.data);
-                if (res.data.length > 0) {
-                    setActiveCourse(res.data[0]); // Default to first course
+                // 1. Fetch Enrolled Courses
+                const courseRes = await api.get('courses/enrolled/');
+                setEnrolledCourses(courseRes.data);
+                
+                // Set initial active course
+                if (courseRes.data.length > 0) {
+                    setActiveCourse(courseRes.data[0]);
                 }
+
+                // 2. Fetch History (Mocked for now or from API)
+                const histRes = await api.get('history/');
+                setAttempts(histRes.data);
+                
+                if (histRes.data.length > 0) {
+                    const passed = histRes.data.filter(a => (a.total_score / a.exam_total_marks) >= 0.4).length;
+                    const avg = histRes.data.reduce((acc, curr) => acc + curr.total_score, 0) / histRes.data.length;
+                    setStats({ total: histRes.data.length, passed, avgScore: Math.round(avg) });
+                }
+
             } catch (err) {
                 console.error(err);
             } finally {
@@ -32,12 +48,12 @@ const DashboardPage = () => {
 
     if (loading) return <div className="min-h-screen flex items-center justify-center font-bold text-slate-600">Loading Study Center...</div>;
 
-    // --- EMPTY STATE (New User) ---
+    // --- EMPTY STATE ---
     if (enrolledCourses.length === 0) {
         return (
             <div className="max-w-5xl mx-auto p-8 text-center mt-10">
                 <div className="bg-white p-12 rounded-3xl shadow-sm border border-slate-200">
-                    <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" alt="No Courses" className="w-32 h-32 mx-auto mb-6 opacity-80" />
+                    <BookOpen size={64} className="mx-auto mb-6 text-slate-300 opacity-80" />
                     <h2 className="text-3xl font-bold text-slate-900 mb-3">Start Your Journey</h2>
                     <p className="text-slate-500 mb-8 max-w-md mx-auto">You haven't enrolled in any batches yet. Explore our store to find the perfect course for your goal.</p>
                     <Link to="/store" className="bg-blue-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-200">
@@ -50,121 +66,167 @@ const DashboardPage = () => {
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans pb-20">
-            {/* --- TOP HERO SECTION (Dark Theme like PW) --- */}
-            <div className="bg-slate-900 text-white pt-8 pb-16 px-6 relative overflow-hidden">
+            {/* --- TOP HERO SECTION --- */}
+            <div className="bg-slate-900 text-white pt-8 pb-20 px-6 relative overflow-hidden">
                 <div className="max-w-7xl mx-auto relative z-10">
-                    <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">YOUR BATCH</div>
                     <div className="flex justify-between items-start">
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-bold leading-tight max-w-2xl">
-                                {activeCourse?.title || "Select a Batch"}
-                            </h1>
-                            {activeCourse && (
-                                <div className="mt-4 flex gap-3 text-sm">
-                                    <span className="bg-white/10 px-3 py-1 rounded-full border border-white/10">Validity: Lifetime</span>
-                                    <span className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full border border-green-500/20">Active</span>
-                                </div>
-                            )}
-                        </div>
-                        
-                        {/* Batch Switcher (Simple Dropdown Trigger) */}
-                        <div className="relative group">
-                            <button className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                                <MoreVertical size={24} className="text-slate-400" />
-                            </button>
-                            {/* Hover Dropdown for switching batches */}
-                            <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 hidden group-hover:block text-slate-800 z-50">
-                                <div className="p-3 border-b border-slate-100 font-bold text-xs text-slate-400 uppercase">Switch Batch</div>
-                                {enrolledCourses.map(c => (
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">CURRENT BATCH</span>
+                                {enrolledCourses.length > 1 && (
                                     <button 
-                                        key={c.id} 
-                                        onClick={() => setActiveCourse(c)}
-                                        className={`w-full text-left px-4 py-3 text-sm font-medium hover:bg-slate-50 transition-colors ${activeCourse?.id === c.id ? 'text-blue-600 bg-blue-50' : ''}`}
+                                        onClick={() => setShowBatchMenu(!showBatchMenu)}
+                                        className="text-xs bg-slate-800 hover:bg-slate-700 text-blue-400 px-2 py-1 rounded flex items-center gap-1 transition-colors"
                                     >
-                                        {c.title}
+                                        <RefreshCw size={10} /> Change
                                     </button>
-                                ))}
+                                )}
+                            </div>
+                            
+                            <div className="relative">
+                                <h1 className="text-2xl md:text-4xl font-bold leading-tight max-w-2xl flex items-center gap-3">
+                                    {activeCourse?.title}
+                                    <ChevronRight className="text-slate-600" size={24}/>
+                                </h1>
+                                
+                                {/* BATCH SWITCHER DROPDOWN */}
+                                {showBatchMenu && (
+                                    <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                                        <div className="p-3 border-b border-slate-100 bg-slate-50 text-xs font-bold text-slate-500 uppercase">
+                                            Select Active Batch
+                                        </div>
+                                        <div className="max-h-60 overflow-y-auto">
+                                            {enrolledCourses.map(course => (
+                                                <button
+                                                    key={course.id}
+                                                    onClick={() => {
+                                                        setActiveCourse(course);
+                                                        setShowBatchMenu(false);
+                                                    }}
+                                                    className={`w-full text-left px-4 py-3 text-sm font-medium flex items-center gap-3 transition-colors ${
+                                                        activeCourse.id === course.id 
+                                                            ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600' 
+                                                            : 'text-slate-700 hover:bg-slate-50'
+                                                    }`}
+                                                >
+                                                    <div className={`w-2 h-2 rounded-full ${activeCourse.id === course.id ? 'bg-blue-600' : 'bg-slate-300'}`}></div>
+                                                    {course.title}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <Link to="/store" className="block p-3 text-center text-xs font-bold text-blue-600 hover:bg-slate-50 border-t border-slate-100">
+                                            + Enroll in New Course
+                                        </Link>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="mt-4 flex gap-3 text-sm">
+                                <span className="bg-white/10 px-3 py-1 rounded-full border border-white/10 flex items-center gap-2">
+                                    <Clock size={14} className="text-emerald-400"/> Validity: Exam Date
+                                </span>
                             </div>
                         </div>
                     </div>
                 </div>
                 
                 {/* Decorative Background */}
-                <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-6 -mt-8 relative z-20">
-                {/* --- BATCH OFFERINGS (Action Cards) --- */}
-                <h3 className="font-bold text-slate-800 mb-4 ml-1">Batch Offerings</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+            <div className="max-w-7xl mx-auto px-6 -mt-12 relative z-20">
+                {/* --- QUICK ACTIONS GRID --- */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                     <ActionCard 
-                        icon={<BookOpen size={24} className="text-blue-600"/>} 
-                        title="All Classes" 
-                        desc="Watch recorded lectures"
-                        onClick={() => navigate('/courses')} // Or specific lecture page
+                        icon={<BookOpen size={24} className="text-white"/>} 
+                        bg="bg-blue-600"
+                        title="Start Learning" 
+                        desc="Access Chapters & Notes"
+                        onClick={() => navigate('/courses')} 
                     />
                     <ActionCard 
-                        icon={<FileText size={24} className="text-purple-600"/>} 
-                        title="All Tests" 
-                        desc="Attempt mock exams"
-                        onClick={() => navigate(`/exam/${activeCourse?.id || ''}`)} // Should link to list of exams for this course
+                        icon={<CheckCircle size={24} className="text-white"/>} 
+                        bg="bg-emerald-600"
+                        title="Mock Tests" 
+                        desc="Attempt Full Length Tests"
+                        onClick={() => alert("Go to Test Series Section")} 
                     />
                     <ActionCard 
-                        icon={<HelpCircle size={24} className="text-orange-600"/>} 
-                        title="My Doubts" 
-                        desc="Ask experts"
-                        onClick={() => alert("Doubt engine coming soon!")}
+                        icon={<TrendingUp size={24} className="text-white"/>} 
+                        bg="bg-purple-600"
+                        title="My Progress" 
+                        desc="View detailed analysis"
+                        onClick={() => document.getElementById('stats-section').scrollIntoView({behavior: 'smooth'})}
                     />
                 </div>
 
-                {/* --- MY STUDY ZONE (Navigation) --- */}
-                <h3 className="font-bold text-slate-800 mb-4 ml-1">My Study Zone</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Card 1: My Batches */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow cursor-pointer group">
-                        <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
-                            <Layout size={24} />
-                        </div>
-                        <h4 className="font-bold text-lg text-slate-800 mb-1">My Batches</h4>
-                        <p className="text-slate-500 text-sm mb-4">View list of batches in which you are enrolled.</p>
-                        <span className="text-blue-600 font-bold text-sm flex items-center gap-1 group-hover:translate-x-1 transition-transform">View All <ChevronRight size={16}/></span>
+                {/* --- STATS SECTION --- */}
+                <div id="stats-section" className="mb-12">
+                    <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2 text-lg">
+                        <TrendingUp size={20} className="text-blue-600"/> Your Performance
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <StatCard label="Tests Taken" value={stats.total} color="blue" />
+                        <StatCard label="Exams Passed" value={stats.passed} color="emerald" />
+                        <StatCard label="Avg. Score" value={stats.avgScore} color="purple" />
                     </div>
+                </div>
 
-                    {/* Card 2: Analytics */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow cursor-pointer group">
-                        <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
-                            <Clock size={24} />
-                        </div>
-                        <h4 className="font-bold text-lg text-slate-800 mb-1">Analytics</h4>
-                        <p className="text-slate-500 text-sm mb-4">Track your progress through detailed reports.</p>
-                        <span className="text-purple-600 font-bold text-sm flex items-center gap-1 group-hover:translate-x-1 transition-transform">Check Stats <ChevronRight size={16}/></span>
+                {/* --- RECENT ACTIVITY --- */}
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                        <h3 className="font-bold text-slate-800">Recent Activity</h3>
+                        <Link to="/courses" className="text-xs font-bold text-blue-600 hover:underline">View All</Link>
                     </div>
-
-                    {/* Card 3: Store */}
-                    <Link to="/store" className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow cursor-pointer group">
-                        <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
-                            <ShoppingCart size={24} />
+                    {attempts.length > 0 ? (
+                        <table className="w-full text-left text-sm">
+                            <thead className="text-slate-400 font-medium border-b border-slate-100">
+                                <tr>
+                                    <th className="px-6 py-3">Exam Name</th>
+                                    <th className="px-6 py-3">Date</th>
+                                    <th className="px-6 py-3 text-right">Score</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {attempts.slice(0, 5).map(a => (
+                                    <tr key={a.id} className="hover:bg-slate-50 transition-colors">
+                                        <td className="px-6 py-4 font-medium text-slate-700">{a.exam_title}</td>
+                                        <td className="px-6 py-4 text-slate-500">{new Date(a.start_time).toLocaleDateString()}</td>
+                                        <td className="px-6 py-4 text-right font-bold text-blue-600">{a.total_score}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <div className="p-12 text-center">
+                            <div className="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+                                <Clock size={32} />
+                            </div>
+                            <p className="text-slate-500 mb-2">No tests attempted yet.</p>
+                            <Link to="/courses" className="text-blue-600 font-bold text-sm hover:underline">Start your first test now</Link>
                         </div>
-                        <h4 className="font-bold text-lg text-slate-800 mb-1">Course Store</h4>
-                        <p className="text-slate-500 text-sm mb-4">Explore new courses and upgrade your skills.</p>
-                        <span className="text-emerald-600 font-bold text-sm flex items-center gap-1 group-hover:translate-x-1 transition-transform">Buy Now <ChevronRight size={16}/></span>
-                    </Link>
+                    )}
                 </div>
             </div>
         </div>
     );
 };
 
-const ActionCard = ({ icon, title, desc, onClick }) => (
-    <div onClick={onClick} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 cursor-pointer hover:border-blue-300 hover:shadow-md transition-all">
-        <div className="bg-slate-50 p-3 rounded-lg">
+const ActionCard = ({ icon, title, desc, onClick, bg }) => (
+    <div onClick={onClick} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group relative overflow-hidden">
+        <div className={`absolute top-0 right-0 w-24 h-24 ${bg} opacity-10 rounded-full -mr-8 -mt-8 transition-transform group-hover:scale-150`}></div>
+        <div className={`${bg} w-12 h-12 rounded-xl flex items-center justify-center mb-4 shadow-md`}>
             {icon}
         </div>
-        <div>
-            <div className="font-bold text-slate-800">{title}</div>
-            <div className="text-xs text-slate-500">{desc}</div>
-        </div>
-        <ChevronRight size={18} className="ml-auto text-slate-300" />
+        <h4 className="font-bold text-lg text-slate-900 group-hover:text-blue-700 transition-colors">{title}</h4>
+        <p className="text-sm text-slate-500 mt-1">{desc}</p>
+    </div>
+);
+
+const StatCard = ({ label, value, color }) => (
+    <div className={`bg-white p-6 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-${color}-500`}>
+        <div className="text-3xl font-black text-slate-900 mb-1">{value}</div>
+        <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">{label}</div>
     </div>
 );
 

@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Chart } from 'chart.js/auto';
 import { 
     CheckCircle, FileText, Lock, Clock, 
     Calendar, Award, Star, ChevronDown, ChevronUp, 
     Shield, ArrowLeft, Zap, Users, BookOpen, BrainCircuit, 
-    Calculator, Globe, Microscope, Target, ArrowRight
+    Calculator, Globe, Microscope, Target, X, CreditCard
 } from 'lucide-react';
 
-// --- DETAILED COURSE DATA (Syllabus from your input) ---
+// --- DETAILED COURSE DATA ---
 const COURSE_DETAILS = {
-    // Default fallback if ID matches nothing
     "agniveer-ultimate": {
         title: "Agniveer Ultimate Access 2025",
         subtitle: "Complete Prep: GD, Technical & Clerk",
@@ -88,237 +88,146 @@ const COURSE_DETAILS = {
             "Daily Quiz & Practice Sets",
             "Physical Training Guide included"
         ]
-    },
-    "agniveer-gd": {
-        title: "Agniveer GD Special Pass",
-        subtitle: "Targeted Prep for General Duty (GD)",
-        price: "₹499",
-        originalPrice: "₹999",
-        discount: "50% OFF",
-        rating: 4.7,
-        students: "8,500+",
-        validity: "Valid till Exam Date",
-        language: "Hinglish",
-        theme: "blue",
-        dates: {
-            notification: "Released (25,000+ Vacancies)",
-            exam: "Online CEE 2025"
-        },
-        stats: [
-            { label: "Mock Tests", value: "30+" },
-            { label: "GD Notes", value: "80+" },
-            { label: "Practice Sets", value: "Daily" }
-        ],
-        syllabus: [
-            {
-                title: "General Knowledge",
-                icon: <Globe size={18} className="text-orange-500"/>,
-                desc: "15 Questions (30 Marks)",
-                content: [
-                    "Abbreviations", "Science – Inventions & Discoveries", "Current Important Events",
-                    "Current Affairs – National & International", "Awards and Honors", "Important Financial",
-                    "Economic News", "Banking News", "Indian Constitution", "Books and Authors",
-                    "Important Days", "History", "Sports Terminology", "Geography",
-                    "Solar System", "Indian states and capitals", "Countries and Currencies"
-                ]
-            },
-            {
-                title: "General Science",
-                icon: <Microscope size={18} className="text-green-500"/>,
-                desc: "15 Questions (30 Marks)",
-                content: [
-                    "Biology (10th Level)",
-                    "Chemistry (10th Level)",
-                    "Physics (10th Level)",
-                    "Human Body",
-                    "Everyday Science Principles"
-                ]
-            },
-            {
-                title: "Mathematics",
-                icon: <Calculator size={18} className="text-blue-500"/>,
-                desc: "15 Questions (30 Marks)",
-                content: [
-                    "Mixture & Allegations", "Pipes and Cisterns", "Speed, Time & Distance",
-                    "Mensuration", "Trigonometry", "Geometry", "Time and Work", "Probability",
-                    "HCF & LCM", "Algebraic Expressions", "Average", "Percentage",
-                    "Profit and Loss", "Number System", "Simple & Compound Interest", 
-                    "Ratio and Proportion", "Partnership"
-                ]
-            },
-            {
-                title: "Logical Reasoning",
-                icon: <BrainCircuit size={18} className="text-purple-500"/>,
-                desc: "5 Questions (10 Marks)",
-                content: [
-                    "Number, Ranking & Time Sequence", "Logical Sequence of Words", "Alphabet Test Series",
-                    "Coding-Decoding", "Direction Sense Test", "Analogy", "Blood Relations",
-                    "Clocks & Calendars", "Statement – Conclusions", "Logical Venn Diagrams"
-                ]
-            }
-        ],
-        features: [
-            "Focused GD Syllabus Coverage",
-            "30+ GD Specific Mock Tests",
-            "Science & Maths Formula Sheets",
-            "Current Affairs Monthly Capsules"
-        ]
-    },
-
-    "agniveer-tech": {
-        title: "Agniveer Technical Special",
-        subtitle: "Physics & Maths Deep Dive (12th Level)",
-        price: "₹599",
-        originalPrice: "₹1,199",
-        discount: "50% OFF",
-        rating: 4.8,
-        students: "5,200+",
-        validity: "Valid till Exam Date",
-        language: "Hinglish",
-        theme: "indigo",
-        dates: {
-            notification: "Released (25,000+ Vacancies)",
-            exam: "Online CEE 2025"
-        },
-        stats: [
-            { label: "Tech Mocks", value: "25+" },
-            { label: "PCM Notes", value: "100+" },
-            { label: "Formulae", value: "All" }
-        ],
-        syllabus: [
-            {
-                title: "Physics (12th Level)",
-                icon: <Zap size={18} className="text-yellow-500"/>,
-                desc: "15 Questions (60 Marks)",
-                content: [
-                    "Physical World & Measurement", "Kinematics", "Laws of Motion", "Work, Energy & Power",
-                    "Motion of System of Particles", "Gravitation", "Thermodynamics", 
-                    "Properties of Bulk Matter", "Electrostatics", "Current Electricity", 
-                    "Magnetic Effects of Current", "Electromagnetic Waves"
-                ]
-            },
-            {
-                title: "Mathematics (12th Level)",
-                icon: <Calculator size={18} className="text-blue-500"/>,
-                desc: "15 Questions (60 Marks)",
-                content: [
-                    "Algebra", "Matrices & Determinants", "Analytical Geometry", "Trigonometry",
-                    "Integral Calculus", "Differential Calculus", "Probability", "Statistics",
-                    "Number Systems", "Vector Algebra", "Complex Numbers"
-                ]
-            },
-            {
-                title: "Chemistry",
-                icon: <Microscope size={18} className="text-green-500"/>,
-                desc: "10 Questions (40 Marks)",
-                content: [
-                    "Physical Chemistry", "Inorganic Chemistry", "Organic Chemistry",
-                    "Atomic Structure", "Chemical Bonding", "States of Matter", 
-                    "Elements & Compounds", "Chemical Kinetics"
-                ]
-            },
-            {
-                title: "General Knowledge",
-                icon: <Globe size={18} className="text-orange-500"/>,
-                desc: "10 Questions (40 Marks)",
-                content: [
-                    "History", "Geography", "Current Affairs", "Awards & Sports", "Indian Armed Forces Facts"
-                ]
-            }
-        ],
-        features: [
-            "Deep Dive into 12th PCM Topics",
-            "Technical Specific Mock Tests",
-            "Numerical Problem Solving Tricks",
-            "Previous Year Technical Questions"
-        ]
-    },
-
-    "agniveer-clerk": {
-        title: "Agniveer Clerk / SKT Special",
-        subtitle: "Master English & Computer Proficiency",
-        price: "₹599",
-        originalPrice: "₹1,199",
-        discount: "50% OFF",
-        rating: 4.6,
-        students: "6,000+",
-        validity: "Valid till Exam Date",
-        language: "Hinglish",
-        theme: "purple",
-        dates: {
-            notification: "Released (25,000+ Vacancies)",
-            exam: "Online CEE 2025"
-        },
-        stats: [
-            { label: "Clerk Mocks", value: "30+" },
-            { label: "Eng Notes", value: "50+" },
-            { label: "Comp Notes", value: "20+" }
-        ],
-        syllabus: [
-            {
-                title: "General English (Part 2)",
-                icon: <BookOpen size={18} className="text-pink-500"/>,
-                desc: "25 Questions (100 Marks) - CRITICAL",
-                content: [
-                    "Comprehension (Unseen Passages)", 
-                    "Parts of Speech (Noun, Pronoun, Verb, Adverb, Preposition, Conjunction)", 
-                    "Tenses & Articles", 
-                    "Vocabulary (Synonyms, Antonyms, One Word Substitution, Idioms & Phrases)", 
-                    "Sentence Structure (Jumbled sentences, Active/Passive Voice, Direct/Indirect Speech)", 
-                    "Spotting Errors"
-                ]
-            },
-            {
-                title: "Computer Science",
-                icon: <Target size={18} className="text-indigo-500"/>,
-                desc: "5 Questions (20 Marks)",
-                content: [
-                    "Computer System Characteristics", "Input/Output Devices", "Memory (RAM/ROM)",
-                    "MS Office (Word, Excel, PPT)", "Windows Operating System", "Basic Internet Concepts"
-                ]
-            },
-            {
-                title: "Mathematics (Part 1)",
-                icon: <Calculator size={18} className="text-blue-500"/>,
-                desc: "10 Questions (40 Marks)",
-                content: [
-                    "Arithmetic", "Algebra", "Mensuration (Area & Volume)", 
-                    "Trigonometry", "Basic Geometry", "Statistics"
-                ]
-            },
-            {
-                title: "GK & General Science",
-                icon: <Globe size={18} className="text-orange-500"/>,
-                desc: "10 Questions (40 Marks Total)",
-                content: [
-                    "Current Affairs", "History & Civics", "Geography",
-                    "Basic Physics, Chemistry & Biology"
-                ]
-            }
-        ],
-        features: [
-            "Special Focus on English (100 Marks)",
-            "Computer Science Notes & Quiz",
-            "Clerk Specific Full Length Mocks",
-            "Grammar & Vocab Booster"
-        ]
     }
+};
+
+// --- PAYMENT MODAL COMPONENT ---
+const PaymentModal = ({ isOpen, onClose, course }) => {
+    const [step, setStep] = useState(1); // 1: Details, 2: Payment, 3: Success
+    const [loading, setLoading] = useState(false);
+
+    if (!isOpen) return null;
+
+    const handlePayment = () => {
+        setLoading(true);
+        // Simulate API Call
+        setTimeout(() => {
+            setLoading(false);
+            setStep(3); // Success
+        }, 2000);
+    };
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-stone-900/80 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-stone-200 dark:border-slate-700 relative">
+                
+                {/* Close Button */}
+                <button 
+                    onClick={onClose} 
+                    className="absolute top-4 right-4 p-2 rounded-full hover:bg-stone-100 dark:hover:bg-slate-800 transition-colors z-10"
+                >
+                    <X size={20} className="text-stone-500" />
+                </button>
+
+                {/* STEP 1: SUMMARY & DETAILS */}
+                {step === 1 && (
+                    <div className="p-6">
+                        <div className="text-center mb-6">
+                            <div className={`inline-flex p-3 rounded-2xl bg-${course.theme}-100 dark:bg-${course.theme}-900/30 text-${course.theme}-600 mb-4`}>
+                                <Lock size={24} />
+                            </div>
+                            <h2 className="text-2xl font-bold text-stone-900 dark:text-white">Secure Checkout</h2>
+                            <p className="text-sm text-stone-500">Complete your purchase to start learning.</p>
+                        </div>
+
+                        <div className="bg-stone-50 dark:bg-slate-800 p-4 rounded-xl mb-6 flex gap-4 items-center">
+                            <div className={`w-16 h-16 rounded-lg bg-${course.theme}-500 shrink-0`}></div>
+                            <div>
+                                <h3 className="font-bold text-sm text-stone-900 dark:text-white line-clamp-1">{course.title}</h3>
+                                <p className="text-xs text-stone-500">{course.subtitle}</p>
+                                <div className="text-lg font-black text-stone-900 dark:text-white mt-1">{course.price} <span className="text-xs font-normal text-stone-400 line-through">{course.originalPrice}</span></div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3 mb-6">
+                            <input type="text" placeholder="Full Name" className="w-full p-3 rounded-xl bg-stone-50 dark:bg-slate-800 border border-stone-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                            <input type="email" placeholder="Email Address" className="w-full p-3 rounded-xl bg-stone-50 dark:bg-slate-800 border border-stone-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                            <input type="tel" placeholder="Phone Number" className="w-full p-3 rounded-xl bg-stone-50 dark:bg-slate-800 border border-stone-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                        </div>
+
+                        <button 
+                            onClick={() => setStep(2)}
+                            className="w-full bg-stone-900 dark:bg-white text-white dark:text-stone-900 py-3.5 rounded-xl font-bold text-sm shadow-lg hover:shadow-xl transition-all active:scale-95"
+                        >
+                            Proceed to Pay {course.price}
+                        </button>
+                    </div>
+                )}
+
+                {/* STEP 2: PAYMENT METHOD (Simulation) */}
+                {step === 2 && (
+                    <div className="p-6">
+                        <h2 className="text-xl font-bold text-stone-900 dark:text-white mb-6">Select Payment Method</h2>
+                        
+                        <div className="space-y-3 mb-8">
+                            <button onClick={handlePayment} className="w-full flex items-center gap-3 p-4 rounded-xl border border-stone-200 dark:border-slate-700 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all text-left group">
+                                <div className="p-2 bg-white rounded-full shadow-sm"><Zap size={18} className="text-purple-600"/></div>
+                                <span className="font-bold text-sm text-stone-700 dark:text-stone-300">UPI (GPay, PhonePe)</span>
+                            </button>
+                            <button onClick={handlePayment} className="w-full flex items-center gap-3 p-4 rounded-xl border border-stone-200 dark:border-slate-700 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all text-left group">
+                                <div className="p-2 bg-white rounded-full shadow-sm"><CreditCard size={18} className="text-blue-600"/></div>
+                                <span className="font-bold text-sm text-stone-700 dark:text-stone-300">Card (Debit/Credit)</span>
+                            </button>
+                        </div>
+
+                        {loading && (
+                            <div className="absolute inset-0 bg-white/80 dark:bg-slate-900/80 flex flex-col items-center justify-center z-20">
+                                <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+                                <p className="text-sm font-bold text-emerald-600 animate-pulse">Processing Payment...</p>
+                            </div>
+                        )}
+
+                        <button onClick={() => setStep(1)} className="text-xs text-stone-400 hover:text-stone-600 underline">Go Back</button>
+                    </div>
+                )}
+
+                {/* STEP 3: SUCCESS */}
+                {step === 3 && (
+                    <div className="p-8 text-center">
+                        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                            <CheckCircle size={40} className="text-green-600" />
+                        </div>
+                        <h2 className="text-2xl font-black text-stone-900 dark:text-white mb-2">Payment Successful!</h2>
+                        <p className="text-stone-500 text-sm mb-6">Welcome to the elite force. Your course content is now unlocked.</p>
+                        <button 
+                            onClick={onClose}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-transform active:scale-95"
+                        >
+                            Start Learning
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 };
 
 const AgniveerPage = () => {
     const { courseId } = useParams();
-    // Default to 'agniveer-ultimate' if ID not found or generic
     const course = COURSE_DETAILS[courseId] || COURSE_DETAILS["agniveer-ultimate"];
     const [activeSection, setActiveSection] = useState(0);
+    const [isPaymentOpen, setIsPaymentOpen] = useState(false); // STATE FOR MODAL
 
     return (
         <div className="min-h-screen bg-stone-50 dark:bg-slate-950 font-sans text-stone-800 dark:text-slate-200">
             
+            {/* PAYMENT MODAL */}
+            <PaymentModal 
+                isOpen={isPaymentOpen} 
+                onClose={() => setIsPaymentOpen(false)} 
+                course={course} 
+            />
+
             {/* Mobile Header (Sticky) */}
             <div className="md:hidden sticky top-0 z-50 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 flex justify-between items-center shadow-sm">
                 <Link to={-1} className="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><ArrowLeft size={20}/></Link>
                 <span className="font-bold text-sm truncate w-40">{course.title}</span>
-                <button className={`bg-${course.theme}-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold`}>Enroll {course.price}</button>
+                <button 
+                    onClick={() => setIsPaymentOpen(true)}
+                    className={`bg-${course.theme}-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold`}
+                >
+                    Enroll {course.price}
+                </button>
             </div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
@@ -442,7 +351,10 @@ const AgniveerPage = () => {
                                     </div>
                                 </div>
 
-                                <button className={`w-full bg-${course.theme}-600 hover:bg-${course.theme}-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all active:scale-95 mb-4 flex items-center justify-center gap-2`}>
+                                <button 
+                                    onClick={() => setIsPaymentOpen(true)}
+                                    className={`w-full bg-${course.theme}-600 hover:bg-${course.theme}-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all active:scale-95 mb-4 flex items-center justify-center gap-2`}
+                                >
                                     Unlock Access <ArrowRight size={20} />
                                 </button>
 

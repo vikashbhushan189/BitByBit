@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { 
     CheckCircle, PlayCircle, FileText, Lock, Clock, 
     Calendar, Award, Star, ChevronDown, ChevronUp, 
-    Shield, ArrowLeft, Zap, Users
+    Shield, ArrowLeft, Zap, Users, BookOpen
 } from 'lucide-react';
 
 // --- MOCK COURSE DATA ---

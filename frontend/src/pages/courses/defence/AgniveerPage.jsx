@@ -89,7 +89,220 @@ const COURSE_DETAILS = {
             "Physical Training Guide included"
         ]
     },
-    // You can add "agniveer-gd", "agniveer-tech" here with specific subsets of the syllabus if needed
+    "agniveer-gd": {
+        title: "Agniveer GD Special Pass",
+        subtitle: "Targeted Prep for General Duty (GD)",
+        price: "₹499",
+        originalPrice: "₹999",
+        discount: "50% OFF",
+        rating: 4.7,
+        students: "8,500+",
+        validity: "Valid till Exam Date",
+        language: "Hinglish",
+        theme: "blue",
+        dates: {
+            notification: "Released (25,000+ Vacancies)",
+            exam: "Online CEE 2025"
+        },
+        stats: [
+            { label: "Mock Tests", value: "30+" },
+            { label: "GD Notes", value: "80+" },
+            { label: "Practice Sets", value: "Daily" }
+        ],
+        syllabus: [
+            {
+                title: "General Knowledge",
+                icon: <Globe size={18} className="text-orange-500"/>,
+                desc: "15 Questions (30 Marks)",
+                content: [
+                    "Abbreviations", "Science – Inventions & Discoveries", "Current Important Events",
+                    "Current Affairs – National & International", "Awards and Honors", "Important Financial",
+                    "Economic News", "Banking News", "Indian Constitution", "Books and Authors",
+                    "Important Days", "History", "Sports Terminology", "Geography",
+                    "Solar System", "Indian states and capitals", "Countries and Currencies"
+                ]
+            },
+            {
+                title: "General Science",
+                icon: <Microscope size={18} className="text-green-500"/>,
+                desc: "15 Questions (30 Marks)",
+                content: [
+                    "Biology (10th Level)",
+                    "Chemistry (10th Level)",
+                    "Physics (10th Level)",
+                    "Human Body",
+                    "Everyday Science Principles"
+                ]
+            },
+            {
+                title: "Mathematics",
+                icon: <Calculator size={18} className="text-blue-500"/>,
+                desc: "15 Questions (30 Marks)",
+                content: [
+                    "Mixture & Allegations", "Pipes and Cisterns", "Speed, Time & Distance",
+                    "Mensuration", "Trigonometry", "Geometry", "Time and Work", "Probability",
+                    "HCF & LCM", "Algebraic Expressions", "Average", "Percentage",
+                    "Profit and Loss", "Number System", "Simple & Compound Interest", 
+                    "Ratio and Proportion", "Partnership"
+                ]
+            },
+            {
+                title: "Logical Reasoning",
+                icon: <BrainCircuit size={18} className="text-purple-500"/>,
+                desc: "5 Questions (10 Marks)",
+                content: [
+                    "Number, Ranking & Time Sequence", "Logical Sequence of Words", "Alphabet Test Series",
+                    "Coding-Decoding", "Direction Sense Test", "Analogy", "Blood Relations",
+                    "Clocks & Calendars", "Statement – Conclusions", "Logical Venn Diagrams"
+                ]
+            }
+        ],
+        features: [
+            "Focused GD Syllabus Coverage",
+            "30+ GD Specific Mock Tests",
+            "Science & Maths Formula Sheets",
+            "Current Affairs Monthly Capsules"
+        ]
+    },
+
+    "agniveer-tech": {
+        title: "Agniveer Technical Special",
+        subtitle: "Physics & Maths Deep Dive (12th Level)",
+        price: "₹599",
+        originalPrice: "₹1,199",
+        discount: "50% OFF",
+        rating: 4.8,
+        students: "5,200+",
+        validity: "Valid till Exam Date",
+        language: "Hinglish",
+        theme: "indigo",
+        dates: {
+            notification: "Released (25,000+ Vacancies)",
+            exam: "Online CEE 2025"
+        },
+        stats: [
+            { label: "Tech Mocks", value: "25+" },
+            { label: "PCM Notes", value: "100+" },
+            { label: "Formulae", value: "All" }
+        ],
+        syllabus: [
+            {
+                title: "Physics (12th Level)",
+                icon: <Zap size={18} className="text-yellow-500"/>,
+                desc: "15 Questions (60 Marks)",
+                content: [
+                    "Physical World & Measurement", "Kinematics", "Laws of Motion", "Work, Energy & Power",
+                    "Motion of System of Particles", "Gravitation", "Thermodynamics", 
+                    "Properties of Bulk Matter", "Electrostatics", "Current Electricity", 
+                    "Magnetic Effects of Current", "Electromagnetic Waves"
+                ]
+            },
+            {
+                title: "Mathematics (12th Level)",
+                icon: <Calculator size={18} className="text-blue-500"/>,
+                desc: "15 Questions (60 Marks)",
+                content: [
+                    "Algebra", "Matrices & Determinants", "Analytical Geometry", "Trigonometry",
+                    "Integral Calculus", "Differential Calculus", "Probability", "Statistics",
+                    "Number Systems", "Vector Algebra", "Complex Numbers"
+                ]
+            },
+            {
+                title: "Chemistry",
+                icon: <Microscope size={18} className="text-green-500"/>,
+                desc: "10 Questions (40 Marks)",
+                content: [
+                    "Physical Chemistry", "Inorganic Chemistry", "Organic Chemistry",
+                    "Atomic Structure", "Chemical Bonding", "States of Matter", 
+                    "Elements & Compounds", "Chemical Kinetics"
+                ]
+            },
+            {
+                title: "General Knowledge",
+                icon: <Globe size={18} className="text-orange-500"/>,
+                desc: "10 Questions (40 Marks)",
+                content: [
+                    "History", "Geography", "Current Affairs", "Awards & Sports", "Indian Armed Forces Facts"
+                ]
+            }
+        ],
+        features: [
+            "Deep Dive into 12th PCM Topics",
+            "Technical Specific Mock Tests",
+            "Numerical Problem Solving Tricks",
+            "Previous Year Technical Questions"
+        ]
+    },
+
+    "agniveer-clerk": {
+        title: "Agniveer Clerk / SKT Special",
+        subtitle: "Master English & Computer Proficiency",
+        price: "₹599",
+        originalPrice: "₹1,199",
+        discount: "50% OFF",
+        rating: 4.6,
+        students: "6,000+",
+        validity: "Valid till Exam Date",
+        language: "Hinglish",
+        theme: "purple",
+        dates: {
+            notification: "Released (25,000+ Vacancies)",
+            exam: "Online CEE 2025"
+        },
+        stats: [
+            { label: "Clerk Mocks", value: "30+" },
+            { label: "Eng Notes", value: "50+" },
+            { label: "Comp Notes", value: "20+" }
+        ],
+        syllabus: [
+            {
+                title: "General English (Part 2)",
+                icon: <BookOpen size={18} className="text-pink-500"/>,
+                desc: "25 Questions (100 Marks) - CRITICAL",
+                content: [
+                    "Comprehension (Unseen Passages)", 
+                    "Parts of Speech (Noun, Pronoun, Verb, Adverb, Preposition, Conjunction)", 
+                    "Tenses & Articles", 
+                    "Vocabulary (Synonyms, Antonyms, One Word Substitution, Idioms & Phrases)", 
+                    "Sentence Structure (Jumbled sentences, Active/Passive Voice, Direct/Indirect Speech)", 
+                    "Spotting Errors"
+                ]
+            },
+            {
+                title: "Computer Science",
+                icon: <Target size={18} className="text-indigo-500"/>,
+                desc: "5 Questions (20 Marks)",
+                content: [
+                    "Computer System Characteristics", "Input/Output Devices", "Memory (RAM/ROM)",
+                    "MS Office (Word, Excel, PPT)", "Windows Operating System", "Basic Internet Concepts"
+                ]
+            },
+            {
+                title: "Mathematics (Part 1)",
+                icon: <Calculator size={18} className="text-blue-500"/>,
+                desc: "10 Questions (40 Marks)",
+                content: [
+                    "Arithmetic", "Algebra", "Mensuration (Area & Volume)", 
+                    "Trigonometry", "Basic Geometry", "Statistics"
+                ]
+            },
+            {
+                title: "GK & General Science",
+                icon: <Globe size={18} className="text-orange-500"/>,
+                desc: "10 Questions (40 Marks Total)",
+                content: [
+                    "Current Affairs", "History & Civics", "Geography",
+                    "Basic Physics, Chemistry & Biology"
+                ]
+            }
+        ],
+        features: [
+            "Special Focus on English (100 Marks)",
+            "Computer Science Notes & Quiz",
+            "Clerk Specific Full Length Mocks",
+            "Grammar & Vocab Booster"
+        ]
+    }
 };
 
 const AgniveerPage = () => {

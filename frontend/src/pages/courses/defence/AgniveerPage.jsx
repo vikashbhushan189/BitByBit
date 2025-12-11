@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Chart } from 'chart.js/auto';
-import api from '../api/axios';
+import api from '../../../api/axios';
 import { 
     CheckCircle, FileText, Lock, Clock, 
     Calendar, Award, Star, ChevronDown, ChevronUp, 

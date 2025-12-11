@@ -418,20 +418,19 @@ const PaymentModal = ({ isOpen, onClose, course }) => {
 
 const AgniveerPage = () => {
     const { courseId } = useParams();
+    const navigate = useNavigate();
     const course = COURSE_DETAILS[courseId] || COURSE_DETAILS["agniveer-ultimate"];
     const [activeSection, setActiveSection] = useState(0);
     const [isPaymentOpen, setIsPaymentOpen] = useState(false); // STATE FOR MODAL
 
-    // --- LOGIC: GATEKEEPER ---
+    // --- GATEKEEPER LOGIC ---
     const handleEnrollClick = () => {
-        const isLoggedIn = !!localStorage.getItem('access_token');
-        
-        if (!isLoggedIn) {
-            // User is Guest -> Send to Login
-            // Optional: You could save the current URL to redirect back after login
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            // User is NOT logged in -> Redirect to Login
             navigate('/login');
         } else {
-            // User is Logged In -> Open Payment
+            // User IS logged in -> Open Payment Modal
             setIsPaymentOpen(true);
         }
     };
@@ -579,7 +578,7 @@ const AgniveerPage = () => {
                                 </div>
 
                                 <button 
-                                    onClick={handleEnrollClick}
+                                    onClick={handleEnrollClick} // <--- Gatekeeper Here Too
                                     className={`w-full bg-${course.theme}-600 hover:bg-${course.theme}-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all active:scale-95 mb-4 flex items-center justify-center gap-2`}
                                 >
                                     Unlock Access <ArrowRight size={20} />

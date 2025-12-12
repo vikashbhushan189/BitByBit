@@ -139,41 +139,36 @@ class AIGeneratorViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'])
     def generate(self, request):
-        source_type = request.data.get('source_type') # 'chapter', 'subject', 'course'
+        # ... (Keep existing generate logic) ...
+        topic_id = request.data.get('topic_id')
+        source_type = request.data.get('source_type')
         source_id = request.data.get('source_id')
         num_questions = int(request.data.get('num_questions', 5))
         difficulty = request.data.get('difficulty', 'Medium')
         custom_instructions = request.data.get('custom_instructions', '')
 
-        # Default fallback (if frontend sends 'topic' by mistake, treat as 'chapter')
-        if source_type == 'topic': source_type = 'chapter'
+        if not source_id and topic_id: source_id = topic_id
+        if not source_type: source_type = 'topic'
+        
+        # Normalize source_type 'topic' -> 'chapter' if needed, or handle normally
+        # Assuming notes are in Chapter now
+        if source_type == 'topic': source_type = 'chapter' 
 
         text_content = ""
-        
-        # 1. Fetch from CHAPTER (New Logic)
         if source_type == 'chapter':
             chapter = get_object_or_404(Chapter, id=source_id)
             text_content = chapter.study_notes or ""
-            
-        # 2. Fetch from SUBJECT (Aggregate Chapters)
         elif source_type == 'subject':
             chapters = Chapter.objects.filter(subject_id=source_id)
             for ch in chapters:
-                if ch.study_notes:
-                    text_content += f"\n\n--- Chapter: {ch.title} ---\n{ch.study_notes}"
-                    
-        # 3. Fetch from COURSE (Aggregate all Chapters)
+                if ch.study_notes: text_content += f"\n\n--- Chapter: {ch.title} ---\n{ch.study_notes}"
         elif source_type == 'course':
-            # Limit to first 20 chapters to avoid AI token limits
-            chapters = Chapter.objects.filter(subject__course_id=source_id)[:20] 
+            chapters = Chapter.objects.filter(subject__course_id=source_id)[:20]
             for ch in chapters:
-                if ch.study_notes:
-                    text_content += f"\n\n--- Chapter: {ch.title} ---\n{ch.study_notes}"
+                if ch.study_notes: text_content += f"\n\n--- Chapter: {ch.title} ---\n{ch.study_notes}"
 
-        if not text_content:
-            return Response({"error": "No study notes found in the selected source."}, status=400)
-
-        # Call AI
+        if not text_content: return Response({"error": "No notes found to generate from."}, status=400)
+        
         questions_json = generate_questions_from_text(text_content, num_questions, difficulty, custom_instructions)
         return Response(questions_json)
 
@@ -182,81 +177,88 @@ class AIGeneratorViewSet(viewsets.ViewSet):
         image = request.FILES.get('image')
         difficulty = request.data.get('difficulty', 'Medium')
         custom_instructions = request.data.get('custom_instructions', '')
-
-        if not image:
-            return Response({"error": "No image uploaded"}, status=400)
-
+        if not image: return Response({"error": "No image uploaded"}, status=400)
         questions = generate_question_from_image(image, difficulty, custom_instructions)
         return Response(questions)
     
-    # --- NEW: CSV Upload for Questions ---
     @action(detail=False, methods=['post'])
     def upload_questions_csv(self, request):
+        # ... (Keep existing CSV upload logic) ...
         file = request.FILES.get('file')
         exam_id = request.data.get('exam_id')
-        
-        if not file or not exam_id:
-            return Response({"error": "File and Exam ID required"}, status=400)
-            
+        if not file or not exam_id: return Response({"error": "File and Exam ID required"}, status=400)
         exam = get_object_or_404(Exam, id=exam_id)
-        
         try:
             decoded_file = file.read().decode('utf-8')
             io_string = io.StringIO(decoded_file)
             reader = csv.DictReader(io_string)
-            
             count = 0
             for row in reader:
-                # Expected headers: Question Text, Option A, Option B, Option C, Option D, Correct Option, Marks
                 q_text = row.get('Question Text')
-                options = [
-                    row.get('Option A'),
-                    row.get('Option B'),
-                    row.get('Option C'),
-                    row.get('Option D')
-                ]
-                correct_opt = row.get('Correct Option', '').upper().strip() # A, B, C, D
+                options = [row.get('Option A'), row.get('Option B'), row.get('Option C'), row.get('Option D')]
+                correct_opt = row.get('Correct Option', '').upper().strip()
                 marks = row.get('Marks', 2)
-                
-                if not q_text or not all(options) or not correct_opt:
-                    continue
-                    
-                # Map 'A'->0, 'B'->1 etc.
-                correct_idx = -1
-                if correct_opt == 'A': correct_idx = 0
-                elif correct_opt == 'B': correct_idx = 1
-                elif correct_opt == 'C': correct_idx = 2
-                elif correct_opt == 'D': correct_idx = 3
-                
+                if not q_text or not all(options) or not correct_opt: continue
+                correct_idx = {'A':0, 'B':1, 'C':2, 'D':3}.get(correct_opt, -1)
                 if correct_idx == -1: continue
-
-                question = Question.objects.create(
-                    exam=exam,
-                    text_content=q_text,
-                    marks=marks
-                )
-                
+                question = Question.objects.create(exam=exam, text_content=q_text, marks=marks)
                 for idx, opt_text in enumerate(options):
-                    Option.objects.create(
-                        question=question,
-                        text=opt_text,
-                        is_correct=(idx == correct_idx)
-                    )
+                    Option.objects.create(question=question, text=opt_text, is_correct=(idx == correct_idx))
                 count += 1
-            
             return Response({"status": "success", "added": count})
-        except Exception as e:
-            return Response({"error": str(e)}, status=500)
+        except Exception as e: return Response({"error": str(e)}, status=500)
 
     @action(detail=False, methods=['post'])
     def save_bulk(self, request):
+        # --- UPDATE: Handle New Exam Creation ---
         exam_id = request.data.get('exam_id')
+        new_exam_title = request.data.get('new_exam_title') # <--- NEW PARAMETER
+        
+        # Context parameters for linking the new exam
+        source_type = request.data.get('source_type') 
+        source_id = request.data.get('source_id')
+
         questions_data = request.data.get('questions', [])
         duration = request.data.get('duration')
-        exam = get_object_or_404(Exam, id=exam_id)
+        
+        exam = None
+
+        if exam_id:
+            exam = get_object_or_404(Exam, id=exam_id)
+        elif new_exam_title:
+            # Create a New Exam on the fly
+            exam_defaults = {
+                'title': new_exam_title,
+                'duration_minutes': int(duration) if duration else 30,
+                'total_marks': len(questions_data) * 2, # Estimate
+                'exam_type': 'SUBJECT_TEST' # Default type
+            }
+
+            # Try to link to Course/Subject based on generation source
+            if source_type == 'course' and source_id:
+                exam_defaults['course_id'] = source_id
+                exam_defaults['exam_type'] = 'MOCK_FULL'
+            elif source_type == 'subject' and source_id:
+                exam_defaults['subject_id'] = source_id
+                exam_defaults['exam_type'] = 'SUBJECT_TEST'
+            elif source_type == 'chapter' and source_id:
+                # If generated from Chapter, link to its Subject
+                try:
+                    chapter = Chapter.objects.get(id=source_id)
+                    exam_defaults['subject'] = chapter.subject
+                    exam_defaults['exam_type'] = 'TOPIC_QUIZ'
+                except: pass
+            
+            exam = Exam.objects.create(**exam_defaults)
+        
+        if not exam:
+            return Response({"error": "Please select an existing exam OR enter a name for a new one."}, status=400)
+
+        # Update duration if provided
         if duration:
             exam.duration_minutes = int(duration)
             exam.save()
+        
         count = 0
         for q_data in questions_data:
             question = Question.objects.create(
@@ -271,8 +273,14 @@ class AIGeneratorViewSet(viewsets.ViewSet):
                     is_correct=(idx == q_data['correct_index'])
                 )
             count += 1
-        return Response({"status": "success", "added": count, "duration_updated": bool(duration)})
-
+            
+        return Response({
+            "status": "success", 
+            "added": count, 
+            "exam_title": exam.title,
+            "message": f"Saved {count} questions to '{exam.title}'"
+        })
+    
 class BulkNotesViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAdminUser]
 

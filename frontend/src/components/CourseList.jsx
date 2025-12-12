@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom'; // Added useSearchParams
+import { Link, useSearchParams } from 'react-router-dom';
 import api from '../api/axios';
-import { BookOpen, ChevronRight, GraduationCap, FileText, Lock } from 'lucide-react';
+import { BookOpen, ChevronRight, GraduationCap, FileText, Lock, PlayCircle } from 'lucide-react';
 
 const CourseList = () => {
     const [courses, setCourses] = useState([]);
@@ -93,43 +93,56 @@ const CourseList = () => {
                             <div className="space-y-8">
                                 {course.subjects && course.subjects.map(subject => (
                                     <div key={subject.id} className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-                                        <div className="px-6 py-4 bg-slate-100 border-b border-slate-200 flex items-center gap-3">
-                                            <div className="bg-blue-100 p-1.5 rounded text-blue-600">
-                                                <BookOpen size={18} />
+                                        <div className="px-6 py-4 bg-slate-100 border-b border-slate-200 flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="bg-blue-100 p-1.5 rounded text-blue-600">
+                                                    <BookOpen size={18} />
+                                                </div>
+                                                <h4 className="font-bold text-slate-700">{subject.title}</h4>
                                             </div>
-                                            <h4 className="font-bold text-slate-700">{subject.title}</h4>
+                                            {/* Show Section if available (e.g. Paper 1) */}
+                                            {subject.section && subject.section !== 'Main' && (
+                                                <span className="text-xs font-bold bg-slate-200 text-slate-600 px-2 py-1 rounded">
+                                                    {subject.section}
+                                                </span>
+                                            )}
                                         </div>
                                         
                                         <div className="p-6 space-y-6">
                                             {subject.chapters && subject.chapters.map(chapter => (
-                                                <div key={chapter.id}>
-                                                    <h5 className="text-sm font-semibold text-slate-500 mb-3 flex items-center gap-2">
-                                                        <span className="w-1.5 h-1.5 bg-slate-300 rounded-full"></span>
-                                                        {chapter.title}
-                                                    </h5>
+                                                <div key={chapter.id} className="border-l-2 border-slate-100 pl-4">
+                                                    <div className="flex items-center justify-between mb-3">
+                                                        <h5 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                                                            <span className="w-1.5 h-1.5 bg-slate-300 rounded-full"></span>
+                                                            {chapter.title}
+                                                        </h5>
+
+                                                        {/* --- NEW: NOTES BUTTON AT CHAPTER LEVEL --- */}
+                                                        {(mode === 'enrolled' || !course.is_paid) && chapter.study_notes && (
+                                                            <Link 
+                                                                to={`/chapter/${chapter.id}/notes`} // New Route
+                                                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-slate-700 rounded-lg hover:bg-slate-900 transition-all shadow-sm"
+                                                            >
+                                                                <FileText size={14} /> Read Notes
+                                                            </Link>
+                                                        )}
+                                                    </div>
                                                     
-                                                    <div className="space-y-2 pl-4 border-l-2 border-slate-100">
+                                                    <div className="space-y-2 pl-4">
                                                         {chapter.topics && chapter.topics.map(topic => (
-                                                            <div key={topic.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg hover:bg-blue-50 transition-colors group">
-                                                                <span className="text-slate-700 font-medium group-hover:text-blue-700 transition-colors mb-2 sm:mb-0">
+                                                            <div key={topic.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-2 rounded-lg hover:bg-blue-50 transition-colors group">
+                                                                <span className="text-sm text-slate-600 font-medium group-hover:text-blue-700 transition-colors mb-2 sm:mb-0">
                                                                     {topic.title}
                                                                 </span>
                                                                 
                                                                 {/* Only show Access Buttons if Enrolled or Course is Free */}
                                                                 {(mode === 'enrolled' || !course.is_paid) ? (
                                                                     <div className="flex items-center gap-3">
-                                                                        {topic.study_notes && (
-                                                                            <Link 
-                                                                                to={`/topic/${topic.id}/notes`}
-                                                                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:border-blue-300 hover:text-blue-600 transition-all shadow-sm"
-                                                                            >
-                                                                                <FileText size={14} /> Notes
-                                                                            </Link>
-                                                                        )}
+                                                                        {/* QUIZ BUTTON (Still on Topic) */}
                                                                         {topic.quiz_id ? (
                                                                             <Link 
                                                                                 to={`/exam/${topic.quiz_id}`}
-                                                                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all shadow-sm hover:shadow-md"
+                                                                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-100 rounded-lg hover:bg-blue-600 hover:text-white transition-all shadow-sm"
                                                                             >
                                                                                 Start Quiz <ChevronRight size={14} />
                                                                             </Link>
@@ -144,6 +157,9 @@ const CourseList = () => {
                                                                 )}
                                                             </div>
                                                         ))}
+                                                        {(!chapter.topics || chapter.topics.length === 0) && (
+                                                            <p className="text-xs text-slate-300 italic">No topics yet</p>
+                                                        )}
                                                     </div>
                                                 </div>
                                             ))}

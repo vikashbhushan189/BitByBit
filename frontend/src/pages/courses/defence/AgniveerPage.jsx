@@ -167,7 +167,7 @@ const COURSE_DETAILS = {
     },
 
     "agniveer-tech": {
-        id: 26,
+        id: 27,
         title: "Agniveer Technical Special",
         subtitle: "Physics & Maths Deep Dive (12th Level)",
         price: "₹599",

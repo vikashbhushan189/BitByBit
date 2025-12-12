@@ -7,7 +7,7 @@ from django.db import transaction
 import csv
 import io
 from .models import Course, Exam, ExamAttempt, Question, Option, StudentResponse, Topic, Chapter, Subject, AdBanner, UserSubscription
-from .serializers import CourseSerializer, ExamSerializer, ExamAttemptSerializer, TopicSerializer, AdBannerSerializer
+from .serializers import CourseSerializer, ExamSerializer, ExamAttemptSerializer, TopicSerializer,ChapterSerializer, AdBannerSerializer
 from .ai_service import generate_questions_from_text, generate_question_from_image
 from .permissions import IsPaidSubscriberOrAdmin
 import logging
@@ -49,6 +49,18 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
             subscription.save()
             
         return Response({"status": "success", "message": f"Enrolled in {course.title}"})
+    
+# NEW: Chapter ViewSet for Notes
+class ChapterViewSet(viewsets.ModelViewSet):
+    queryset = Chapter.objects.all()
+    serializer_class = ChapterSerializer
+    
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            permission_classes = [permissions.IsAuthenticated, IsPaidSubscriberOrAdmin]
+        else:
+            permission_classes = [permissions.IsAdminUser]
+        return [permission() for permission in permission_classes]
     
 class TopicViewSet(viewsets.ModelViewSet):  # <--- Changed from ReadOnlyModelViewSet to ModelViewSet
     queryset = Topic.objects.all()
@@ -265,8 +277,7 @@ class BulkNotesViewSet(viewsets.ViewSet):
             return Response({"error": "File must be a CSV"}, status=400)
 
         try:
-            # FIX: Use codecs.iterdecode to stream line-by-line safely
-            # This handles both InMemoryUploadedFile and TemporaryUploadedFile
+            # Stream line-by-line using codecs
             decoded_file = codecs.iterdecode(file_obj, 'utf-8-sig')
             reader = csv.DictReader(decoded_file)
             
@@ -278,7 +289,6 @@ class BulkNotesViewSet(viewsets.ViewSet):
                     if 'course' in clean: header_map['course'] = field
                     elif 'subject' in clean: header_map['subject'] = field
                     elif 'chapter' in clean: header_map['chapter'] = field
-                    elif 'topic' in clean: header_map['topic'] = field
                     elif 'note' in clean: header_map['notes'] = field 
 
             updated_count = 0
@@ -288,26 +298,26 @@ class BulkNotesViewSet(viewsets.ViewSet):
                 c_title = row.get(header_map.get('course'), '').strip()
                 s_title = row.get(header_map.get('subject'), '').strip()
                 ch_title = row.get(header_map.get('chapter'), '').strip()
-                t_title = row.get(header_map.get('topic'), '').strip()
                 notes = row.get(header_map.get('notes'), '').strip()
 
-                if not (c_title and s_title and ch_title and t_title):
+                if not (c_title and s_title and ch_title):
                     continue
 
                 course, _ = Course.objects.get_or_create(title=c_title)
                 subject, _ = Subject.objects.get_or_create(title=s_title, course=course)
-                chapter, _ = Chapter.objects.get_or_create(title=ch_title, subject=subject)
-                topic, created = Topic.objects.get_or_create(title=t_title, chapter=chapter)
+                
+                # Notes now attach to CHAPTER
+                chapter, created = Chapter.objects.get_or_create(title=ch_title, subject=subject)
                 
                 if notes:
-                    topic.study_notes = notes
-                    topic.save()
+                    chapter.study_notes = notes
+                    chapter.save()
                     if created: created_count += 1
                     else: updated_count += 1
 
             return Response({
                 "status": "success", 
-                "message": f"Processed successfully! Created {created_count}, Updated {updated_count}."
+                "message": f"Processed successfully! Created {created_count}, Updated {updated_count} chapters."
             })
 
         except Exception as e:

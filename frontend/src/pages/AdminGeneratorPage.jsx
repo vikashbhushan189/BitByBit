@@ -81,9 +81,8 @@ const AdminGeneratorPage = () => {
         formData.append('custom_instructions', customInstructions);
 
         try {
-            const res = await api.post('ai-generator/generate_image/', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            // FIX: Let Axios handle headers for multipart
+            const res = await api.post('ai-generator/generate_image/', formData);
             const formattedData = res.data.map(q => ({ ...q, image_url: '' }));
             setGeneratedQuestions(prev => [...prev, ...formattedData]);
         } catch (err) {
@@ -115,9 +114,8 @@ const AdminGeneratorPage = () => {
         formData.append('exam_id', selectedExam);
 
         try {
-            const res = await api.post('ai-generator/upload_questions_csv/', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            // FIX: Let Axios handle headers for multipart
+            const res = await api.post('ai-generator/upload_questions_csv/', formData);
             alert(`Success! Added ${res.data.added} questions.`);
             setCsvFile(null);
         } catch (err) {
@@ -140,22 +138,19 @@ const AdminGeneratorPage = () => {
             // Transform backend structure to generator structure
             const loadedQuestions = examData.questions.map(q => {
                 // Find index of correct option
-                const correctIndex = q.options.findIndex(opt => opt.id === q.correct_option_id || opt.is_correct); // Adjust based on your serializer
-                // Note: If your serializer doesn't send is_correct, you might need to update it or this feature is limited to text editing.
-                // Assuming standard list order for options 0-3
+                const correctIndex = q.options.findIndex(opt => opt.id === q.correct_option_id || opt.is_correct); 
                 
                 return {
                     question_text: q.text_content,
                     options: q.options.map(o => o.text),
                     correct_index: correctIndex !== -1 ? correctIndex : 0,
                     marks: q.marks,
-                    image_url: '', // Backend might not store image URL separately yet
-                    id: q.id // Track ID if we want to update later
+                    image_url: '', 
+                    id: q.id 
                 };
             });
 
             setGeneratedQuestions(loadedQuestions);
-            // Also sync the timer
             if (examData.duration_minutes) setSuggestedDuration(examData.duration_minutes);
             
         } catch (err) {

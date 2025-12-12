@@ -10,3 +10,4 @@ google-generativeai
 gunicorn
 whitenoise
 Pillow
+chardet

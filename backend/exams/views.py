@@ -13,6 +13,7 @@ from .permissions import IsPaidSubscriberOrAdmin
 import logging
 from io import TextIOWrapper
 import codecs
+import chardet
 
 logger = logging.getLogger(__name__)
 
@@ -277,11 +278,24 @@ class BulkNotesViewSet(viewsets.ViewSet):
             return Response({"error": "File must be a CSV"}, status=400)
 
         try:
-            # FIX: Added errors='replace' to prevent crashes on Windows characters
-            decoded_file = codecs.iterdecode(file_obj, 'utf-8-sig', errors='replace')
+            # 1. Detect Encoding (The Magic Fix)
+            # Read the first few bytes to guess the encoding
+            raw_data = file_obj.read()
+            result = chardet.detect(raw_data)
+            encoding = result['encoding'] or 'utf-8' # Fallback to utf-8
+            
+            # Reset file pointer to beginning
+            file_obj.seek(0)
+            
+            print(f"DEBUG: Detected CSV encoding: {encoding}")
+
+            # 2. Decode using the detected encoding
+            # errors='replace' will swap unreadable chars with ? instead of crashing,
+            # but usually correct encoding prevents this entirely.
+            decoded_file = raw_data.decode(encoding, errors='replace').splitlines()
             reader = csv.DictReader(decoded_file)
             
-            # Map Headers (Case-insensitive)
+            # 3. Map Headers (Case-insensitive)
             header_map = {}
             if reader.fieldnames:
                 for field in reader.fieldnames:
@@ -302,6 +316,10 @@ class BulkNotesViewSet(viewsets.ViewSet):
                 t_title = row.get(header_map.get('topic'), '').strip()
                 notes = row.get(header_map.get('notes'), '').strip()
 
+                # Clean up replacement characters if they still appear
+                if notes:
+                    notes = notes.replace('', '-').replace('â', "'")
+
                 if not (c_title and s_title and ch_title):
                     continue
 
@@ -309,26 +327,19 @@ class BulkNotesViewSet(viewsets.ViewSet):
                 subject, _ = Subject.objects.get_or_create(title=s_title, course=course)
                 chapter, _ = Chapter.objects.get_or_create(title=ch_title, subject=subject)
                 
-                # If topic is present in CSV, use it (backward compatibility)
-                # If not, we just update chapter notes directly
-                if t_title:
-                     topic, created = Topic.objects.get_or_create(title=t_title, chapter=chapter)
-                     if notes:
-                        topic.study_notes = notes # Or maybe append to chapter? 
-                        # Based on your previous request "Notes in Chapter", 
-                        # we should prioritize Chapter notes if Topic is empty or ignored.
-                        # But to keep it simple and working with your template:
-                        # Let's save notes to CHAPTER as per recent architecture change.
-                
-                # Logic Update: Save notes to CHAPTER as requested previously
+                # Logic Update: Save to Chapter
                 if notes:
                     chapter.study_notes = notes
                     chapter.save()
                     updated_count += 1
+                
+                # Create topic if provided (for structure)
+                if t_title:
+                     Topic.objects.get_or_create(title=t_title, chapter=chapter)
 
             return Response({
                 "status": "success", 
-                "message": f"Processed successfully! Updated {updated_count} chapters."
+                "message": f"Success! Updated {updated_count} chapters using {encoding} encoding."
             })
 
         except Exception as e:

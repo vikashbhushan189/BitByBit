@@ -139,33 +139,41 @@ class AIGeneratorViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'])
     def generate(self, request):
-        topic_id = request.data.get('topic_id')
-        source_type = request.data.get('source_type')
+        source_type = request.data.get('source_type') # 'chapter', 'subject', 'course'
         source_id = request.data.get('source_id')
         num_questions = int(request.data.get('num_questions', 5))
         difficulty = request.data.get('difficulty', 'Medium')
         custom_instructions = request.data.get('custom_instructions', '')
 
-        # Fallback for older logic
-        if not source_id and topic_id: source_id = topic_id
-        if not source_type: source_type = 'topic'
+        # Default fallback (if frontend sends 'topic' by mistake, treat as 'chapter')
+        if source_type == 'topic': source_type = 'chapter'
 
         text_content = ""
-        if source_type == 'topic':
-            topic = get_object_or_404(Topic, id=source_id)
-            text_content = topic.study_notes or ""
+        
+        # 1. Fetch from CHAPTER (New Logic)
+        if source_type == 'chapter':
+            chapter = get_object_or_404(Chapter, id=source_id)
+            text_content = chapter.study_notes or ""
+            
+        # 2. Fetch from SUBJECT (Aggregate Chapters)
         elif source_type == 'subject':
-            topics = Topic.objects.filter(chapter__subject_id=source_id)
-            for t in topics:
-                if t.study_notes: text_content += f"\n\nTopic: {t.title}\n{t.study_notes}"
+            chapters = Chapter.objects.filter(subject_id=source_id)
+            for ch in chapters:
+                if ch.study_notes:
+                    text_content += f"\n\n--- Chapter: {ch.title} ---\n{ch.study_notes}"
+                    
+        # 3. Fetch from COURSE (Aggregate all Chapters)
         elif source_type == 'course':
-            topics = Topic.objects.filter(chapter__subject__course_id=source_id)[:30]
-            for t in topics:
-                if t.study_notes: text_content += f"\n\nTopic: {t.title}\n{t.study_notes}"
+            # Limit to first 20 chapters to avoid AI token limits
+            chapters = Chapter.objects.filter(subject__course_id=source_id)[:20] 
+            for ch in chapters:
+                if ch.study_notes:
+                    text_content += f"\n\n--- Chapter: {ch.title} ---\n{ch.study_notes}"
 
         if not text_content:
-            return Response({"error": "No notes found to generate from."}, status=400)
-        
+            return Response({"error": "No study notes found in the selected source."}, status=400)
+
+        # Call AI
         questions_json = generate_questions_from_text(text_content, num_questions, difficulty, custom_instructions)
         return Response(questions_json)
 

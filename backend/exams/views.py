@@ -277,8 +277,8 @@ class BulkNotesViewSet(viewsets.ViewSet):
             return Response({"error": "File must be a CSV"}, status=400)
 
         try:
-            # Stream line-by-line using codecs
-            decoded_file = codecs.iterdecode(file_obj, 'utf-8-sig')
+            # FIX: Added errors='replace' to prevent crashes on Windows characters
+            decoded_file = codecs.iterdecode(file_obj, 'utf-8-sig', errors='replace')
             reader = csv.DictReader(decoded_file)
             
             # Map Headers (Case-insensitive)
@@ -289,6 +289,7 @@ class BulkNotesViewSet(viewsets.ViewSet):
                     if 'course' in clean: header_map['course'] = field
                     elif 'subject' in clean: header_map['subject'] = field
                     elif 'chapter' in clean: header_map['chapter'] = field
+                    elif 'topic' in clean: header_map['topic'] = field
                     elif 'note' in clean: header_map['notes'] = field 
 
             updated_count = 0
@@ -298,6 +299,7 @@ class BulkNotesViewSet(viewsets.ViewSet):
                 c_title = row.get(header_map.get('course'), '').strip()
                 s_title = row.get(header_map.get('subject'), '').strip()
                 ch_title = row.get(header_map.get('chapter'), '').strip()
+                t_title = row.get(header_map.get('topic'), '').strip()
                 notes = row.get(header_map.get('notes'), '').strip()
 
                 if not (c_title and s_title and ch_title):
@@ -305,19 +307,28 @@ class BulkNotesViewSet(viewsets.ViewSet):
 
                 course, _ = Course.objects.get_or_create(title=c_title)
                 subject, _ = Subject.objects.get_or_create(title=s_title, course=course)
+                chapter, _ = Chapter.objects.get_or_create(title=ch_title, subject=subject)
                 
-                # Notes now attach to CHAPTER
-                chapter, created = Chapter.objects.get_or_create(title=ch_title, subject=subject)
+                # If topic is present in CSV, use it (backward compatibility)
+                # If not, we just update chapter notes directly
+                if t_title:
+                     topic, created = Topic.objects.get_or_create(title=t_title, chapter=chapter)
+                     if notes:
+                        topic.study_notes = notes # Or maybe append to chapter? 
+                        # Based on your previous request "Notes in Chapter", 
+                        # we should prioritize Chapter notes if Topic is empty or ignored.
+                        # But to keep it simple and working with your template:
+                        # Let's save notes to CHAPTER as per recent architecture change.
                 
+                # Logic Update: Save notes to CHAPTER as requested previously
                 if notes:
                     chapter.study_notes = notes
                     chapter.save()
-                    if created: created_count += 1
-                    else: updated_count += 1
+                    updated_count += 1
 
             return Response({
                 "status": "success", 
-                "message": f"Processed successfully! Created {created_count}, Updated {updated_count} chapters."
+                "message": f"Processed successfully! Updated {updated_count} chapters."
             })
 
         except Exception as e:

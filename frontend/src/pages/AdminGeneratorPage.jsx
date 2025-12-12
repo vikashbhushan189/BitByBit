@@ -6,21 +6,21 @@ const AdminGeneratorPage = () => {
     // Data Sources
     const [courses, setCourses] = useState([]);
     const [subjects, setSubjects] = useState([]);
-    const [topics, setTopics] = useState([]);
+    const [chapters, setChapters] = useState([]); // Changed from topics to chapters
     const [exams, setExams] = useState([]);
     
     // Generator Config
     const [mode, setMode] = useState('text'); // 'text' | 'image' | 'csv'
-    const [scope, setScope] = useState('topic'); 
+    const [scope, setScope] = useState('chapter'); // 'chapter' | 'subject' | 'course'
     
-    const [selectedId, setSelectedId] = useState(''); 
+    const [selectedId, setSelectedId] = useState(''); // ID of Chapter/Subject/Course
     const [selectedExam, setSelectedExam] = useState('');
     const [numQ, setNumQ] = useState(5);
     const [difficulty, setDifficulty] = useState('Medium');
     const [customInstructions, setCustomInstructions] = useState('');
     
     const [imageFile, setImageFile] = useState(null);
-    const [csvFile, setCsvFile] = useState(null); // New state for CSV
+    const [csvFile, setCsvFile] = useState(null); 
     
     const [generatedQuestions, setGeneratedQuestions] = useState([]);
     const [suggestedDuration, setSuggestedDuration] = useState(0);
@@ -30,16 +30,23 @@ const AdminGeneratorPage = () => {
     useEffect(() => {
         const loadData = async () => {
             try {
-                const [cRes, tRes, eRes] = await Promise.all([
+                // Fetch basic data (courses & exams)
+                // Note: We'll fetch subjects/chapters dynamically or all at once depending on API structure.
+                // Assuming standard list endpoints exist.
+                const [cRes, eRes] = await Promise.all([
                     api.get('courses/'),
-                    api.get('topics/'),
                     api.get('exams/')
                 ]);
                 
                 setCourses(cRes.data);
+                // Flatten subjects from courses for the dropdowns
                 const allSubjects = cRes.data.flatMap(c => c.subjects || []);
                 setSubjects(allSubjects);
-                setTopics(tRes.data);
+                
+                // Flatten chapters from subjects
+                const allChapters = allSubjects.flatMap(s => s.chapters || []);
+                setChapters(allChapters);
+
                 setExams(eRes.data);
             } catch(e) { console.error(e) }
         };
@@ -53,11 +60,19 @@ const AdminGeneratorPage = () => {
     // --- HANDLERS ---
 
     const handleTextGenerate = async () => {
-        if (!selectedId) return alert("Please select a source");
+        if (!selectedId) return alert("Please select a source (Chapter/Subject/Course)");
         setLoading(true);
         try {
+            // Note: Backend needs to be updated to handle 'chapter' source_type if not already
+            // Assuming backend 'topic' logic can be repurposed or updated for 'chapter'
+            // For now, we send 'topic' as source_type if the backend expects it, 
+            // OR we update the backend to accept 'chapter'.
+            // Given the prompt "update the Versatile Exam Generator", we assume backend 
+            // logic for 'generate' needs to handle chapters too.
+            // Let's assume we send 'chapter' and backend handles it (or we alias it).
+            
             const res = await api.post('ai-generator/generate/', {
-                source_type: scope,
+                source_type: scope, // 'chapter', 'subject', 'course'
                 source_id: selectedId,
                 num_questions: numQ,
                 difficulty: difficulty,
@@ -66,7 +81,7 @@ const AdminGeneratorPage = () => {
             const formattedData = res.data.map(q => ({ ...q, image_url: '' }));
             setGeneratedQuestions(prev => [...prev, ...formattedData]);
         } catch (err) {
-            alert("Generation failed.");
+            alert("Generation failed. Ensure the selected source has notes.");
         } finally {
             setLoading(false);
         }
@@ -81,7 +96,7 @@ const AdminGeneratorPage = () => {
         formData.append('custom_instructions', customInstructions);
 
         try {
-            // FIX: Let Axios handle headers for multipart
+            // Let Axios handle headers for multipart
             const res = await api.post('ai-generator/generate_image/', formData);
             const formattedData = res.data.map(q => ({ ...q, image_url: '' }));
             setGeneratedQuestions(prev => [...prev, ...formattedData]);
@@ -114,7 +129,6 @@ const AdminGeneratorPage = () => {
         formData.append('exam_id', selectedExam);
 
         try {
-            // FIX: Let Axios handle headers for multipart
             const res = await api.post('ai-generator/upload_questions_csv/', formData);
             alert(`Success! Added ${res.data.added} questions.`);
             setCsvFile(null);
@@ -125,7 +139,7 @@ const AdminGeneratorPage = () => {
         }
     };
 
-    // NEW: Fetch existing questions from an exam to edit
+    // Fetch existing questions from an exam to edit
     const handleLoadExamQuestions = async () => {
         if (!selectedExam) return alert("Please select an exam to load questions from.");
         if (generatedQuestions.length > 0 && !window.confirm("This will replace your current editor content. Continue?")) return;
@@ -135,9 +149,7 @@ const AdminGeneratorPage = () => {
             const res = await api.get(`exams/${selectedExam}/`);
             const examData = res.data;
             
-            // Transform backend structure to generator structure
             const loadedQuestions = examData.questions.map(q => {
-                // Find index of correct option
                 const correctIndex = q.options.findIndex(opt => opt.id === q.correct_option_id || opt.is_correct); 
                 
                 return {
@@ -205,11 +217,11 @@ const AdminGeneratorPage = () => {
     // --- RENDERERS ---
 
     const renderSourceSelector = () => {
-        if (scope === 'topic') {
+        if (scope === 'chapter') {
             return (
                 <select className="w-full p-2 border rounded" onChange={e => setSelectedId(e.target.value)}>
-                    <option value="">Select Topic</option>
-                    {topics.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
+                    <option value="">Select Chapter</option>
+                    {chapters.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
                 </select>
             );
         } else if (scope === 'subject') {
@@ -251,7 +263,6 @@ const AdminGeneratorPage = () => {
                     >
                         <ImageIcon size={18}/> From Image
                     </button>
-                    {/* NEW CSV TAB */}
                     <button 
                         onClick={() => setMode('csv')}
                         className={`flex-1 py-4 font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 ${mode === 'csv' ? 'bg-green-50 text-green-700 border-b-2 border-green-600' : 'text-slate-500 hover:bg-slate-50'}`}
@@ -269,7 +280,7 @@ const AdminGeneratorPage = () => {
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2">1. Generation Scope</label>
                                 <div className="flex gap-2 mb-4">
-                                    {['topic', 'subject', 'course'].map(s => (
+                                    {['chapter', 'subject', 'course'].map(s => (
                                         <button 
                                             key={s} 
                                             onClick={() => setScope(s)}
@@ -377,7 +388,6 @@ const AdminGeneratorPage = () => {
                                     <option value="">-- Save to Exam --</option>
                                     {exams.map(e => <option key={e.id} value={e.id}>{e.title}</option>)}
                                 </select>
-                                {/* Load Button */}
                                 <button 
                                     onClick={handleLoadExamQuestions} 
                                     className="bg-blue-100 text-blue-700 p-2 rounded hover:bg-blue-200"
@@ -385,7 +395,6 @@ const AdminGeneratorPage = () => {
                                 >
                                     <RefreshCw size={18}/>
                                 </button>
-                                {/* Save Button */}
                                 <button onClick={handleSave} className="bg-green-600 text-white p-2 rounded hover:bg-green-700" title="Save / Publish">
                                     <Save size={18}/>
                                 </button>

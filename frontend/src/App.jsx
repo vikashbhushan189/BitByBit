@@ -115,19 +115,16 @@ const AdminRoute = ({ children }) => {
     return token ? children : <Navigate to="/admin-portal" />;
 };
 
-// Layout Component to Handle Navbar Visibility
 const Layout = ({ children }) => {
     const location = useLocation();
     
-    // LOGIC: When to HIDE the Global Navbar
-    // 1. Admin Pages (They have their own sidebar/header)
-    // 2. Landing Page '/' (It has the Mega Menu Navbar)
-    // 3. Study Sections: Exam Page & Notes Reader (Distraction-free mode)
+    // Hide Student Navbar on Admin Pages, Landing Page, and Study Sections
     const hideNavbar = 
         location.pathname.startsWith('/admin') || 
         location.pathname === '/' ||
         location.pathname.startsWith('/exam/') || 
-        (location.pathname.startsWith('/topic/') && location.pathname.endsWith('/notes'));
+        (location.pathname.startsWith('/topic/') && location.pathname.endsWith('/notes')) ||
+        (location.pathname.startsWith('/chapter/') && location.pathname.endsWith('/notes')); // <--- ADD THIS
 
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-100">
@@ -182,7 +179,8 @@ function App() {
                 <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
                 <Route path="/exam/:examId" element={<PrivateRoute><ExamPage /></PrivateRoute>} />
                 <Route path="/topic/:topicId/notes" element={<PrivateRoute><NotesPage /></PrivateRoute>} />
-                
+                <Route path="/chapter/:chapterId/notes" element={<PrivateRoute><NotesPage /></PrivateRoute>} />
+
                 {/* Store & Categories */}
                 <Route path="/store" element={<PrivateRoute><CourseStorePage /></PrivateRoute>} />
                 <Route path="/category/:categoryId" element={<CategoryPage />} />

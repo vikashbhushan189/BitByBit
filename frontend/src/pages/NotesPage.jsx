@@ -3,24 +3,25 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import remarkMath from 'remark-math'; // 1. Import remark-math
-import rehypeKatex from 'rehype-katex'; // 2. Import rehype-katex
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import { ArrowLeft, Lock, Loader2, FileText, AlertTriangle } from 'lucide-react';
 
 const NotesPage = () => {
-    const { topicId } = useParams();
+    const { topicId, chapterId } = useParams(); // Get both potential IDs
     const navigate = useNavigate();
-    const [topic, setTopic] = useState(null);
+    const [data, setData] = useState(null); // Changed 'topic' to generic 'data'
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // 1. Fetch Content
     useEffect(() => {
         const fetchNotes = async () => {
             try {
-                const res = await api.get(`topics/${topicId}/`);
-                setTopic(res.data);
+                // Determine Endpoint based on URL
+                const endpoint = chapterId ? `chapters/${chapterId}/` : `topics/${topicId}/`;
+                const res = await api.get(endpoint);
+                setData(res.data);
             } catch (err) {
                 console.error("Notes Error:", err);
                 if (err.response && err.response.status === 403) {
@@ -35,9 +36,9 @@ const NotesPage = () => {
             }
         };
         fetchNotes();
-    }, [topicId]);
+    }, [topicId, chapterId]);
 
-    // 2. Security Features
+    // Security Features (Prevent Copy/Print)
     useEffect(() => {
         const handleContextMenu = (e) => { e.preventDefault(); return false; };
         const handleKeyDown = (e) => {
@@ -54,45 +55,28 @@ const NotesPage = () => {
         };
     }, []);
 
-    // --- RENDER STATES ---
-
     if (loading) return (
         <div className="min-h-screen flex items-center justify-center text-blue-600 font-bold gap-2">
             <Loader2 className="animate-spin"/> Loading Notes...
         </div>
     );
 
-    // Error View
     if (error) return (
         <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-            <div className="bg-red-50 p-6 rounded-full mb-4">
-                <Lock size={48} className="text-red-500" />
-            </div>
+            <div className="bg-red-50 p-6 rounded-full mb-4"><Lock size={48} className="text-red-500" /></div>
             <h2 className="text-2xl font-bold text-slate-800 mb-2">{error}</h2>
-            <p className="text-slate-500 max-w-md mb-8">
-                {error.includes("Premium") 
-                    ? "You need to subscribe to this course to view these notes." 
-                    : "The content you are looking for might have been removed."}
-            </p>
-            <button 
-                onClick={() => navigate(-1)} 
-                className="px-6 py-3 bg-slate-900 text-white rounded-lg font-bold hover:bg-slate-800 transition-colors"
-            >
-                Go Back
-            </button>
+            <button onClick={() => navigate(-1)} className="px-6 py-3 bg-slate-900 text-white rounded-lg font-bold hover:bg-slate-800 transition-colors">Go Back</button>
         </div>
     );
 
-    // Empty Content View
-    if (!topic || !topic.study_notes) return (
+    if (!data || !data.study_notes) return (
         <div className="min-h-screen flex flex-col items-center justify-center text-gray-500">
             <FileText size={48} className="mb-4 text-gray-300"/>
-            <p>No study notes written for this topic yet.</p>
+            <p>No notes available for this section yet.</p>
             <button onClick={() => navigate(-1)} className="mt-4 text-blue-600 hover:underline">Go Back</button>
         </div>
     );
 
-    // Main Content View
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col font-sans select-none print:hidden">
             {/* Header */}
@@ -109,22 +93,18 @@ const NotesPage = () => {
             <main className="flex-1 max-w-4xl mx-auto w-full p-6 md:p-10">
                 <div className="bg-white p-10 rounded-2xl shadow-sm border border-slate-200 min-h-[80vh]">
                     <h1 className="text-3xl font-extrabold text-slate-900 mb-8 border-b pb-4">
-                        {topic.title}
+                        {data.title}
                     </h1>
                     
                     <div className="prose prose-blue prose-lg max-w-none text-slate-700">
-                        {/* 3. Updated Markdown component with math plugins */}
-                        <Markdown 
-                            remarkPlugins={[remarkGfm, remarkMath]} 
-                            rehypePlugins={[rehypeKatex]}
-                        >
-                            {topic.study_notes}
+                        <Markdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+                            {data.study_notes}
                         </Markdown>
                     </div>
                 </div>
                 
                 <p className="text-center text-slate-400 text-xs mt-8 mb-4">
-                    &copy; Bit by Bit. Content is secured. ID: {topicId}
+                    &copy; Bit by Bit. Content is secured. ID: {chapterId || topicId}
                 </p>
             </main>
 

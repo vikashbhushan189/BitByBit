@@ -22,11 +22,11 @@ const AdminNotesUploadPage = () => {
         formData.append('file', file);
 
         try {
-            // FIX: Do NOT manually set Content-Type. Let Axios set it with the correct boundary.
+            // FIX: Let Axios handle headers automatically for boundary
             const res = await api.post('bulk-notes/upload_csv/', formData);
             setResult({ type: 'success', message: res.data.message });
-            setFile(null); // Reset file input
-            // Reset the actual input element
+            setFile(null); 
+            // Reset the file input visually
             document.getElementById('fileInput').value = "";
         } catch (err) {
             console.error(err);
@@ -37,15 +37,17 @@ const AdminNotesUploadPage = () => {
         }
     };
 
+    // UPDATED TEMPLATE: Removed 'Topic' column
     const downloadTemplate = () => {
         const csvContent = "data:text/csv;charset=utf-8," 
-            + "Course,Subject,Chapter,Topic,Notes\n"
-            + "Computer Science,Operating System,Process Management,Scheduling,Short notes about FCFS...";
+            + "Course,Subject,Chapter,Notes\n"
+            + "Computer Science,Operating System,Process Management,# Process Management Notes...\n"
+            + "Computer Science,Operating System,Deadlocks,# Deadlock Notes...";
         
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "notes_template.csv");
+        link.setAttribute("download", "chapter_notes_template.csv");
         document.body.appendChild(link);
         link.click();
     };
@@ -65,7 +67,8 @@ const AdminNotesUploadPage = () => {
                             Get Template
                         </h2>
                         <p className="text-slate-400 mb-4">
-                            Download the CSV template. Fill it with your hierarchy and Markdown notes.
+                            Download the updated CSV template. <br/>
+                            <strong>Structure:</strong> Course &gt; Subject &gt; Chapter &gt; Notes.
                         </p>
                         <button 
                             onClick={downloadTemplate}

@@ -6,16 +6,15 @@ from django.utils import timezone
 from django.db import transaction
 import csv
 import io
+import codecs
+from io import TextIOWrapper
+
 from .models import Course, Exam, ExamAttempt, Question, Option, StudentResponse, Topic, Chapter, Subject, AdBanner, UserSubscription
-from .serializers import CourseSerializer, ExamSerializer, ExamAttemptSerializer, TopicSerializer,ChapterSerializer, AdBannerSerializer
+from .serializers import CourseSerializer, ExamSerializer, ExamAttemptSerializer, TopicSerializer, AdBannerSerializer, ChapterSerializer
 from .ai_service import generate_questions_from_text, generate_question_from_image
 from .permissions import IsPaidSubscriberOrAdmin
-import logging
-from io import TextIOWrapper
-import codecs
-import chardet
 
-logger = logging.getLogger(__name__)
+# --- STUDENT VIEWS ---
 
 class CourseViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Course.objects.all()
@@ -30,50 +29,21 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
         courses = Course.objects.filter(id__in=subscribed_ids)
         serializer = self.get_serializer(courses, many=True)
         return Response(serializer.data)
-    
-    
-    @action(detail=True, methods=['post'])
-    def subscribe(self, request, pk=None):
-        """Simulate successful payment and enroll user"""
-        course = self.get_object()
-        
-        # Create or Get Subscription
-        subscription, created = UserSubscription.objects.get_or_create(
-            user=request.user,
-            course=course,
-            defaults={'active': True}
-        )
-        
-        # If it existed but was inactive, reactivate it
-        if not subscription.active:
-            subscription.active = True
-            subscription.save()
-            
-        return Response({"status": "success", "message": f"Enrolled in {course.title}"})
-    
-# NEW: Chapter ViewSet for Notes
+
 class ChapterViewSet(viewsets.ModelViewSet):
     queryset = Chapter.objects.all()
     serializer_class = ChapterSerializer
-    
     def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            permission_classes = [permissions.IsAuthenticated, IsPaidSubscriberOrAdmin]
-        else:
-            permission_classes = [permissions.IsAdminUser]
+        if self.action in ['list', 'retrieve']: permission_classes = [permissions.IsAuthenticated, IsPaidSubscriberOrAdmin]
+        else: permission_classes = [permissions.IsAdminUser]
         return [permission() for permission in permission_classes]
-    
-class TopicViewSet(viewsets.ModelViewSet):  # <--- Changed from ReadOnlyModelViewSet to ModelViewSet
+
+class TopicViewSet(viewsets.ModelViewSet):
     queryset = Topic.objects.all()
     serializer_class = TopicSerializer
-    
     def get_permissions(self):
-        # Students can only READ (if they subscribed)
-        if self.action in ['list', 'retrieve']:
-            permission_classes = [permissions.IsAuthenticated, IsPaidSubscriberOrAdmin]
-        # Admins can EDIT/DELETE
-        else:
-            permission_classes = [permissions.IsAdminUser]
+        if self.action in ['list', 'retrieve']: permission_classes = [permissions.IsAuthenticated, IsPaidSubscriberOrAdmin]
+        else: permission_classes = [permissions.IsAdminUser]
         return [permission() for permission in permission_classes]
 
 class ExamViewSet(viewsets.ReadOnlyModelViewSet):
@@ -127,6 +97,19 @@ class ExamViewSet(viewsets.ReadOnlyModelViewSet):
 
         return Response({"score": attempt.total_score, "total_marks": exam.total_marks, "status": "Completed"})
 
+    @action(detail=True, methods=['post'])
+    def subscribe(self, request, pk=None):
+        course = self.get_object()
+        subscription, created = UserSubscription.objects.get_or_create(
+            user=request.user,
+            course=course,
+            defaults={'active': True}
+        )
+        if not subscription.active:
+            subscription.active = True
+            subscription.save()
+        return Response({"status": "success", "message": f"Enrolled in {course.title}"})
+
 class AttemptHistoryViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ExamAttemptSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -134,12 +117,13 @@ class AttemptHistoryViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         return ExamAttempt.objects.filter(user=self.request.user).order_by('-start_time')
 
+# --- ADMIN VIEWS ---
+
 class AIGeneratorViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAdminUser]
 
     @action(detail=False, methods=['post'])
     def generate(self, request):
-        # ... (Keep existing generate logic) ...
         topic_id = request.data.get('topic_id')
         source_type = request.data.get('source_type')
         source_id = request.data.get('source_id')
@@ -149,9 +133,6 @@ class AIGeneratorViewSet(viewsets.ViewSet):
 
         if not source_id and topic_id: source_id = topic_id
         if not source_type: source_type = 'topic'
-        
-        # Normalize source_type 'topic' -> 'chapter' if needed, or handle normally
-        # Assuming notes are in Chapter now
         if source_type == 'topic': source_type = 'chapter' 
 
         text_content = ""
@@ -167,7 +148,8 @@ class AIGeneratorViewSet(viewsets.ViewSet):
             for ch in chapters:
                 if ch.study_notes: text_content += f"\n\n--- Chapter: {ch.title} ---\n{ch.study_notes}"
 
-        if not text_content: return Response({"error": "No notes found to generate from."}, status=400)
+        if not text_content:
+            return Response({"error": "No notes found to generate from."}, status=400)
         
         questions_json = generate_questions_from_text(text_content, num_questions, difficulty, custom_instructions)
         return Response(questions_json)
@@ -177,13 +159,15 @@ class AIGeneratorViewSet(viewsets.ViewSet):
         image = request.FILES.get('image')
         difficulty = request.data.get('difficulty', 'Medium')
         custom_instructions = request.data.get('custom_instructions', '')
-        if not image: return Response({"error": "No image uploaded"}, status=400)
+
+        if not image:
+            return Response({"error": "No image uploaded"}, status=400)
+
         questions = generate_question_from_image(image, difficulty, custom_instructions)
         return Response(questions)
     
     @action(detail=False, methods=['post'])
     def upload_questions_csv(self, request):
-        # ... (Keep existing CSV upload logic) ...
         file = request.FILES.get('file')
         exam_id = request.data.get('exam_id')
         if not file or not exam_id: return Response({"error": "File and Exam ID required"}, status=400)
@@ -210,14 +194,11 @@ class AIGeneratorViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'])
     def save_bulk(self, request):
-        # --- UPDATE: Handle New Exam Creation ---
         exam_id = request.data.get('exam_id')
-        new_exam_title = request.data.get('new_exam_title') # <--- NEW PARAMETER
+        new_exam_title = request.data.get('new_exam_title')
         
-        # Context parameters for linking the new exam
         source_type = request.data.get('source_type') 
         source_id = request.data.get('source_id')
-
         questions_data = request.data.get('questions', [])
         duration = request.data.get('duration')
         
@@ -226,15 +207,13 @@ class AIGeneratorViewSet(viewsets.ViewSet):
         if exam_id:
             exam = get_object_or_404(Exam, id=exam_id)
         elif new_exam_title:
-            # Create a New Exam on the fly
             exam_defaults = {
                 'title': new_exam_title,
                 'duration_minutes': int(duration) if duration else 30,
-                'total_marks': len(questions_data) * 2, # Estimate
-                'exam_type': 'SUBJECT_TEST' # Default type
+                'total_marks': len(questions_data) * 2, 
+                'exam_type': 'SUBJECT_TEST'
             }
 
-            # Try to link to Course/Subject based on generation source
             if source_type == 'course' and source_id:
                 exam_defaults['course_id'] = source_id
                 exam_defaults['exam_type'] = 'MOCK_FULL'
@@ -242,19 +221,24 @@ class AIGeneratorViewSet(viewsets.ViewSet):
                 exam_defaults['subject_id'] = source_id
                 exam_defaults['exam_type'] = 'SUBJECT_TEST'
             elif source_type == 'chapter' and source_id:
-                # If generated from Chapter, link to its Subject
                 try:
                     chapter = Chapter.objects.get(id=source_id)
-                    exam_defaults['subject'] = chapter.subject
+                    # FIX: Automatically create a TOPIC for this quiz so it appears in the hierarchy
+                    topic = Topic.objects.create(
+                        chapter=chapter,
+                        title=new_exam_title, # The topic name is the quiz name
+                        order=chapter.topics.count() + 1
+                    )
+                    exam_defaults['topic'] = topic
                     exam_defaults['exam_type'] = 'TOPIC_QUIZ'
-                except: pass
+                except Exception as e:
+                    print(f"Error linking chapter to topic: {e}")
             
             exam = Exam.objects.create(**exam_defaults)
         
         if not exam:
             return Response({"error": "Please select an existing exam OR enter a name for a new one."}, status=400)
 
-        # Update duration if provided
         if duration:
             exam.duration_minutes = int(duration)
             exam.save()
@@ -280,38 +264,18 @@ class AIGeneratorViewSet(viewsets.ViewSet):
             "exam_title": exam.title,
             "message": f"Saved {count} questions to '{exam.title}'"
         })
-    
+
 class BulkNotesViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAdminUser]
 
     @action(detail=False, methods=['post'])
     def upload_csv(self, request):
         file_obj = request.FILES.get('file')
-        if not file_obj: 
-            return Response({"error": "No file uploaded"}, status=400)
-
-        if not file_obj.name.endswith('.csv'):
-            return Response({"error": "File must be a CSV"}, status=400)
-
+        if not file_obj: return Response({"error": "No file uploaded"}, status=400)
+        if not file_obj.name.endswith('.csv'): return Response({"error": "File must be a CSV"}, status=400)
         try:
-            # 1. Detect Encoding (The Magic Fix)
-            # Read the first few bytes to guess the encoding
-            raw_data = file_obj.read()
-            result = chardet.detect(raw_data)
-            encoding = result['encoding'] or 'utf-8' # Fallback to utf-8
-            
-            # Reset file pointer to beginning
-            file_obj.seek(0)
-            
-            print(f"DEBUG: Detected CSV encoding: {encoding}")
-
-            # 2. Decode using the detected encoding
-            # errors='replace' will swap unreadable chars with ? instead of crashing,
-            # but usually correct encoding prevents this entirely.
-            decoded_file = raw_data.decode(encoding, errors='replace').splitlines()
+            decoded_file = codecs.iterdecode(file_obj, 'utf-8-sig')
             reader = csv.DictReader(decoded_file)
-            
-            # 3. Map Headers (Case-insensitive)
             header_map = {}
             if reader.fieldnames:
                 for field in reader.fieldnames:
@@ -321,43 +285,23 @@ class BulkNotesViewSet(viewsets.ViewSet):
                     elif 'chapter' in clean: header_map['chapter'] = field
                     elif 'topic' in clean: header_map['topic'] = field
                     elif 'note' in clean: header_map['notes'] = field 
-
             updated_count = 0
             created_count = 0
-            
             for row in reader:
                 c_title = row.get(header_map.get('course'), '').strip()
                 s_title = row.get(header_map.get('subject'), '').strip()
                 ch_title = row.get(header_map.get('chapter'), '').strip()
-                t_title = row.get(header_map.get('topic'), '').strip()
                 notes = row.get(header_map.get('notes'), '').strip()
-
-                # Clean up replacement characters if they still appear
-                if notes:
-                    notes = notes.replace('', '-').replace('â', "'")
-
-                if not (c_title and s_title and ch_title):
-                    continue
-
+                if not (c_title and s_title and ch_title): continue
                 course, _ = Course.objects.get_or_create(title=c_title)
                 subject, _ = Subject.objects.get_or_create(title=s_title, course=course)
-                chapter, _ = Chapter.objects.get_or_create(title=ch_title, subject=subject)
-                
-                # Logic Update: Save to Chapter
+                chapter, created = Chapter.objects.get_or_create(title=ch_title, subject=subject)
                 if notes:
                     chapter.study_notes = notes
                     chapter.save()
-                    updated_count += 1
-                
-                # Create topic if provided (for structure)
-                if t_title:
-                     Topic.objects.get_or_create(title=t_title, chapter=chapter)
-
-            return Response({
-                "status": "success", 
-                "message": f"Success! Updated {updated_count} chapters using {encoding} encoding."
-            })
-
+                    if created: created_count += 1
+                    else: updated_count += 1
+            return Response({"status": "success", "message": f"Processed successfully! Created {created_count}, Updated {updated_count} chapters."})
         except Exception as e:
             print(f"CSV ERROR: {e}")
             return Response({"error": f"Server Error: {str(e)}"}, status=500)
@@ -365,10 +309,7 @@ class BulkNotesViewSet(viewsets.ViewSet):
 class AdBannerViewSet(viewsets.ModelViewSet):
     queryset = AdBanner.objects.filter(is_active=True).order_by('-created_at')
     serializer_class = AdBannerSerializer
-    
     def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            permission_classes = [permissions.AllowAny]
-        else:
-            permission_classes = [permissions.IsAdminUser]
+        if self.action in ['list', 'retrieve']: permission_classes = [permissions.AllowAny]
+        else: permission_classes = [permissions.IsAdminUser]
         return [permission() for permission in permission_classes]

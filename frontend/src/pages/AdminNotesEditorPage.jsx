@@ -1,19 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
-import { Save, FileText, CheckCircle, Loader2, RefreshCw } from 'lucide-react';
+import { Save, FileText, CheckCircle, Loader2 } from 'lucide-react';
 
 const AdminNotesEditorPage = () => {
     // Data Sources
     const [courses, setCourses] = useState([]);
     const [subjects, setSubjects] = useState([]);
-    const [chapters, setChapters] = useState([]); // Added Chapters level
-    const [topics, setTopics] = useState([]);
+    const [chapters, setChapters] = useState([]);
     
     // Selection State
     const [selectedCourse, setSelectedCourse] = useState('');
     const [selectedSubject, setSelectedSubject] = useState('');
     const [selectedChapter, setSelectedChapter] = useState('');
-    const [selectedTopic, setSelectedTopic] = useState('');
     
     // Editor State
     const [notesContent, setNotesContent] = useState('');
@@ -38,43 +36,38 @@ const AdminNotesEditorPage = () => {
     useEffect(() => {
         if (selectedSubject) {
             const subject = subjects.find(s => s.id === parseInt(selectedSubject));
-            setChapters(subject?.chapters || []); // Assuming serializer sends chapters
+            setChapters(subject?.chapters || []);
             setSelectedChapter('');
         }
     }, [selectedSubject, subjects]);
 
+    // 3. Load Notes when Chapter Selected (Now directly from Chapter)
     useEffect(() => {
         if (selectedChapter) {
-            const chapter = chapters.find(c => c.id === parseInt(selectedChapter));
-            setTopics(chapter?.topics || []);
-            setSelectedTopic('');
-        }
-    }, [selectedChapter, chapters]);
-
-    // 3. Load Notes when Topic Selected
-    useEffect(() => {
-        if (selectedTopic) {
             setLoading(true);
-            api.get(`topics/${selectedTopic}/`)
+            api.get(`chapters/${selectedChapter}/`)
                 .then(res => {
                     setNotesContent(res.data.study_notes || "");
                     setMessage(null);
                 })
-                .catch(err => alert("Failed to load notes."))
+                .catch(err => {
+                    console.error(err);
+                    alert("Failed to load notes.");
+                })
                 .finally(() => setLoading(false));
         } else {
             setNotesContent('');
         }
-    }, [selectedTopic]);
+    }, [selectedChapter]);
 
     // 4. Save Changes
     const handleSave = async () => {
-        if (!selectedTopic) return;
+        if (!selectedChapter) return;
         setSaving(true);
         setMessage(null);
 
         try {
-            await api.patch(`topics/${selectedTopic}/`, {
+            await api.patch(`chapters/${selectedChapter}/`, {
                 study_notes: notesContent
             });
             setMessage("Notes updated successfully!");
@@ -95,7 +88,7 @@ const AdminNotesEditorPage = () => {
                 </h1>
 
                 {/* --- SELECTION PANEL --- */}
-                <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 mb-8 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label className="block text-xs font-bold text-slate-400 uppercase mb-2">1. Course</label>
                         <select className="w-full p-2 bg-slate-900 border border-slate-600 rounded text-white" 
@@ -120,18 +113,10 @@ const AdminNotesEditorPage = () => {
                             {chapters.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
                         </select>
                     </div>
-                    <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase mb-2">4. Topic</label>
-                        <select className="w-full p-2 bg-slate-900 border border-slate-600 rounded text-white" 
-                            onChange={e => setSelectedTopic(e.target.value)} value={selectedTopic} disabled={!selectedChapter}>
-                            <option value="">-- Select Topic --</option>
-                            {topics.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
-                        </select>
-                    </div>
                 </div>
 
                 {/* --- EDITOR AREA --- */}
-                {selectedTopic && (
+                {selectedChapter && (
                     <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl relative">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-xl font-bold">Edit Content (Markdown)</h2>

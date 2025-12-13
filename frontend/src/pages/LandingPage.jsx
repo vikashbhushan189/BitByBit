@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-    BookOpen, CheckCircle, Clock, Trophy, ChevronDown, ChevronUp, Menu, X, 
+    BookOpen, CheckCircle, Clock, Trophy, ChevronDown, Menu, X, 
     GraduationCap, ArrowRight, Monitor, Cpu, FileText, Cloud,
     Atom, Stethoscope, Building2, Scale, Briefcase, Globe, Code,
     BrainCircuit, Zap, Users, Moon, Sun, LayoutGrid, Calculator,
-    Landmark, Gavel, Plane, Microscope, PenTool, TrendingUp, Search // Added Search Icon
+    Landmark, Gavel, Plane, Microscope, PenTool, TrendingUp, Search,
+    LayoutDashboard // Added this import
 } from 'lucide-react';
 import api from '../api/axios';
 import { useTheme } from '../hooks/useTheme';
@@ -367,85 +368,114 @@ const SearchModal = ({ isOpen, onClose, categories }) => {
 const LandingPage = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState(null);
-    const [mobileExpanded, setMobileExpanded] = useState({}); // New State for Mobile Accordion
-    
     const [showAd, setShowAd] = useState(true);
     const [banners, setBanners] = useState([]);
     const [activeTab, setActiveTab] = useState(0);
     const [currentAdIndex, setCurrentAdIndex] = useState(0);
     const { theme, toggleTheme } = useTheme(); 
     
+    // --- STATE FOR SEARCH MODAL ---
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [showAllCategories, setShowAllCategories] = useState(false);
     const INITIAL_CATEGORY_COUNT = 6; 
 
+    // CHECK LOGIN STATUS
+    const isLoggedIn = !!localStorage.getItem('access_token');
+
     const allCategories = NAV_LINKS[0].categories;
     const displayedCategories = showAllCategories ? allCategories : allCategories.slice(0, INITIAL_CATEGORY_COUNT);
 
-    useEffect(() => { setBanners(mockBanners); }, []);
+    useEffect(() => {
+        // Fallback to mock banners if API fails or is empty initially
+        api.get('banners/').then(res => {
+            if (res.data.length > 0) setBanners(res.data);
+            else setBanners(mockBanners);
+        }).catch(() => setBanners(mockBanners));
+    }, []);
+
     useEffect(() => {
         if (banners.length <= 1) return;
-        const timer = setInterval(() => { setCurrentAdIndex(prev => (prev + 1) % banners.length); }, 4000); 
+        const timer = setInterval(() => {
+            setCurrentAdIndex(prev => (prev + 1) % banners.length);
+        }, 4000); 
         return () => clearInterval(timer);
     }, [banners]);
 
     const activeBanner = banners[currentAdIndex];
 
-    // Toggle Mobile Submenu
-    const toggleMobileSubmenu = (idx) => {
-        setMobileExpanded(prev => ({
-            ...prev,
-            [idx]: !prev[idx]
-        }));
-    };
-
     return (
         <div className="bg-white dark:bg-slate-900 font-sans text-slate-800 dark:text-slate-200 transition-colors duration-300">
             
-            {/* --- SEARCH MODAL --- */}
             <SearchModal 
                 isOpen={isSearchOpen} 
                 onClose={() => setIsSearchOpen(false)} 
                 categories={allCategories}
             />
 
-            {/* Navbar */}
+            {/* --- NAVIGATION BAR --- */}
             <nav className="sticky top-0 z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-20">
-                        <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer">
-                            <div className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 p-2 rounded-lg transition-colors"><GraduationCap size={24} /></div>
-                            <span className="font-black text-2xl tracking-tighter text-slate-900 dark:text-white"><span className="text-blue-600">Bit</span>byBit</span>
-                        </div>
                         
+                        {/* Logo */}
+                        <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer">
+                            <div className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 p-2 rounded-lg transition-colors">
+                                <GraduationCap size={24} />
+                            </div>
+                            <span className="font-black text-2xl tracking-tighter text-slate-900 dark:text-white">
+                                <span className="text-blue-600">Bit</span>byBit
+                            </span>
+                        </div>
+
                         {/* Desktop Menu */}
                         <div className="hidden lg:flex items-center space-x-2">
                             {NAV_LINKS.map((link, idx) => (
-                                <div key={idx} className="relative group" onMouseEnter={() => setActiveDropdown(idx)} onMouseLeave={() => setActiveDropdown(null)}>
-                                    <button className={`px-4 py-2.5 rounded-lg text-sm font-bold flex items-center gap-1.5 transition-all ${activeDropdown === idx ? 'bg-blue-50 dark:bg-slate-800 text-blue-600' : 'text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                                <div 
+                                    key={idx}
+                                    className="relative group"
+                                    onMouseEnter={() => setActiveDropdown(idx)}
+                                    onMouseLeave={() => setActiveDropdown(null)}
+                                >
+                                    <button className={`px-4 py-2.5 rounded-lg text-sm font-bold flex items-center gap-1.5 transition-all
+                                        ${activeDropdown === idx 
+                                            ? 'bg-blue-50 dark:bg-slate-800 text-blue-600' 
+                                            : 'text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                                         {link.label}
                                         {['mega_tabs', 'dropdown'].includes(link.type) && <ChevronDown size={14} className={`mt-0.5 transition-transform duration-200 ${activeDropdown === idx ? 'rotate-180' : ''}`}/>}
                                     </button>
-                                    
-                                    {/* Desktop Dropdown Logic (Existing) */}
+
+                                    {/* DROPDOWNS */}
                                     {activeDropdown === idx && (
                                         <div className="absolute top-full left-0 pt-2 w-max animate-in fade-in slide-in-from-top-2 duration-200">
+                                            {/* (Mega Menu Logic - Same as before) */}
                                             {link.type === 'mega_tabs' && (
                                                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 flex overflow-hidden w-[700px] -ml-20 max-h-[500px]">
-                                                    <div className="w-1/3 bg-slate-50 dark:bg-slate-900 border-r border-slate-100 dark:border-slate-700 p-2 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
+                                                    <div className="w-1/3 bg-slate-50 dark:bg-slate-900 border-r border-slate-100 dark:border-slate-700 p-2 overflow-y-auto scrollbar-thin">
                                                         {link.categories.map((cat, cIdx) => (
-                                                            <div key={cIdx} onMouseEnter={() => setActiveTab(cIdx)} className={`px-4 py-3 rounded-xl text-sm font-bold cursor-pointer flex justify-between items-center transition-all mb-1 ${activeTab === cIdx ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200'}`}>
+                                                            <div 
+                                                                key={cIdx}
+                                                                onMouseEnter={() => setActiveTab(cIdx)}
+                                                                className={`px-4 py-3 rounded-xl text-sm font-bold cursor-pointer flex justify-between items-center transition-all mb-1
+                                                                    ${activeTab === cIdx 
+                                                                        ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm' 
+                                                                        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200'}
+                                                                `}
+                                                            >
                                                                 {cat.name}
                                                                 {activeTab === cIdx && <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>}
                                                             </div>
                                                         ))}
                                                     </div>
                                                     <div className="w-2/3 p-6 bg-white dark:bg-slate-800 overflow-y-auto">
-                                                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">{link.categories[activeTab].name}</h4>
+                                                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">
+                                                            {link.categories[activeTab].name}
+                                                        </h4>
                                                         <div className="grid grid-cols-2 gap-3">
                                                             {link.categories[activeTab].items.map((item, iIdx) => (
                                                                 <div key={iIdx} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-500 hover:shadow-md transition-all cursor-pointer group bg-slate-50/50 dark:bg-slate-900/50 hover:bg-white dark:hover:bg-slate-900">
-                                                                    <div className="bg-white dark:bg-slate-800 p-2 rounded-lg shadow-sm group-hover:scale-110 transition-transform">{item.icon}</div>
+                                                                    <div className="bg-white dark:bg-slate-800 p-2 rounded-lg shadow-sm group-hover:scale-110 transition-transform">
+                                                                        {item.icon}
+                                                                    </div>
                                                                     <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-blue-700 dark:group-hover:text-blue-400">{item.name}</span>
                                                                 </div>
                                                             ))}
@@ -453,7 +483,6 @@ const LandingPage = () => {
                                                     </div>
                                                 </div>
                                             )}
-                                            {/* Simple Dropdown Logic */}
                                             {link.type === 'dropdown' && (
                                                 <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 p-2 w-64">
                                                     {link.items.map((item, iIdx) => (
@@ -470,76 +499,69 @@ const LandingPage = () => {
                             ))}
                         </div>
 
+                        {/* Right Side Buttons */}
                         <div className="hidden lg:flex items-center gap-4">
                             <button onClick={() => setIsSearchOpen(true)} className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"><Search size={20} /></button>
                             <button onClick={toggleTheme} className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">{theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}</button>
-                            <Link to="/login" className="text-slate-600 dark:text-slate-300 font-bold hover:text-blue-600 dark:hover:text-blue-400 px-4 py-2 transition-colors">Login</Link>
-                            <Link to="/register" className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-200 dark:shadow-none hover:-translate-y-0.5">Register</Link>
+                            
+                            {/* DYNAMIC AUTH BUTTONS */}
+                            {isLoggedIn ? (
+                                <Link 
+                                    to="/dashboard" 
+                                    className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg flex items-center gap-2"
+                                >
+                                    <LayoutDashboard size={18} /> Dashboard
+                                </Link>
+                            ) : (
+                                <>
+                                    <Link to="/login" className="text-slate-600 dark:text-slate-300 font-bold hover:text-blue-600 dark:hover:text-blue-400 px-4 py-2 transition-colors">Login</Link>
+                                    <Link to="/register" className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-200 dark:shadow-none hover:-translate-y-0.5">Register</Link>
+                                </>
+                            )}
                         </div>
+
+                        {/* Mobile Menu Button */}
                         <div className="lg:hidden flex items-center gap-4">
-                            <button onClick={toggleTheme} className="p-2 text-slate-600 dark:text-slate-300">{theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}</button>
+                             <button onClick={toggleTheme} className="p-2 text-slate-600 dark:text-slate-300">{theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}</button>
                             <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-600 dark:text-slate-300">{isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}</button>
                         </div>
                     </div>
                 </div>
 
-                {/* --- MOBILE MENU WITH ACCORDION LOGIC --- */}
+                {/* Mobile Menu Drawer */}
                 {isMobileMenuOpen && (
-                    <div className="lg:hidden bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 absolute w-full left-0 shadow-xl max-h-[80vh] overflow-y-auto z-40">
+                    <div className="lg:hidden bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 absolute w-full left-0 shadow-xl max-h-[80vh] overflow-y-auto">
                         <div className="p-4 space-y-2">
-                            {NAV_LINKS.map((link, idx) => (
+                            {/* ... (Existing mobile menu loop) ... */}
+                             {NAV_LINKS.map((link, idx) => (
                                 <div key={idx} className="border-b border-slate-50 dark:border-slate-800 pb-2 last:border-0">
-                                    {/* Link Header */}
-                                    <div 
-                                        className="flex justify-between items-center py-2 cursor-pointer"
-                                        onClick={() => toggleMobileSubmenu(idx)}
-                                    >
-                                        <div className="font-bold text-slate-800 dark:text-slate-200">{link.label}</div>
-                                        {['mega_tabs', 'dropdown'].includes(link.type) && (
-                                            <ChevronDown size={16} className={`transition-transform duration-200 ${mobileExpanded[idx] ? 'rotate-180' : ''}`} />
-                                        )}
-                                    </div>
-                                    
-                                    {/* Submenu Content */}
-                                    {mobileExpanded[idx] && (
-                                        <div className="pl-4 space-y-4 mt-2 animate-in slide-in-from-top-2 duration-200">
-                                            
-                                            {/* MEGA MENU: Render Categories */}
-                                            {link.type === 'mega_tabs' && link.categories.map((cat, cIdx) => (
-                                                <div key={cIdx} className="mb-4">
+                                    <div className="font-bold text-slate-800 dark:text-slate-200 py-2">{link.label}</div>
+                                    {link.type === 'mega_tabs' && (
+                                        <div className="pl-4 space-y-4 mt-2">
+                                            {link.categories.map((cat, cIdx) => (
+                                                <div key={cIdx}>
                                                     <div className="text-xs font-bold text-blue-500 uppercase mb-2">{cat.name}</div>
-                                                    <div className="grid grid-cols-1 gap-2">
+                                                    <div className="grid grid-cols-2 gap-2">
                                                         {cat.items.map((item, iIdx) => (
-                                                            <div key={iIdx} className="text-sm text-slate-600 dark:text-slate-300 flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-800 rounded">
-                                                                <span className="text-slate-400">{item.icon}</span>
-                                                                {item.name}
-                                                            </div>
+                                                            <div key={iIdx} className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded">{item.name}</div>
                                                         ))}
                                                     </div>
                                                 </div>
                                             ))}
-
-                                            {/* DROPDOWN: Render Items */}
-                                            {link.type === 'dropdown' && link.items.map((item, iIdx) => (
-                                                <div key={iIdx} className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-800 rounded text-sm text-slate-600 dark:text-slate-300">
-                                                    {item.icon && <span className="text-slate-400">{item.icon}</span>}
-                                                    {item.name}
-                                                </div>
-                                            ))}
-                                            
-                                            {/* LINK: Render as Link */}
-                                            {link.type === 'link' && (
-                                                <Link to={link.to} className="block p-2 text-sm text-blue-600 hover:underline">
-                                                    Go to Page
-                                                </Link>
-                                            )}
                                         </div>
                                     )}
                                 </div>
                             ))}
+
                             <div className="flex flex-col gap-3 mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
-                                <Link to="/login" className="w-full text-center border-2 border-slate-100 dark:border-slate-700 py-3 rounded-xl font-bold text-slate-700 dark:text-slate-300">Login</Link>
-                                <Link to="/register" className="w-full text-center bg-blue-600 text-white py-3 rounded-xl font-bold">Register</Link>
+                                {isLoggedIn ? (
+                                    <Link to="/dashboard" className="w-full text-center bg-slate-900 text-white py-3 rounded-xl font-bold">Go to Dashboard</Link>
+                                ) : (
+                                    <>
+                                        <Link to="/login" className="w-full text-center border-2 border-slate-100 dark:border-slate-700 py-3 rounded-xl font-bold text-slate-700 dark:text-slate-300">Login</Link>
+                                        <Link to="/register" className="w-full text-center bg-blue-600 text-white py-3 rounded-xl font-bold">Register</Link>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>

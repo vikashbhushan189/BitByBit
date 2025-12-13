@@ -3,15 +3,12 @@ from django.conf import settings
 import json
 import PIL.Image
 
-# Configure API
 genai.configure(api_key=settings.GEMINI_API_KEY)
 
 def get_model():
-    # gemini-1.5-flash is optimized for multimodal (text + images) and speed
     return genai.GenerativeModel('gemini-2.5-flash')
 
 def clean_json_response(response_text):
-    """Helper to strip markdown and parse JSON"""
     clean_text = response_text.replace("```json", "").replace("```", "").strip()
     try:
         return json.loads(clean_text)
@@ -35,14 +32,14 @@ def generate_questions_from_text(text_content, num_questions=5, difficulty="Medi
             "question_text": "Question...",
             "options": ["A", "B", "C", "D"],
             "correct_index": 0,
-            "marks": 2
+            "marks": 2,
+            "explanation": "Detailed explanation of why this option is correct..."
         }}
     ]
     
     NOTES:
     {text_content[:25000]} 
     """
-    # Note: Increased char limit to 25k for Subject/Mock tests
     
     try:
         response = model.generate_content(prompt)
@@ -53,18 +50,12 @@ def generate_questions_from_text(text_content, num_questions=5, difficulty="Medi
 
 def generate_question_from_image(image_file, difficulty="Medium", custom_instructions=""):
     model = get_model()
-    
-    # Load image using PIL
     img = PIL.Image.open(image_file)
-
     style_guide = custom_instructions if custom_instructions else "standard exam pattern"
 
     prompt = f"""
-    Analyze this image. It might be a diagram, a mathematical equation, or a code snippet.
-    
-    TASK: Create 1 high-quality Multiple Choice Question (MCQ) that tests the concept shown in this image.
-    Do NOT just describe the image. Create a question *based* on it (e.g., if it's a circuit, ask for total resistance).
-    
+    Analyze this image.
+    TASK: Create 1 Multiple Choice Question (MCQ) based on it.
     CONTEXT: {style_guide}
     DIFFICULTY: {difficulty}
     
@@ -74,13 +65,13 @@ def generate_question_from_image(image_file, difficulty="Medium", custom_instruc
             "question_text": "Question...",
             "options": ["A", "B", "C", "D"],
             "correct_index": 0,
-            "marks": 2
+            "marks": 2,
+            "explanation": "Detailed explanation..."
         }}
     ]
     """
 
     try:
-        # Pass both text prompt and image to the model
         response = model.generate_content([prompt, img])
         return clean_json_response(response.text)
     except Exception as e:

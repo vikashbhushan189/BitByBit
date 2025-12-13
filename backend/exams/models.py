@@ -82,6 +82,8 @@ class Question(models.Model):
     exam = models.ForeignKey(Exam, related_name='questions', on_delete=models.CASCADE)
     text_content = models.TextField()
     marks = models.FloatField(default=1.0)
+    # NEW: Store the explanation
+    explanation = models.TextField(blank=True, default="", help_text="Explanation for the correct answer")
 
     def __str__(self):
         return self.text_content[:50]

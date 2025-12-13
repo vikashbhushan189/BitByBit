@@ -21,13 +21,13 @@ class QuestionSerializer(serializers.ModelSerializer):
         model = Question
         fields = ['id', 'text_content', 'marks', 'options']
 
-# --- LIGHTWEIGHT EXAM SERIALIZER (For Lists/Dashboard) ---
+# LIGHTWEIGHT EXAM SERIALIZER
 class SimpleExamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Exam
         fields = ['id', 'title', 'duration_minutes', 'total_marks', 'exam_type']
 
-# --- HEAVY EXAM SERIALIZER (For Taking Tests) ---
+# HEAVY EXAM SERIALIZER
 class ExamSerializer(serializers.ModelSerializer):
     questions = QuestionSerializer(many=True, read_only=True)
     class Meta:
@@ -41,12 +41,10 @@ class TopicSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'order', 'quiz_id']
 
     def get_quiz_id(self, obj):
-        # FIX: Check both 'quiz' (new) and 'quiz_legacy' (old) safely
         try:
             if hasattr(obj, 'quiz'): return obj.quiz.id
             if hasattr(obj, 'quiz_legacy'): return obj.quiz_legacy.id
-        except Exception:
-            return None
+        except Exception: pass
         return None
 
 class ChapterSerializer(serializers.ModelSerializer):
@@ -58,11 +56,21 @@ class ChapterSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'order', 'study_notes', 'topics', 'quiz_id']
 
     def get_quiz_id(self, obj):
+        # 1. Check direct Chapter Quiz
         try:
-            # Safely try to get linked exam
-            return obj.quiz.id
-        except Exception:
-            return None
+            if hasattr(obj, 'quiz'): return obj.quiz.id
+        except Exception: pass
+        
+        # 2. Check Topic Quizzes (Fallback for legacy data)
+        # If this chapter has no direct quiz, but has topics with quizzes, return the first one
+        # This ensures the "Chapter Quiz" tab isn't empty for old data.
+        for topic in obj.topics.all():
+            try:
+                if hasattr(topic, 'quiz'): return topic.quiz.id
+                if hasattr(topic, 'quiz_legacy'): return topic.quiz_legacy.id
+            except: continue
+            
+        return None
 
 class SubjectSerializer(serializers.ModelSerializer):
     chapters = ChapterSerializer(many=True, read_only=True)
@@ -73,8 +81,9 @@ class SubjectSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'section', 'order', 'chapters', 'tests']
     
     def get_tests(self, obj):
-        # OPTIMIZATION: Use Simple serializer
-        exams = obj.tests.all()
+        # FIX: Only return exams specifically marked as SUBJECT_TEST
+        # This hides Topic/Chapter quizzes from the "Subject Quiz" tab
+        exams = obj.tests.filter(exam_type='SUBJECT_TEST')
         return SimpleExamSerializer(exams, many=True).data
 
 class CourseSerializer(serializers.ModelSerializer):
@@ -87,12 +96,10 @@ class CourseSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'description', 'is_paid', 'subjects', 'mocks', 'pyqs']
 
     def get_mocks(self, obj):
-        # OPTIMIZATION: Use Simple serializer
         exams = obj.mocks.filter(exam_type='MOCK_FULL')
         return SimpleExamSerializer(exams, many=True).data
 
     def get_pyqs(self, obj):
-        # OPTIMIZATION: Use Simple serializer
         exams = obj.mocks.filter(exam_type='PYQ')
         return SimpleExamSerializer(exams, many=True).data
 

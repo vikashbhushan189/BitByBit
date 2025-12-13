@@ -31,9 +31,11 @@ const ExamPage = () => {
 
     // --- PROCTORING STATE ---
     const [isProctored, setIsProctored] = useState(false);
-    const [violationCount, setViolationCount] = useState(0);
-    const [isFullScreen, setIsFullScreen] = useState(true); // Assume true initially to avoid flicker
+    const violationCountRef = useRef(0); // Ref for immediate access in event listeners
+    const [violationCountDisplay, setViolationCountDisplay] = useState(0); // State for UI display
+    const [isFullScreen, setIsFullScreen] = useState(true); 
     const [showViolationModal, setShowViolationModal] = useState(false);
+    const [violationReason, setViolationReason] = useState("");
 
     // --- 1. INITIALIZE ---
     useEffect(() => {
@@ -42,13 +44,15 @@ const ExamPage = () => {
                 const examRes = await api.get(`exams/${examId}/`);
                 setExam(examRes.data);
                 
-                // Determine if Proctoring is needed (Not for Topic Quizzes)
-                const proctoredTypes = ['SUBJECT_TEST', 'MOCK_FULL', 'PYQ'];
-                const shouldProctor = proctoredTypes.includes(examRes.data.exam_type);
+                // --- PROCTORING CONFIG ---
+                // Enable for specific types OR all types. 
+                // Removed 'TOPIC_QUIZ' from exclusion to test proctoring easily.
+                // You can add it back if needed: !['TOPIC_QUIZ'].includes(type)
+                const shouldProctor = true; 
                 setIsProctored(shouldProctor);
 
                 if (shouldProctor) {
-                    setIsFullScreen(false); // Force user to enter FS manually
+                    setIsFullScreen(false); // Trigger the blocker immediately
                 }
 
                 setTimeLeft((examRes.data.duration_minutes || 30) * 60);
@@ -65,93 +69,13 @@ const ExamPage = () => {
         initExam();
     }, [examId, navigate]);
 
-    // --- 2. PROCTORING LOGIC ---
-    useEffect(() => {
-        if (!isProctored || loading || result) return;
-
-        // A. Handle Tab Switching / Minimizing
-        const handleVisibilityChange = () => {
-            if (document.hidden) {
-                handleViolation("You switched tabs or minimized the window.");
-            }
-        };
-
-        // B. Handle Full Screen Exit
-        const handleFullScreenChange = () => {
-            if (!document.fullscreenElement) {
-                setIsFullScreen(false);
-                // We don't count this as a "violation" immediately, 
-                // but we block the screen until they return.
-            } else {
-                setIsFullScreen(true);
-            }
-        };
-
-        // C. Disable Right Click
-        const handleContextMenu = (e) => e.preventDefault();
-
-        // Attach Listeners
-        document.addEventListener("visibilitychange", handleVisibilityChange);
-        document.addEventListener("fullscreenchange", handleFullScreenChange);
-        document.addEventListener("contextmenu", handleContextMenu);
-
-        return () => {
-            document.removeEventListener("visibilitychange", handleVisibilityChange);
-            document.removeEventListener("fullscreenchange", handleFullScreenChange);
-            document.removeEventListener("contextmenu", handleContextMenu);
-        };
-    }, [isProctored, loading, result, violationCount]);
-
-    const handleViolation = (reason) => {
-        if (result || submitting) return;
-        
-        const newCount = violationCount + 1;
-        setViolationCount(newCount);
-        
-        if (newCount >= 4) {
-            // TERMINATE EXAM
-            alert("Too many violations! Your exam is being auto-submitted.");
-            handleSubmit(true);
-        } else {
-            // SHOW WARNING
-            setShowViolationModal(true);
-        }
-    };
-
-    const enterFullScreen = () => {
-        const elem = document.documentElement;
-        if (elem.requestFullscreen) {
-            elem.requestFullscreen().then(() => setIsFullScreen(true)).catch(err => console.log(err));
-        }
-    };
-
-    // --- 3. TIMER ---
-    useEffect(() => {
-        if (!timeLeft || result || loading) return;
-        
-        // Pause timer visual if not full screen (Server time still ticks, but this creates urgency)
-        if (isProctored && !isFullScreen) return;
-
-        const timerId = setInterval(() => {
-            setTimeLeft(prev => {
-                if (prev <= 1) {
-                    clearInterval(timerId);
-                    handleSubmit(true);
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-        return () => clearInterval(timerId);
-    }, [timeLeft, result, loading, isProctored, isFullScreen]);
-
-    // --- 4. SUBMIT LOGIC ---
+    // --- 2. SUBMIT LOGIC (Hoisted) ---
     const handleSubmit = async (autoSubmit = false) => {
         if (!autoSubmit && !window.confirm("Finish Test? This cannot be undone.")) return;
         
-        // Exit Full Screen on Submit
+        // Clean up full screen
         if (document.fullscreenElement) {
-            document.exitFullscreen().catch(err => console.log(err));
+            document.exitFullscreen().catch(err => {}); // Ignore error if already exited
         }
 
         setSubmitting(true);
@@ -170,7 +94,97 @@ const ExamPage = () => {
         }
     };
 
-    // --- 5. PRACTICE HELPERS ---
+    // --- 3. PROCTORING LISTENERS ---
+    useEffect(() => {
+        if (!isProctored || loading || result || submitting) return;
+
+        const triggerViolation = (reason) => {
+            if (violationCountRef.current >= 4) return; // Already maxed out
+
+            violationCountRef.current += 1;
+            setViolationCountDisplay(violationCountRef.current);
+            setViolationReason(reason);
+
+            if (violationCountRef.current >= 4) {
+                alert("Maximum violations reached (4/4). The test is auto-submitting.");
+                handleSubmit(true);
+            } else {
+                setShowViolationModal(true);
+            }
+        };
+
+        // A. Tab Switching (Standard)
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                triggerViolation("Tab switching is not allowed.");
+            }
+        };
+
+        // B. Full Screen Exit (Robust)
+        const handleFullScreenChange = () => {
+            if (!document.fullscreenElement) {
+                setIsFullScreen(false);
+                // Note: We don't trigger a violation count here immediately,
+                // we just show the blocker screen which forces them back.
+            } else {
+                setIsFullScreen(true);
+            }
+        };
+
+        // C. Window Blur (Alt-Tab / Clicking outside)
+        const handleWindowBlur = () => {
+            // Only trigger if we are supposed to be in the exam
+            if (document.fullscreenElement) {
+                 triggerViolation("You moved away from the exam window.");
+            }
+        };
+
+        // D. Disable Right Click
+        const handleContextMenu = (e) => e.preventDefault();
+
+        // Attach
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        document.addEventListener("fullscreenchange", handleFullScreenChange);
+        window.addEventListener("blur", handleWindowBlur);
+        document.addEventListener("contextmenu", handleContextMenu);
+
+        // Cleanup
+        return () => {
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+            document.removeEventListener("fullscreenchange", handleFullScreenChange);
+            window.removeEventListener("blur", handleWindowBlur);
+            document.removeEventListener("contextmenu", handleContextMenu);
+        };
+    }, [isProctored, loading, result, submitting]);
+
+    const enterFullScreen = () => {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen().then(() => setIsFullScreen(true)).catch(err => console.log(err));
+        }
+    };
+
+    // --- 4. TIMER ---
+    useEffect(() => {
+        if (!timeLeft || result || loading) return;
+        
+        // Pause timer visual if user is blocked (optional choice)
+        // keeping it running adds pressure to return
+        
+        const timerId = setInterval(() => {
+            setTimeLeft(prev => {
+                if (prev <= 1) {
+                    clearInterval(timerId);
+                    handleSubmit(true);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(timerId);
+    }, [timeLeft, result, loading]);
+
+    // --- 5. HELPERS ---
     const handleAnswerSelect = (qId, optId) => {
         if (practiceFeedback[qId]) return;
         const newAnswers = { ...answers, [qId]: optId };
@@ -201,21 +215,21 @@ const ExamPage = () => {
     
     if (loading) return <div className="min-h-screen flex items-center justify-center gap-2 text-blue-600 font-bold"><Loader2 className="animate-spin"/> Loading Exam...</div>;
     
-    // 1. PROCTORING: FULL SCREEN BLOCKER
+    // 1. PROCTORING: FULL SCREEN BLOCKER (High Z-Index)
     if (isProctored && !isFullScreen && !result) {
         return (
-            <div className="fixed inset-0 z-50 bg-slate-900 flex flex-col items-center justify-center text-white p-6 text-center">
-                <ShieldAlert size={64} className="text-red-500 mb-6 animate-pulse" />
-                <h2 className="text-3xl font-bold mb-4">Proctored Exam Mode</h2>
-                <p className="text-slate-300 max-w-md mb-8">
-                    This is a serious exam environment. You must remain in full-screen mode at all times. 
-                    Switching tabs or exiting full screen will be recorded as a violation.
+            <div className="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center text-white p-6 text-center">
+                <ShieldAlert size={80} className="text-red-500 mb-6 animate-pulse" />
+                <h2 className="text-3xl font-bold mb-4">Exam Paused</h2>
+                <p className="text-slate-300 max-w-md mb-8 text-lg leading-relaxed">
+                    You have exited Full Screen mode. <br/>
+                    Please return immediately to continue.
                 </p>
                 <button 
                     onClick={enterFullScreen}
-                    className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg flex items-center gap-2 transition-all hover:scale-105"
+                    className="bg-blue-600 hover:bg-blue-500 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg flex items-center gap-3 transition-all hover:scale-105"
                 >
-                    <Maximize size={20} /> Enter Full Screen to Start
+                    <Maximize size={24} /> Return to Exam
                 </button>
             </div>
         );
@@ -254,26 +268,33 @@ const ExamPage = () => {
     // 3. EXAM INTERFACE
     const questions = exam?.questions || [];
     const currentQ = questions[currentQIndex];
-    const isPracticeMode = exam?.exam_type === 'TOPIC_QUIZ'; 
+    // Allow check answer if specifically a topic quiz AND we have feedback for it
+    // Or if you want "Check Answer" always available for topic quizzes:
+    const canCheckAnswer = exam?.exam_type === 'TOPIC_QUIZ';
+    
     const feedback = practiceFeedback[currentQ.id];
     const isLastQ = currentQIndex === questions.length - 1;
 
     return (
-        <div className={`flex flex-col h-screen bg-slate-50 font-sans text-slate-800 ${isProctored ? 'select-none' : ''}`}>
+        <div className={`flex flex-col h-screen bg-slate-50 font-sans text-slate-800 select-none`}> 
+            {/* 'select-none' prevents text highlighting */}
             
             {/* PROCTORING WARNING MODAL */}
             {showViolationModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-red-900/40 backdrop-blur-sm">
-                    <div className="bg-white p-8 rounded-2xl shadow-2xl border-2 border-red-500 max-w-sm text-center animate-in fade-in zoom-in duration-300">
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-red-950/80 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white p-8 rounded-2xl shadow-2xl border-2 border-red-500 max-w-sm text-center">
                         <ShieldAlert size={48} className="text-red-600 mx-auto mb-4" />
-                        <h3 className="text-xl font-bold text-red-700 mb-2">Warning {violationCount}/3</h3>
+                        <h3 className="text-2xl font-black text-red-700 mb-2">Proctoring Warning</h3>
+                        <div className="bg-red-50 text-red-800 text-sm p-3 rounded mb-4 font-mono font-bold">
+                            Violation {violationCountDisplay}/4
+                        </div>
                         <p className="text-slate-600 mb-6">
-                            You switched tabs or windows. This is a proctored exam. 
-                            <strong>Next violation will result in auto-submission.</strong>
+                            {violationReason || "Suspicious activity detected."} <br/>
+                            <strong>The exam will auto-submit on the 4th violation.</strong>
                         </p>
                         <button 
                             onClick={() => setShowViolationModal(false)}
-                            className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-bold"
+                            className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-bold shadow-lg"
                         >
                             I Understand
                         </button>
@@ -365,8 +386,8 @@ const ExamPage = () => {
                     </div>
                     {isProctored && (
                         <div className="mt-auto pt-4 border-t border-slate-100">
-                             <div className="flex items-center gap-2 text-xs font-bold text-red-500 bg-red-50 p-3 rounded-lg">
-                                <ShieldAlert size={16}/> Warning Count: {violationCount}/3
+                             <div className="flex items-center gap-2 text-xs font-bold text-red-500 bg-red-50 p-3 rounded-lg border border-red-100">
+                                <ShieldAlert size={16}/> Warnings: {violationCountDisplay}/3
                              </div>
                         </div>
                     )}
@@ -377,7 +398,9 @@ const ExamPage = () => {
                 <button onClick={() => setCurrentQIndex(Math.max(0, currentQIndex - 1))} disabled={currentQIndex === 0} className="flex items-center gap-2 px-6 py-3 text-slate-600 hover:bg-slate-100 rounded-xl font-bold disabled:opacity-30">Previous</button>
                 <div className="flex gap-4">
                     <button onClick={() => toggleReview(currentQ.id)} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all border-2 ${markedForReview[currentQ.id] ? 'bg-purple-50 border-purple-200 text-purple-700' : 'bg-white border-slate-200 text-slate-500'}`}><Flag size={18}/> Mark</button>
-                    {isPracticeMode && !feedback ? (
+                    
+                    {/* CHECK ANSWER BUTTON (Only if Practice Mode) */}
+                    {canCheckAnswer && !feedback ? (
                         <button onClick={() => handleCheckAnswer(currentQ.id)} className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-all">Check Answer</button>
                     ) : (
                         <button onClick={() => setCurrentQIndex(Math.min(questions.length - 1, currentQIndex + 1))} disabled={isLastQ} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-all disabled:opacity-50">{isLastQ ? "Finish" : "Next"} <ChevronRight size={20} /></button>

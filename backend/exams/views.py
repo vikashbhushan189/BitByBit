@@ -328,7 +328,8 @@ class AIGeneratorViewSet(viewsets.ViewSet):
             question = Question.objects.create(
                 exam=exam,
                 text_content=q_data['question_text'],
-                marks=q_data.get('marks', 2)
+                marks=q_data.get('marks', 2),
+                explanation=q_data.get('explanation', '')
             )
             for idx, opt_text in enumerate(q_data['options']):
                 Option.objects.create(

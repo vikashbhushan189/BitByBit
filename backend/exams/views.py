@@ -97,6 +97,34 @@ class ExamViewSet(viewsets.ReadOnlyModelViewSet):
 
         return Response({"score": attempt.total_score, "total_marks": exam.total_marks, "status": "Completed"})
 
+    # --- NEW: Check Single Answer (For Practice Mode) ---
+    @action(detail=True, methods=['post'])
+    def check_answer(self, request, pk=None):
+        question_id = request.data.get('question_id')
+        option_id = request.data.get('option_id')
+        
+        # Validate Inputs
+        if not question_id:
+            return Response({"error": "Question ID required"}, status=400)
+
+        question = get_object_or_404(Question, id=question_id)
+        
+        # Check against database
+        correct_option = question.options.filter(is_correct=True).first()
+        is_correct = False
+        
+        if option_id:
+            try:
+                selected = Option.objects.get(id=option_id)
+                is_correct = selected.is_correct
+            except: pass
+            
+        return Response({
+            "is_correct": is_correct,
+            "correct_option_id": correct_option.id if correct_option else None,
+            "explanation": question.explanation
+        })
+
     @action(detail=True, methods=['post'])
     def subscribe(self, request, pk=None):
         course = self.get_object()
@@ -152,7 +180,6 @@ class AIGeneratorViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'])
     def generate_image(self, request):
-        # ... (Keep existing image logic)
         image = request.FILES.get('image')
         difficulty = request.data.get('difficulty', 'Medium')
         custom_instructions = request.data.get('custom_instructions', '')
@@ -390,7 +417,7 @@ class BulkNotesViewSet(viewsets.ViewSet):
 
         except Exception as e:
             print(f"CSV ERROR: {e}")
-            return Response({"error": f"Server Error: {str(e)}"}, status=500)
+            return Response({"error": f"Server Error: {str(e)}"}, status=500)   
 
 class AdBannerViewSet(viewsets.ModelViewSet):
     queryset = AdBanner.objects.filter(is_active=True).order_by('-created_at')

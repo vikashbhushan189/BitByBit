@@ -324,37 +324,70 @@ class BulkNotesViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['post'])
     def upload_csv(self, request):
         file_obj = request.FILES.get('file')
-        if not file_obj: return Response({"error": "No file uploaded"}, status=400)
-        if not file_obj.name.endswith('.csv'): return Response({"error": "File must be a CSV"}, status=400)
+        if not file_obj: 
+            return Response({"error": "No file uploaded"}, status=400)
+
+        if not file_obj.name.endswith('.csv'):
+            return Response({"error": "File must be a CSV"}, status=400)
+
         try:
+            # 1. Stream & Decode
             decoded_file = codecs.iterdecode(file_obj, 'utf-8-sig')
             reader = csv.DictReader(decoded_file)
+            
+            # 2. Smart Header Map (Now includes "Paper" or "Section")
             header_map = {}
             if reader.fieldnames:
                 for field in reader.fieldnames:
                     clean = field.strip().lower()
                     if 'course' in clean: header_map['course'] = field
+                    # Look for "Paper", "Section", or "Part"
+                    elif 'paper' in clean or 'section' in clean or 'part' in clean: header_map['section'] = field
                     elif 'subject' in clean: header_map['subject'] = field
                     elif 'chapter' in clean: header_map['chapter'] = field
-                    elif 'topic' in clean: header_map['topic'] = field
                     elif 'note' in clean: header_map['notes'] = field 
+
             updated_count = 0
             created_count = 0
+            
             for row in reader:
                 c_title = row.get(header_map.get('course'), '').strip()
+                # Get Section/Paper (Default to "Main" if missing)
+                sec_title = row.get(header_map.get('section'), 'Main').strip() 
                 s_title = row.get(header_map.get('subject'), '').strip()
                 ch_title = row.get(header_map.get('chapter'), '').strip()
                 notes = row.get(header_map.get('notes'), '').strip()
-                if not (c_title and s_title and ch_title): continue
+
+                if not (c_title and s_title and ch_title):
+                    continue
+
                 course, _ = Course.objects.get_or_create(title=c_title)
-                subject, _ = Subject.objects.get_or_create(title=s_title, course=course)
+                
+                # Update Subject with Section info
+                subject, _ = Subject.objects.get_or_create(
+                    title=s_title, 
+                    course=course,
+                    defaults={'section': sec_title} 
+                )
+                
+                # If subject exists but section name is different/updated in CSV, update it
+                if subject.section != sec_title and sec_title:
+                    subject.section = sec_title
+                    subject.save()
+
                 chapter, created = Chapter.objects.get_or_create(title=ch_title, subject=subject)
+                
                 if notes:
                     chapter.study_notes = notes
                     chapter.save()
                     if created: created_count += 1
                     else: updated_count += 1
-            return Response({"status": "success", "message": f"Processed successfully! Created {created_count}, Updated {updated_count} chapters."})
+
+            return Response({
+                "status": "success", 
+                "message": f"Processed successfully! Created {created_count}, Updated {updated_count} chapters."
+            })
+
         except Exception as e:
             print(f"CSV ERROR: {e}")
             return Response({"error": f"Server Error: {str(e)}"}, status=500)

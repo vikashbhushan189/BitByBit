@@ -40,17 +40,18 @@ const AdminNotesUploadPage = () => {
     // UPDATED TEMPLATE: Removed 'Topic' column
     const downloadTemplate = () => {
         const csvContent = "data:text/csv;charset=utf-8," 
-            + "Course,Subject,Chapter,Notes\n"
-            + "Computer Science,Operating System,Process Management,# Process Management Notes...\n"
-            + "Computer Science,Operating System,Deadlocks,# Deadlock Notes...";
+            + "Course,Paper,Subject,Chapter,Notes\n"
+            + "UGC NET Computer Science,Paper 1,Teaching Aptitude,Methods of Teaching,# Markdown Notes here...\n"
+            + "UGC NET Computer Science,Paper 2,Operating System,Process Management,# OS Notes here...";
         
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "chapter_notes_template.csv");
+        link.setAttribute("download", "ugc_net_template.csv");
         document.body.appendChild(link);
         link.click();
     };
+    
 
     return (
         <div className="min-h-screen bg-slate-900 text-white p-8 font-sans">

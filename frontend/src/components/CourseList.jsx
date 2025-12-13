@@ -3,43 +3,52 @@ import { Link, useSearchParams } from 'react-router-dom';
 import api from '../api/axios';
 import { 
     BookOpen, ChevronRight, GraduationCap, FileText, Lock, 
-    PlayCircle, AlertCircle, Clock, Zap, BookMarked, Trophy 
+    PlayCircle, AlertCircle, Clock, Zap, BookMarked, Trophy, HelpCircle
 } from 'lucide-react';
 
 const CourseCard = ({ course, mode }) => {
-    const [activeTab, setActiveTab] = useState('notes'); // Default tab
-
+    const [activeTab, setActiveTab] = useState('notes'); 
     const isLocked = !((mode === 'enrolled') || !course.is_paid);
 
     // --- DATA AGGREGATION ---
-    // 1. Notes: Flatten chapters that have notes
+    
+    // 1. Notes
     const notesData = course.subjects?.flatMap(sub => 
         sub.chapters?.filter(ch => ch.study_notes).map(ch => ({
             id: ch.id, title: ch.title, subtitle: sub.title, type: 'note', link: `/chapter/${ch.id}/notes`
         }))
     ) || [];
 
-    // 2. Chapter Quizzes: Flatten chapters that have quizzes
+    // 2. Chapter Quizzes (Updated to use quiz_details)
     const chapterQuizData = course.subjects?.flatMap(sub => 
-        sub.chapters?.filter(ch => ch.quiz_id).map(ch => ({
-            id: ch.quiz_id, title: ch.title, subtitle: sub.title, type: 'quiz', link: `/exam/${ch.quiz_id}`
+        sub.chapters?.filter(ch => ch.quiz_details).map(ch => ({
+            id: ch.quiz_details.id, 
+            title: ch.quiz_details.title || ch.title, 
+            subtitle: `${sub.title} • ${ch.quiz_details.question_count} Qs • ${ch.quiz_details.total_marks} Marks`, 
+            type: 'quiz', 
+            link: `/exam/${ch.quiz_details.id}`,
+            meta: ch.quiz_details // Store full metadata
         }))
     ) || [];
 
-    // 3. Subject Quizzes: From subject.tests
+    // 3. Subject Quizzes
     const subjectQuizData = course.subjects?.flatMap(sub => 
         sub.tests?.map(test => ({
-            id: test.id, title: test.title, subtitle: sub.title, type: 'quiz', link: `/exam/${test.id}`
+            id: test.id, 
+            title: test.title, 
+            subtitle: `${sub.title} • ${test.question_count} Qs • ${test.total_marks} Marks`, 
+            type: 'quiz', 
+            link: `/exam/${test.id}`
         }))
     ) || [];
 
-    // 4. Mocks & PYQs: From course.mocks and course.pyqs
+    // 4. Mocks & PYQs
     const mockData = course.mocks?.map(m => ({
-        id: m.id, title: m.title, subtitle: "Full Syllabus", type: 'mock', link: `/exam/${m.id}`
+        id: m.id, title: m.title, subtitle: `${m.question_count} Qs • ${m.total_marks} Marks`, type: 'mock', link: `/exam/${m.id}`
     })) || [];
 
     const pyqData = course.pyqs?.map(p => ({
-        id: p.id, title: p.title, subtitle: "Previous Year", type: 'pyq', link: `/exam/${p.id}`
+        id: p.id, title: p.title, subtitle: `${p.question_count} Qs • ${p.total_marks} Marks`, type: 'pyq', link: `/exam/${p.id}`
     })) || [];
 
     // --- RENDER HELPERS ---
@@ -62,7 +71,7 @@ const CourseCard = ({ course, mode }) => {
                             {isLocked ? <Lock size={16} className="text-slate-400"/> : <div className="h-2 w-2 rounded-full bg-green-500"></div>}
                         </div>
                         
-                        <h4 className="font-bold text-slate-800 text-sm line-clamp-2 mb-1">{item.title}</h4>
+                        <h4 className="font-bold text-slate-800 text-sm line-clamp-2 mb-1" title={item.title}>{item.title}</h4>
                         <p className="text-xs text-slate-500 font-medium mb-4">{item.subtitle}</p>
 
                         {isLocked ? (

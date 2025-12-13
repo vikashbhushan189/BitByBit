@@ -44,17 +44,12 @@ class Chapter(models.Model):
         return f"{self.subject.title} - {self.title}"
 
 class Topic(models.Model):
+    # Keeping this model temporarily to avoid migration errors, but it's deprecated.
     chapter = models.ForeignKey(Chapter, related_name='topics', on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
     order = models.IntegerField(default=1)
-    
-    # Removed study_notes from here
-
-    class Meta:
-        ordering = ['order']
-
-    def __str__(self):
-        return self.title
+    class Meta: ordering = ['order']
+    def __str__(self): return self.title
 
 # --- 2. Exam System ---
 class Exam(models.Model):
@@ -68,8 +63,11 @@ class Exam(models.Model):
     title = models.CharField(max_length=255)
     exam_type = models.CharField(max_length=20, choices=EXAM_TYPES)
     
-    # Linkage
-    topic = models.OneToOneField(Topic, null=True, blank=True, on_delete=models.SET_NULL, related_name='quiz')
+    
+    # NEW: Direct Link to Chapter
+    chapter = models.OneToOneField(Chapter, null=True, blank=True, on_delete=models.SET_NULL, related_name='quiz')
+    # Old Links (Keep for safety or Subject/Course tests)
+    topic = models.OneToOneField(Topic, null=True, blank=True, on_delete=models.SET_NULL, related_name='quiz_legacy')
     subject = models.ForeignKey(Subject, null=True, blank=True, on_delete=models.SET_NULL, related_name='tests')
     course = models.ForeignKey(Course, null=True, blank=True, on_delete=models.SET_NULL, related_name='mocks')
 
@@ -78,7 +76,7 @@ class Exam(models.Model):
     negative_marking_ratio = models.FloatField(default=0.25)
     
     def __str__(self):
-        return f"{self.get_exam_type_display()} - {self.title}"
+        return f"{self.get_exam_type_display()} - {self.title}" 
 
 class Question(models.Model):
     exam = models.ForeignKey(Exam, related_name='questions', on_delete=models.CASCADE)

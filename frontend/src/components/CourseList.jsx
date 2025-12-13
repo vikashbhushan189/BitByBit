@@ -1,79 +1,127 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../api/axios';
-import { BookOpen, ChevronRight, ChevronDown, ChevronUp, GraduationCap, FileText, Lock, PlayCircle, AlertCircle } from 'lucide-react';
+import { 
+    BookOpen, ChevronRight, GraduationCap, FileText, Lock, 
+    PlayCircle, AlertCircle, Clock, Zap, BookMarked, Trophy 
+} from 'lucide-react';
 
-// --- HELPER COMPONENT FOR CHAPTER ACCORDION ---
-const ChapterItem = ({ chapter, mode, isPaid }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const hasTopics = chapter.topics && chapter.topics.length > 0;
-    const hasNotes = !!chapter.study_notes;
-    
-    return (
-        <div className="border-b border-slate-100 last:border-0">
-            <div className="flex items-center justify-between py-3 pr-2">
-                <div className="flex items-center gap-3 flex-1">
-                    <button 
-                        onClick={() => setIsOpen(!isOpen)}
-                        className="flex items-center gap-2 text-sm font-bold text-slate-700 hover:text-blue-600 text-left transition-colors"
-                    >
-                        <span className={`p-1 rounded-md transition-colors ${isOpen ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400'}`}>
-                            {isOpen ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
-                        </span>
-                        {chapter.title}
-                    </button>
-                </div>
+const CourseCard = ({ course, mode }) => {
+    const [activeTab, setActiveTab] = useState('notes'); // Default tab
 
-                <div className="flex items-center gap-2">
-                    {/* NOTES BUTTON (Always visible at Chapter level) */}
-                    {(mode === 'enrolled' || !isPaid) && hasNotes && (
-                        <Link 
-                            to={`/chapter/${chapter.id}/notes`}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-all shadow-sm"
-                        >
-                            <FileText size={14} /> Notes
-                        </Link>
-                    )}
-                </div>
+    const isLocked = !((mode === 'enrolled') || !course.is_paid);
+
+    // --- DATA AGGREGATION ---
+    // 1. Notes: Flatten chapters that have notes
+    const notesData = course.subjects?.flatMap(sub => 
+        sub.chapters?.filter(ch => ch.study_notes).map(ch => ({
+            id: ch.id, title: ch.title, subtitle: sub.title, type: 'note', link: `/chapter/${ch.id}/notes`
+        }))
+    ) || [];
+
+    // 2. Chapter Quizzes: Flatten chapters that have quizzes
+    const chapterQuizData = course.subjects?.flatMap(sub => 
+        sub.chapters?.filter(ch => ch.quiz_id).map(ch => ({
+            id: ch.quiz_id, title: ch.title, subtitle: sub.title, type: 'quiz', link: `/exam/${ch.quiz_id}`
+        }))
+    ) || [];
+
+    // 3. Subject Quizzes: From subject.tests
+    const subjectQuizData = course.subjects?.flatMap(sub => 
+        sub.tests?.map(test => ({
+            id: test.id, title: test.title, subtitle: sub.title, type: 'quiz', link: `/exam/${test.id}`
+        }))
+    ) || [];
+
+    // 4. Mocks & PYQs: From course.mocks and course.pyqs
+    const mockData = course.mocks?.map(m => ({
+        id: m.id, title: m.title, subtitle: "Full Syllabus", type: 'mock', link: `/exam/${m.id}`
+    })) || [];
+
+    const pyqData = course.pyqs?.map(p => ({
+        id: p.id, title: p.title, subtitle: "Previous Year", type: 'pyq', link: `/exam/${p.id}`
+    })) || [];
+
+    // --- RENDER HELPERS ---
+    const renderContentGrid = (items, emptyMsg, icon) => {
+        if (items.length === 0) return (
+            <div className="flex flex-col items-center justify-center py-12 text-slate-400 bg-slate-50/50 rounded-xl border-2 border-dashed border-slate-200">
+                {icon}
+                <p className="mt-2 text-sm font-medium">{emptyMsg}</p>
             </div>
-            
-            {/* DROPDOWN FOR TOPICS/QUIZZES */}
-            {isOpen && (
-                <div className="pl-9 pb-4 pr-2 space-y-2 animate-in slide-in-from-top-1 duration-200">
-                    {hasTopics ? (
-                        chapter.topics.map(topic => (
-                            <div key={topic.id} className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100 hover:border-blue-200 transition-colors">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
-                                    <span className="text-xs font-medium text-slate-600">
-                                        {/* If topic name == chapter name, show 'Practice Quiz' instead of repeating name */}
-                                        {topic.title === chapter.title ? "Practice Quiz" : topic.title}
-                                    </span>
-                                </div>
-                                
-                                {(mode === 'enrolled' || !isPaid) ? (
-                                    topic.quiz_id ? (
-                                        <Link 
-                                            to={`/exam/${topic.quiz_id}`}
-                                            className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-all shadow-sm"
-                                        >
-                                            Start <ChevronRight size={10} />
-                                        </Link>
-                                    ) : (
-                                        <span className="text-[10px] text-slate-400 italic px-2">No Quiz</span>
-                                    )
-                                ) : (
-                                    <Lock size={12} className="text-slate-400"/>
-                                )}
+        );
+
+        return (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {items.map((item, idx) => (
+                    <div key={idx} className="group relative bg-white border border-slate-200 rounded-xl p-4 hover:shadow-lg hover:border-blue-400 transition-all duration-300">
+                        <div className="flex justify-between items-start mb-3">
+                            <div className={`p-2 rounded-lg ${item.type === 'note' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600'}`}>
+                                {item.type === 'note' ? <FileText size={20}/> : <Clock size={20}/>}
                             </div>
-                        ))
-                    ) : (
-                        <div className="text-xs text-slate-400 italic flex items-center gap-1 pl-2">
-                            <AlertCircle size={12}/> No quizzes available yet.
+                            {isLocked ? <Lock size={16} className="text-slate-400"/> : <div className="h-2 w-2 rounded-full bg-green-500"></div>}
                         </div>
-                    )}
+                        
+                        <h4 className="font-bold text-slate-800 text-sm line-clamp-2 mb-1">{item.title}</h4>
+                        <p className="text-xs text-slate-500 font-medium mb-4">{item.subtitle}</p>
+
+                        {isLocked ? (
+                            <button disabled className="w-full py-2 rounded-lg bg-slate-100 text-slate-400 text-xs font-bold cursor-not-allowed">
+                                Locked
+                            </button>
+                        ) : (
+                            <Link to={item.link} className="block w-full py-2 rounded-lg bg-slate-900 text-white text-xs font-bold text-center group-hover:bg-blue-600 transition-colors">
+                                {item.type === 'note' ? 'Read Notes' : 'Start Test'}
+                            </Link>
+                        )}
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
+    return (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-10">
+            {/* Header */}
+            <div className="bg-slate-900 p-6 md:p-8 text-white relative overflow-hidden">
+                <div className="relative z-10">
+                    <h2 className="text-2xl font-bold">{course.title}</h2>
+                    <p className="text-slate-400 text-sm mt-1 max-w-2xl">{course.description}</p>
                 </div>
-            )}
+                <BookOpen className="absolute right-[-20px] bottom-[-20px] text-blue-600 opacity-20 w-48 h-48 rotate-12" />
+            </div>
+
+            {/* Navigation Tabs */}
+            <div className="flex overflow-x-auto border-b border-slate-200 bg-white sticky top-0 z-20 no-scrollbar">
+                {[
+                    { id: 'notes', label: 'Notes', icon: <BookMarked size={16}/> },
+                    { id: 'chapter_quiz', label: 'Chapter Quiz', icon: <Zap size={16}/> },
+                    { id: 'subject_quiz', label: 'Subject Quiz', icon: <BookOpen size={16}/> },
+                    { id: 'mock', label: 'Full Mock Test', icon: <Trophy size={16}/> },
+                    { id: 'pyq', label: 'Full Length PYQs', icon: <Clock size={16}/> },
+                ].map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`flex items-center gap-2 px-6 py-4 text-sm font-bold whitespace-nowrap transition-all border-b-2 
+                            ${activeTab === tab.id 
+                                ? 'border-blue-600 text-blue-600 bg-blue-50/50' 
+                                : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                            }`}
+                    >
+                        {tab.icon} {tab.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* Content Area */}
+            <div className="p-6 bg-slate-50 min-h-[300px]">
+                {activeTab === 'notes' && renderContentGrid(notesData, "No notes uploaded yet.", <FileText size={40} className="opacity-50"/>)}
+                {activeTab === 'chapter_quiz' && renderContentGrid(chapterQuizData, "No chapter quizzes available.", <Zap size={40} className="opacity-50"/>)}
+                {activeTab === 'subject_quiz' && renderContentGrid(subjectQuizData, "No subject tests added.", <BookOpen size={40} className="opacity-50"/>)}
+                {activeTab === 'mock' && renderContentGrid(mockData, "Mock tests coming soon.", <Trophy size={40} className="opacity-50"/>)}
+                {activeTab === 'pyq' && renderContentGrid(pyqData, "PYQs will be uploaded shortly.", <Clock size={40} className="opacity-50"/>)}
+            </div>
         </div>
     );
 };
@@ -102,7 +150,10 @@ const CourseList = () => {
 
     if (loading) return (
         <div className="min-h-screen flex items-center justify-center">
-            <div className="text-blue-600 font-semibold animate-pulse">Loading content...</div>
+            <div className="text-blue-600 font-semibold animate-pulse flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
+                Loading content...
+            </div>
         </div>
     );
 
@@ -122,79 +173,27 @@ const CourseList = () => {
     }
 
     return (
-        <div className="max-w-5xl mx-auto p-6 font-sans">
-            <header className="mb-10 text-center">
-                <h1 className="text-3xl font-extrabold text-slate-900 flex items-center justify-center gap-3">
-                    <GraduationCap size={32} className="text-blue-600" />
-                    {mode === 'enrolled' ? 'My Enrolled Courses' : 'Course Library'}
-                </h1>
-                <p className="text-slate-500 mt-2 text-sm">
-                    {mode === 'enrolled' ? 'Resume your learning journey.' : 'Explore structured courses for your exam.'}
-                </p>
+        <div className="max-w-7xl mx-auto p-6 font-sans">
+            <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-extrabold text-slate-900 flex items-center gap-3">
+                        <GraduationCap size={32} className="text-blue-600" />
+                        {mode === 'enrolled' ? 'My Library' : 'All Courses'}
+                    </h1>
+                    <p className="text-slate-500 mt-2 text-sm">
+                        {mode === 'enrolled' ? 'Resume your learning journey.' : 'Explore structured courses for your exam.'}
+                    </p>
+                </div>
+                {mode === 'enrolled' && (
+                    <Link to="/courses" className="text-sm font-bold text-blue-600 hover:underline">
+                        View Course Catalog &rarr;
+                    </Link>
+                )}
             </header>
 
-            <div className="space-y-8">
+            <div className="space-y-12">
                 {courses.map(course => (
-                    <div key={course.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                        {/* Course Header */}
-                        <div className="bg-slate-900 p-6 text-white flex justify-between items-start">
-                            <div>
-                                <h2 className="text-xl font-bold">{course.title}</h2>
-                                <p className="text-slate-400 text-sm mt-1">{course.description}</p>
-                            </div>
-                            {/* Badges */}
-                            <div className="flex flex-col items-end gap-2">
-                                {mode === 'enrolled' ? (
-                                    <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-1 rounded border border-emerald-500/30">
-                                        ACTIVE
-                                    </span>
-                                ) : course.is_paid ? (
-                                    <span className="bg-yellow-500/20 text-yellow-300 text-[10px] font-bold px-2 py-1 rounded border border-yellow-500/30">
-                                        PREMIUM
-                                    </span>
-                                ) : (
-                                    <span className="bg-blue-500/20 text-blue-300 text-[10px] font-bold px-2 py-1 rounded border border-blue-500/30">
-                                        FREE
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Syllabus Content */}
-                        <div className="p-6 bg-slate-50">
-                            <div className="space-y-6">
-                                {course.subjects && course.subjects.map(subject => (
-                                    <div key={subject.id} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                                        <div className="px-5 py-3 bg-slate-100 border-b border-slate-200 flex items-center justify-between">
-                                            <h4 className="font-bold text-slate-700 text-sm flex items-center gap-2">
-                                                <BookOpen size={16} className="text-blue-500"/>
-                                                {subject.title}
-                                            </h4>
-                                            {subject.section && subject.section !== 'Main' && (
-                                                <span className="text-[10px] font-bold bg-white border border-slate-300 text-slate-500 px-2 py-0.5 rounded">
-                                                    {subject.section}
-                                                </span>
-                                            )}
-                                        </div>
-                                        
-                                        <div className="p-4">
-                                            {subject.chapters && subject.chapters.map(chapter => (
-                                                <ChapterItem 
-                                                    key={chapter.id} 
-                                                    chapter={chapter} 
-                                                    mode={mode} 
-                                                    isPaid={course.is_paid} 
-                                                />
-                                            ))}
-                                            {(!subject.chapters || subject.chapters.length === 0) && (
-                                                <p className="text-xs text-slate-400 italic text-center py-2">No chapters added.</p>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
+                    <CourseCard key={course.id} course={course} mode={mode} />
                 ))}
             </div>
         </div>

@@ -222,17 +222,12 @@ class AIGeneratorViewSet(viewsets.ViewSet):
                 exam_defaults['exam_type'] = 'SUBJECT_TEST'
             elif source_type == 'chapter' and source_id:
                 try:
+                    # FIX: Link directly to Chapter
                     chapter = Chapter.objects.get(id=source_id)
-                    # FIX: Automatically create a TOPIC for this quiz so it appears in the hierarchy
-                    topic = Topic.objects.create(
-                        chapter=chapter,
-                        title=new_exam_title, # The topic name is the quiz name
-                        order=chapter.topics.count() + 1
-                    )
-                    exam_defaults['topic'] = topic
-                    exam_defaults['exam_type'] = 'TOPIC_QUIZ'
+                    exam_defaults['chapter'] = chapter
+                    exam_defaults['exam_type'] = 'TOPIC_QUIZ' # or rename to CHAPTER_QUIZ
                 except Exception as e:
-                    print(f"Error linking chapter to topic: {e}")
+                    print(f"Error linking chapter: {e}")
             
             exam = Exam.objects.create(**exam_defaults)
         

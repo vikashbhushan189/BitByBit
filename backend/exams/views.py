@@ -124,17 +124,16 @@ class AIGeneratorViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'])
     def generate(self, request):
+        # ... (Keep existing generate logic)
         topic_id = request.data.get('topic_id')
         source_type = request.data.get('source_type')
         source_id = request.data.get('source_id')
         num_questions = int(request.data.get('num_questions', 5))
         difficulty = request.data.get('difficulty', 'Medium')
         custom_instructions = request.data.get('custom_instructions', '')
-
         if not source_id and topic_id: source_id = topic_id
         if not source_type: source_type = 'topic'
         if source_type == 'topic': source_type = 'chapter' 
-
         text_content = ""
         if source_type == 'chapter':
             chapter = get_object_or_404(Chapter, id=source_id)
@@ -147,50 +146,109 @@ class AIGeneratorViewSet(viewsets.ViewSet):
             chapters = Chapter.objects.filter(subject__course_id=source_id)[:20]
             for ch in chapters:
                 if ch.study_notes: text_content += f"\n\n--- Chapter: {ch.title} ---\n{ch.study_notes}"
-
-        if not text_content:
-            return Response({"error": "No notes found to generate from."}, status=400)
-        
+        if not text_content: return Response({"error": "No notes found to generate from."}, status=400)
         questions_json = generate_questions_from_text(text_content, num_questions, difficulty, custom_instructions)
         return Response(questions_json)
 
     @action(detail=False, methods=['post'])
     def generate_image(self, request):
+        # ... (Keep existing image logic)
         image = request.FILES.get('image')
         difficulty = request.data.get('difficulty', 'Medium')
         custom_instructions = request.data.get('custom_instructions', '')
-
-        if not image:
-            return Response({"error": "No image uploaded"}, status=400)
-
+        if not image: return Response({"error": "No image uploaded"}, status=400)
         questions = generate_question_from_image(image, difficulty, custom_instructions)
         return Response(questions)
     
+    # --- IMPROVED CSV UPLOAD ---
     @action(detail=False, methods=['post'])
     def upload_questions_csv(self, request):
-        file = request.FILES.get('file')
+        file_obj = request.FILES.get('file')
         exam_id = request.data.get('exam_id')
-        if not file or not exam_id: return Response({"error": "File and Exam ID required"}, status=400)
+        
+        if not file_obj or not exam_id:
+            return Response({"error": "File and Exam ID required"}, status=400)
+            
         exam = get_object_or_404(Exam, id=exam_id)
+        
         try:
-            decoded_file = file.read().decode('utf-8')
-            io_string = io.StringIO(decoded_file)
-            reader = csv.DictReader(io_string)
+            # 1. Stream & Decode (Fix memory issues & BOM)
+            decoded_file = codecs.iterdecode(file_obj, 'utf-8-sig')
+            reader = csv.DictReader(decoded_file)
+            
+            # 2. Normalize Headers
+            header_map = {}
+            if reader.fieldnames:
+                for field in reader.fieldnames:
+                    clean = field.strip().lower()
+                    if 'question' in clean: header_map['question'] = field
+                    elif 'option a' in clean: header_map['a'] = field
+                    elif 'option b' in clean: header_map['b'] = field
+                    elif 'option c' in clean: header_map['c'] = field
+                    elif 'option d' in clean: header_map['d'] = field
+                    elif 'correct' in clean: header_map['correct'] = field
+                    elif 'mark' in clean: header_map['marks'] = field
+
             count = 0
+            skipped = 0
+            total_new_marks = 0
+
             for row in reader:
-                q_text = row.get('Question Text')
-                options = [row.get('Option A'), row.get('Option B'), row.get('Option C'), row.get('Option D')]
-                correct_opt = row.get('Correct Option', '').upper().strip()
-                marks = row.get('Marks', 2)
-                if not q_text or not all(options) or not correct_opt: continue
-                correct_idx = {'A':0, 'B':1, 'C':2, 'D':3}.get(correct_opt, -1)
-                if correct_idx == -1: continue
-                question = Question.objects.create(exam=exam, text_content=q_text, marks=marks)
+                q_text = row.get(header_map.get('question'), '').strip()
+                options = [
+                    row.get(header_map.get('a'), '').strip(),
+                    row.get(header_map.get('b'), '').strip(),
+                    row.get(header_map.get('c'), '').strip(),
+                    row.get(header_map.get('d'), '').strip()
+                ]
+                correct_opt = row.get(header_map.get('correct'), '').upper().strip()
+                marks_str = row.get(header_map.get('marks'), '2').strip()
+                marks = float(marks_str) if marks_str else 2.0
+                
+                # Validation: Skip if critical data missing
+                if not q_text or not all(options) or not correct_opt:
+                    skipped += 1
+                    continue
+                    
+                correct_idx = -1
+                if correct_opt == 'A': correct_idx = 0
+                elif correct_opt == 'B': correct_idx = 1
+                elif correct_opt == 'C': correct_idx = 2
+                elif correct_opt == 'D': correct_idx = 3
+                
+                if correct_idx == -1: 
+                    skipped += 1
+                    continue
+
+                question = Question.objects.create(
+                    exam=exam,
+                    text_content=q_text,
+                    marks=marks
+                )
+                
                 for idx, opt_text in enumerate(options):
-                    Option.objects.create(question=question, text=opt_text, is_correct=(idx == correct_idx))
+                    Option.objects.create(
+                        question=question,
+                        text=opt_text,
+                        is_correct=(idx == correct_idx)
+                    )
                 count += 1
-            return Response({"status": "success", "added": count})
-        except Exception as e: return Response({"error": str(e)}, status=500)
+                total_new_marks += marks
+
+            # 3. Update Exam Total Marks
+            # Add new marks to existing total
+            exam.total_marks += int(total_new_marks)
+            exam.save()
+            
+            return Response({
+                "status": "success", 
+                "added": count, 
+                "skipped": skipped,
+                "message": f"Added {count} questions. Skipped {skipped} rows (check formatting). Total Marks Updated."
+            })
+
+        except Exception as e:
+            return Response({"error": f"CSV Error: {str(e)}"}, status=500)
 
     @action(detail=False, methods=['post'])
     def save_bulk(self, request):

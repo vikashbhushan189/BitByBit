@@ -1,25 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../api/axios';
-import { 
-    BookOpen, ChevronRight, GraduationCap, FileText, Lock, 
-    PlayCircle, AlertCircle, Clock, Zap, BookMarked, Trophy, HelpCircle
-} from 'lucide-react';
+import { BookOpen, ChevronRight, GraduationCap, FileText, Lock, PlayCircle, AlertCircle, BookMarked, Zap, Trophy, Clock } from 'lucide-react';
 
 const CourseCard = ({ course, mode }) => {
     const [activeTab, setActiveTab] = useState('notes'); 
     const isLocked = !((mode === 'enrolled') || !course.is_paid);
 
     // --- DATA AGGREGATION ---
-    
-    // 1. Notes
     const notesData = course.subjects?.flatMap(sub => 
         sub.chapters?.filter(ch => ch.study_notes).map(ch => ({
             id: ch.id, title: ch.title, subtitle: sub.title, type: 'note', link: `/chapter/${ch.id}/notes`
         }))
     ) || [];
 
-    // 2. Chapter Quizzes (Updated to use quiz_details)
     const chapterQuizData = course.subjects?.flatMap(sub => 
         sub.chapters?.filter(ch => ch.quiz_details).map(ch => ({
             id: ch.quiz_details.id, 
@@ -27,11 +21,10 @@ const CourseCard = ({ course, mode }) => {
             subtitle: `${sub.title} • ${ch.quiz_details.question_count} Qs • ${ch.quiz_details.total_marks} Marks`, 
             type: 'quiz', 
             link: `/exam/${ch.quiz_details.id}`,
-            meta: ch.quiz_details // Store full metadata
+            meta: ch.quiz_details 
         }))
     ) || [];
 
-    // 3. Subject Quizzes
     const subjectQuizData = course.subjects?.flatMap(sub => 
         sub.tests?.map(test => ({
             id: test.id, 
@@ -42,7 +35,6 @@ const CourseCard = ({ course, mode }) => {
         }))
     ) || [];
 
-    // 4. Mocks & PYQs
     const mockData = course.mocks?.map(m => ({
         id: m.id, title: m.title, subtitle: `${m.question_count} Qs • ${m.total_marks} Marks`, type: 'mock', link: `/exam/${m.id}`
     })) || [];
@@ -54,7 +46,7 @@ const CourseCard = ({ course, mode }) => {
     // --- RENDER HELPERS ---
     const renderContentGrid = (items, emptyMsg, icon) => {
         if (items.length === 0) return (
-            <div className="flex flex-col items-center justify-center py-12 text-slate-400 bg-slate-50/50 rounded-xl border-2 border-dashed border-slate-200">
+            <div className="flex flex-col items-center justify-center py-12 text-slate-400 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700">
                 {icon}
                 <p className="mt-2 text-sm font-medium">{emptyMsg}</p>
             </div>
@@ -63,23 +55,23 @@ const CourseCard = ({ course, mode }) => {
         return (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {items.map((item, idx) => (
-                    <div key={idx} className="group relative bg-white border border-slate-200 rounded-xl p-4 hover:shadow-lg hover:border-blue-400 transition-all duration-300">
+                    <div key={idx} className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 hover:shadow-lg hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-300">
                         <div className="flex justify-between items-start mb-3">
-                            <div className={`p-2 rounded-lg ${item.type === 'note' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600'}`}>
+                            <div className={`p-2 rounded-lg ${item.type === 'note' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'}`}>
                                 {item.type === 'note' ? <FileText size={20}/> : <Clock size={20}/>}
                             </div>
                             {isLocked ? <Lock size={16} className="text-slate-400"/> : <div className="h-2 w-2 rounded-full bg-green-500"></div>}
                         </div>
                         
-                        <h4 className="font-bold text-slate-800 text-sm line-clamp-2 mb-1" title={item.title}>{item.title}</h4>
-                        <p className="text-xs text-slate-500 font-medium mb-4">{item.subtitle}</p>
+                        <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm line-clamp-2 mb-1" title={item.title}>{item.title}</h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-4">{item.subtitle}</p>
 
                         {isLocked ? (
-                            <button disabled className="w-full py-2 rounded-lg bg-slate-100 text-slate-400 text-xs font-bold cursor-not-allowed">
+                            <button disabled className="w-full py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 text-xs font-bold cursor-not-allowed">
                                 Locked
                             </button>
                         ) : (
-                            <Link to={item.link} className="block w-full py-2 rounded-lg bg-slate-900 text-white text-xs font-bold text-center group-hover:bg-blue-600 transition-colors">
+                            <Link to={item.link} className="block w-full py-2 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-bold text-center group-hover:bg-blue-600 dark:group-hover:bg-blue-200 transition-colors">
                                 {item.type === 'note' ? 'Read Notes' : 'Start Test'}
                             </Link>
                         )}
@@ -90,9 +82,9 @@ const CourseCard = ({ course, mode }) => {
     };
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-10">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden mb-10 transition-colors">
             {/* Header */}
-            <div className="bg-slate-900 p-6 md:p-8 text-white relative overflow-hidden">
+            <div className="bg-slate-900 dark:bg-black p-6 md:p-8 text-white relative overflow-hidden">
                 <div className="relative z-10">
                     <h2 className="text-2xl font-bold">{course.title}</h2>
                     <p className="text-slate-400 text-sm mt-1 max-w-2xl">{course.description}</p>
@@ -101,7 +93,7 @@ const CourseCard = ({ course, mode }) => {
             </div>
 
             {/* Navigation Tabs */}
-            <div className="flex overflow-x-auto border-b border-slate-200 bg-white sticky top-0 z-20 no-scrollbar">
+            <div className="flex overflow-x-auto border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-20 no-scrollbar">
                 {[
                     { id: 'notes', label: 'Notes', icon: <BookMarked size={16}/> },
                     { id: 'chapter_quiz', label: 'Chapter Quiz', icon: <Zap size={16}/> },
@@ -114,8 +106,8 @@ const CourseCard = ({ course, mode }) => {
                         onClick={() => setActiveTab(tab.id)}
                         className={`flex items-center gap-2 px-6 py-4 text-sm font-bold whitespace-nowrap transition-all border-b-2 
                             ${activeTab === tab.id 
-                                ? 'border-blue-600 text-blue-600 bg-blue-50/50' 
-                                : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                                ? 'border-blue-600 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/10' 
+                                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
                             }`}
                     >
                         {tab.icon} {tab.label}
@@ -124,7 +116,7 @@ const CourseCard = ({ course, mode }) => {
             </div>
 
             {/* Content Area */}
-            <div className="p-6 bg-slate-50 min-h-[300px]">
+            <div className="p-6 bg-slate-50 dark:bg-slate-950 min-h-[300px]">
                 {activeTab === 'notes' && renderContentGrid(notesData, "No notes uploaded yet.", <FileText size={40} className="opacity-50"/>)}
                 {activeTab === 'chapter_quiz' && renderContentGrid(chapterQuizData, "No chapter quizzes available.", <Zap size={40} className="opacity-50"/>)}
                 {activeTab === 'subject_quiz' && renderContentGrid(subjectQuizData, "No subject tests added.", <BookOpen size={40} className="opacity-50"/>)}
@@ -158,9 +150,9 @@ const CourseList = () => {
     }, [mode]);
 
     if (loading) return (
-        <div className="min-h-screen flex items-center justify-center">
-            <div className="text-blue-600 font-semibold animate-pulse flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+            <div className="text-blue-600 dark:text-blue-400 font-semibold animate-pulse flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full animate-bounce"></div>
                 Loading content...
             </div>
         </div>
@@ -169,11 +161,11 @@ const CourseList = () => {
     if (mode === 'enrolled' && courses.length === 0) {
         return (
             <div className="max-w-4xl mx-auto p-12 text-center mt-10">
-                <div className="bg-slate-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-400">
+                <div className="bg-slate-100 dark:bg-slate-800 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-400">
                     <BookOpen size={40} />
                 </div>
-                <h2 className="text-2xl font-bold text-slate-800 mb-2">No Active Courses</h2>
-                <p className="text-slate-500 mb-8">You haven't enrolled in any courses yet.</p>
+                <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">No Active Courses</h2>
+                <p className="text-slate-500 dark:text-slate-400 mb-8">You haven't enrolled in any courses yet.</p>
                 <Link to="/store" className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors">
                     Browse Store
                 </Link>
@@ -185,16 +177,16 @@ const CourseList = () => {
         <div className="max-w-7xl mx-auto p-6 font-sans">
             <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-extrabold text-slate-900 flex items-center gap-3">
-                        <GraduationCap size={32} className="text-blue-600" />
+                    <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white flex items-center gap-3">
+                        <GraduationCap size={32} className="text-blue-600 dark:text-blue-400" />
                         {mode === 'enrolled' ? 'My Library' : 'All Courses'}
                     </h1>
-                    <p className="text-slate-500 mt-2 text-sm">
+                    <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">
                         {mode === 'enrolled' ? 'Resume your learning journey.' : 'Explore structured courses for your exam.'}
                     </p>
                 </div>
                 {mode === 'enrolled' && (
-                    <Link to="/courses" className="text-sm font-bold text-blue-600 hover:underline">
+                    <Link to="/courses" className="text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline">
                         View Course Catalog &rarr;
                     </Link>
                 )}

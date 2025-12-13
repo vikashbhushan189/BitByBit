@@ -43,17 +43,17 @@ const DashboardPage = () => {
         fetchData();
     }, []);
 
-    if (loading) return <div className="min-h-screen flex items-center justify-center font-bold text-slate-600">Loading Study Center...</div>;
+    if (loading) return <div className="min-h-screen flex items-center justify-center font-bold text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-950">Loading Study Center...</div>;
 
     // --- EMPTY STATE ---
     if (enrolledCourses.length === 0) {
         return (
-            <div className="max-w-5xl mx-auto p-8 text-center mt-10">
-                <div className="bg-white p-12 rounded-3xl shadow-sm border border-slate-200">
-                    <BookOpen size={64} className="mx-auto mb-6 text-slate-300 opacity-80" />
-                    <h2 className="text-3xl font-bold text-slate-900 mb-3">Start Your Journey</h2>
-                    <p className="text-slate-500 mb-8 max-w-md mx-auto">You haven't enrolled in any batches yet. Explore our store to find the perfect course for your goal.</p>
-                    <Link to="/store" className="bg-blue-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-200">
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8 flex items-center justify-center">
+                <div className="max-w-2xl w-full bg-white dark:bg-slate-900 p-12 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 text-center">
+                    <BookOpen size={64} className="mx-auto mb-6 text-slate-300 dark:text-slate-600 opacity-80" />
+                    <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3">Start Your Journey</h2>
+                    <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-md mx-auto">You haven't enrolled in any batches yet. Explore our store to find the perfect course for your goal.</p>
+                    <Link to="/store" className="bg-blue-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-900/50">
                         Explore Batches
                     </Link>
                 </div>
@@ -62,9 +62,9 @@ const DashboardPage = () => {
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 font-sans pb-20">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans pb-20 transition-colors duration-300">
             {/* --- TOP HERO SECTION --- */}
-            <div className="bg-slate-900 text-white pt-8 pb-20 px-6 relative overflow-hidden">
+            <div className="bg-slate-900 dark:bg-black text-white pt-8 pb-20 px-6 relative overflow-hidden">
                 <div className="max-w-7xl mx-auto relative z-10">
                     <div className="flex justify-between items-start">
                         <div>
@@ -86,13 +86,13 @@ const DashboardPage = () => {
                                     <ChevronRight className="text-slate-600" size={24}/>
                                 </h1>
                                 
-                                {/* BATCH SWITCHER */}
+                                {/* BATCH SWITCHER DROPDOWN */}
                                 {showBatchMenu && (
-                                    <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                                        <div className="p-3 border-b border-slate-100 bg-slate-50 text-xs font-bold text-slate-500 uppercase">
+                                    <div className="absolute top-full left-0 mt-2 w-72 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                                        <div className="p-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold text-slate-500 uppercase">
                                             Select Active Batch
                                         </div>
-                                        <div className="max-h-60 overflow-y-auto">
+                                        <div className="max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
                                             {enrolledCourses.map(course => (
                                                 <button
                                                     key={course.id}
@@ -102,16 +102,16 @@ const DashboardPage = () => {
                                                     }}
                                                     className={`w-full text-left px-4 py-3 text-sm font-medium flex items-center gap-3 transition-colors ${
                                                         activeCourse.id === course.id 
-                                                            ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600' 
-                                                            : 'text-slate-700 hover:bg-slate-50'
+                                                            ? 'bg-blue-50 dark:bg-slate-700 text-blue-700 dark:text-blue-400 border-l-4 border-blue-600' 
+                                                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
                                                     }`}
                                                 >
-                                                    <div className={`w-2 h-2 rounded-full ${activeCourse.id === course.id ? 'bg-blue-600' : 'bg-slate-300'}`}></div>
+                                                    <div className={`w-2 h-2 rounded-full ${activeCourse.id === course.id ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-500'}`}></div>
                                                     {course.title}
                                                 </button>
                                             ))}
                                         </div>
-                                        <Link to="/store" className="block p-3 text-center text-xs font-bold text-blue-600 hover:bg-slate-50 border-t border-slate-100">
+                                        <Link to="/store" className="block p-3 text-center text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-900 border-t border-slate-100 dark:border-slate-700">
                                             + Enroll in New Course
                                         </Link>
                                     </div>
@@ -139,7 +139,7 @@ const DashboardPage = () => {
                         bg="bg-blue-600"
                         title="Start Learning" 
                         desc="Access Chapters & Notes"
-                        onClick={() => navigate('/courses?mode=enrolled')} // <--- UPDATED: Pass mode=enrolled
+                        onClick={() => navigate('/courses?mode=enrolled')} 
                     />
                     <ActionCard 
                         icon={<CheckCircle size={24} className="text-white"/>} 
@@ -159,7 +159,7 @@ const DashboardPage = () => {
 
                 {/* --- STATS SECTION --- */}
                 <div id="stats-section" className="mb-12">
-                    <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2 text-lg">
+                    <h3 className="font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2 text-lg">
                         <TrendingUp size={20} className="text-blue-600"/> Your Performance
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -170,37 +170,37 @@ const DashboardPage = () => {
                 </div>
 
                 {/* --- RECENT ACTIVITY --- */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                        <h3 className="font-bold text-slate-800">Recent Activity</h3>
+                <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+                        <h3 className="font-bold text-slate-800 dark:text-white">Recent Activity</h3>
                         <Link to="/courses" className="text-xs font-bold text-blue-600 hover:underline">View All</Link>
                     </div>
                     {attempts.length > 0 ? (
                         <table className="w-full text-left text-sm">
-                            <thead className="text-slate-400 font-medium border-b border-slate-100">
+                            <thead className="text-slate-400 font-medium border-b border-slate-100 dark:border-slate-800">
                                 <tr>
                                     <th className="px-6 py-3">Exam Name</th>
                                     <th className="px-6 py-3">Date</th>
                                     <th className="px-6 py-3 text-right">Score</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                                 {attempts.slice(0, 5).map(a => (
-                                    <tr key={a.id} className="hover:bg-slate-50 transition-colors">
-                                        <td className="px-6 py-4 font-medium text-slate-700">{a.exam_title}</td>
-                                        <td className="px-6 py-4 text-slate-500">{new Date(a.start_time).toLocaleDateString()}</td>
-                                        <td className="px-6 py-4 text-right font-bold text-blue-600">{a.total_score}</td>
+                                    <tr key={a.id} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                        <td className="px-6 py-4 font-medium text-slate-700 dark:text-slate-200">{a.exam_title}</td>
+                                        <td className="px-6 py-4 text-slate-500 dark:text-slate-400">{new Date(a.start_time).toLocaleDateString()}</td>
+                                        <td className="px-6 py-4 text-right font-bold text-blue-600 dark:text-blue-400">{a.total_score}</td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     ) : (
                         <div className="p-12 text-center">
-                            <div className="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+                            <div className="bg-slate-100 dark:bg-slate-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
                                 <Clock size={32} />
                             </div>
-                            <p className="text-slate-500 mb-2">No tests attempted yet.</p>
-                            <Link to="/courses" className="text-blue-600 font-bold text-sm hover:underline">Start your first test now</Link>
+                            <p className="text-slate-500 dark:text-slate-400 mb-2">No tests attempted yet.</p>
+                            <Link to="/courses" className="text-blue-600 dark:text-blue-400 font-bold text-sm hover:underline">Start your first test now</Link>
                         </div>
                     )}
                 </div>
@@ -210,19 +210,19 @@ const DashboardPage = () => {
 };
 
 const ActionCard = ({ icon, title, desc, onClick, bg }) => (
-    <div onClick={onClick} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group relative overflow-hidden">
+    <div onClick={onClick} className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-lg hover:border-blue-400 dark:hover:border-blue-500 hover:-translate-y-1 transition-all cursor-pointer group relative overflow-hidden">
         <div className={`absolute top-0 right-0 w-24 h-24 ${bg} opacity-10 rounded-full -mr-8 -mt-8 transition-transform group-hover:scale-150`}></div>
         <div className={`${bg} w-12 h-12 rounded-xl flex items-center justify-center mb-4 shadow-md`}>
             {icon}
         </div>
-        <h4 className="font-bold text-lg text-slate-900 group-hover:text-blue-700 transition-colors">{title}</h4>
-        <p className="text-sm text-slate-500 mt-1">{desc}</p>
+        <h4 className="font-bold text-lg text-slate-900 dark:text-white group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">{title}</h4>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{desc}</p>
     </div>
 );
 
 const StatCard = ({ label, value, color }) => (
-    <div className={`bg-white p-6 rounded-2xl border border-slate-200 shadow-sm border-l-4 border-l-${color}-500`}>
-        <div className="text-3xl font-black text-slate-900 mb-1">{value}</div>
+    <div className={`bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm border-l-4 border-l-${color}-500`}>
+        <div className="text-3xl font-black text-slate-900 dark:text-white mb-1">{value}</div>
         <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">{label}</div>
     </div>
 );

@@ -21,18 +21,18 @@ class QuestionSerializer(serializers.ModelSerializer):
         model = Question
         fields = ['id', 'text_content', 'marks', 'options']
 
-# HEAVY Serializer (Includes Questions - Use only for Taking Exam)
+# --- LIGHTWEIGHT EXAM SERIALIZER (For Lists/Dashboard) ---
+class SimpleExamSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Exam
+        fields = ['id', 'title', 'duration_minutes', 'total_marks', 'exam_type']
+
+# --- HEAVY EXAM SERIALIZER (For Taking Tests) ---
 class ExamSerializer(serializers.ModelSerializer):
     questions = QuestionSerializer(many=True, read_only=True)
     class Meta:
         model = Exam
         fields = ['id', 'title', 'duration_minutes', 'total_marks', 'questions', 'negative_marking_ratio', 'exam_type']
-
-# LIGHT Serializer (No Questions - Use for Course List / Dashboard)
-class SimpleExamSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Exam
-        fields = ['id', 'title', 'duration_minutes', 'total_marks', 'exam_type']
 
 class TopicSerializer(serializers.ModelSerializer):
     quiz_id = serializers.SerializerMethodField()
@@ -41,12 +41,12 @@ class TopicSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'order', 'quiz_id']
 
     def get_quiz_id(self, obj):
-        # FIX: Check both 'quiz' (new) and 'quiz_legacy' (old) to prevent crashes
+        # FIX: Check both 'quiz' (new) and 'quiz_legacy' (old) safely
         try:
             if hasattr(obj, 'quiz'): return obj.quiz.id
             if hasattr(obj, 'quiz_legacy'): return obj.quiz_legacy.id
         except Exception:
-            pass
+            return None
         return None
 
 class ChapterSerializer(serializers.ModelSerializer):
@@ -59,6 +59,7 @@ class ChapterSerializer(serializers.ModelSerializer):
 
     def get_quiz_id(self, obj):
         try:
+            # Safely try to get linked exam
             return obj.quiz.id
         except Exception:
             return None
@@ -72,8 +73,8 @@ class SubjectSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'section', 'order', 'chapters', 'tests']
     
     def get_tests(self, obj):
+        # OPTIMIZATION: Use Simple serializer
         exams = obj.tests.all()
-        # OPTIMIZATION: Use SimpleExamSerializer (No questions loaded)
         return SimpleExamSerializer(exams, many=True).data
 
 class CourseSerializer(serializers.ModelSerializer):
@@ -86,13 +87,13 @@ class CourseSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'description', 'is_paid', 'subjects', 'mocks', 'pyqs']
 
     def get_mocks(self, obj):
+        # OPTIMIZATION: Use Simple serializer
         exams = obj.mocks.filter(exam_type='MOCK_FULL')
-        # OPTIMIZATION: Use SimpleExamSerializer
         return SimpleExamSerializer(exams, many=True).data
 
     def get_pyqs(self, obj):
+        # OPTIMIZATION: Use Simple serializer
         exams = obj.mocks.filter(exam_type='PYQ')
-        # OPTIMIZATION: Use SimpleExamSerializer
         return SimpleExamSerializer(exams, many=True).data
 
 class ExamAttemptSerializer(serializers.ModelSerializer):

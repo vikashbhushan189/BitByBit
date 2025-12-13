@@ -117,14 +117,13 @@ const AdminRoute = ({ children }) => {
 
 const Layout = ({ children }) => {
     const location = useLocation();
-    
-    // Hide Student Navbar on Admin Pages, Landing Page, and Study Sections
+
+    // Hide Student Navbar on Admin Pages OR Landing Page OR Agniveer Page
     const hideNavbar = 
         location.pathname.startsWith('/admin') || 
-        location.pathname === '/' ||
-        location.pathname.startsWith('/exam/') || 
-        (location.pathname.startsWith('/topic/') && location.pathname.endsWith('/notes')) ||
-        (location.pathname.startsWith('/chapter/') && location.pathname.endsWith('/notes')); // <--- ADD THIS
+        location.pathname === '/' || 
+        location.pathname === '/defence/agniveer' ||
+        location.pathname === '/teaching/bpsc_tre'; 
 
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-100">
@@ -134,36 +133,30 @@ const Layout = ({ children }) => {
     );
 };
 
+
 function App() {
   const isLoggedIn = !!localStorage.getItem('access_token');
 
   // FIX: Force re-validation on history navigation (Back Button)
   useEffect(() => {
     const handleFocus = () => {
-        // List of public paths that don't require login
-        const isPublic = [
-            '/login', '/register', '/', '/forgot-password', 
-            '/store'
-        ].includes(window.location.pathname) || 
-        window.location.pathname.startsWith('/category/') ||
-        window.location.pathname.startsWith('/course/') ||
-        window.location.pathname.startsWith('/defence/') ||
-        window.location.pathname.startsWith('/teaching/') ||
-        window.location.pathname.startsWith('/password-reset');
-
+        const publicPaths = [
+            '/', '/login', '/register', '/forgot-password', 
+            '/defence/agniveer', '/teaching/bpsc_tre', '/store'
+        ];
+        // Check public paths
+        const isPublic = publicPaths.some(path => window.location.pathname === path || window.location.pathname.startsWith('/password-reset') || window.location.pathname.startsWith('/category/') || window.location.pathname.startsWith('/course/'));
         const hasToken = !!localStorage.getItem('access_token');
         
+        // Only force login if accessing a PROTECTED route without a token
         if (!isPublic && !hasToken) {
             window.location.href = '/login';
         }
     };
 
-    window.addEventListener('pageshow', handleFocus);
-    window.addEventListener('popstate', handleFocus);
-    
+    window.addEventListener('pageshow', handleFocus);    
     return () => {
         window.removeEventListener('pageshow', handleFocus);
-        window.removeEventListener('popstate', handleFocus);
     };
   }, []);
 
@@ -172,25 +165,26 @@ function App() {
         <Layout>
             <Routes>
                 {/* Landing / Home */}
-                <Route path="/" element={isLoggedIn ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
+                {/* 1. PUBLIC ROUTES (Allow everyone, including logged-in users) */}
+                <Route path="/" element={<LandingPage />} /> {/* REMOVED: isLogged check */}
+
+                {/* Public Course Pages */}
+                <Route path="/defence/agniveer" element={<AgniveerPage />} />
+                <Route path="/teaching/bpsc_tre" element={<BpscTrePage />} />
+                <Route path="/course/:category/:courseId" element={<AgniveerPage />} />
+                <Route path="/category/:categoryId" element={<CategoryPage />} />
                 
-                {/* Student Routes */}
+                {/* Store can be browsed publicly now if you wish, or keep private */}
+                <Route path="/store" element={<CourseStorePage />} /> 
+
+                {/* 2. PROTECTED ROUTES (Login Required) */}
                 <Route path="/courses" element={<PrivateRoute><CourseList /></PrivateRoute>} />
                 <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
                 <Route path="/exam/:examId" element={<PrivateRoute><ExamPage /></PrivateRoute>} />
                 <Route path="/topic/:topicId/notes" element={<PrivateRoute><NotesPage /></PrivateRoute>} />
                 <Route path="/chapter/:chapterId/notes" element={<PrivateRoute><NotesPage /></PrivateRoute>} />
 
-                {/* Store & Categories */}
-                <Route path="/store" element={<PrivateRoute><CourseStorePage /></PrivateRoute>} />
-                <Route path="/category/:categoryId" element={<CategoryPage />} />
-                
-                {/* Detailed Course Pages (Publicly accessible now for browsing) */}
-                <Route path="/course/:category/:courseId" element={<AgniveerPage />} />
-                <Route path="/defence/agniveer" element={<AgniveerPage />} />
-                <Route path="/teaching/bpsc_tre" element={<BpscTrePage />} />
-
-                {/* Admin Routes */}
+                {/* 3. ADMIN ROUTES */}
                 <Route path="/admin-portal" element={<AdminLoginPage />} />
                 <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
                 <Route path="/admin-generator" element={<AdminRoute><AdminGeneratorPage /></AdminRoute>} />
@@ -198,11 +192,12 @@ function App() {
                 <Route path="/admin-notes-editor" element={<AdminRoute><AdminNotesEditorPage /></AdminRoute>} />
                 <Route path="/admin-ads" element={<AdminRoute><AdminAdManagerPage /></AdminRoute>} /> 
 
-                {/* Auth Routes */}
+                {/* 4. AUTH ROUTES */}
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/password-reset/:uid/:token" element={<ResetPasswordPage />} />
+
             </Routes>
         </Layout>
     </Router>

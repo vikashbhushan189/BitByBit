@@ -82,8 +82,10 @@ const ExamPage = () => {
                 attempt_id: attemptId,
                 answers: answers
             });
+            console.log("Submission Result:", res.data); // Debugging
             setResult(res.data);
         } catch (err) {
+            console.error("Submit Error:", err);
             alert("Submission failed. Check connection.");
         } finally {
             setSubmitting(false);
@@ -100,17 +102,49 @@ const ExamPage = () => {
     if (loading) return <div className="min-h-screen flex items-center justify-center gap-2 text-blue-600 font-bold"><Loader2 className="animate-spin"/> Loading Exam...</div>;
     
     // Result View
-    if (result) return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans">
-            <div className="bg-white p-10 rounded-2xl shadow-xl text-center max-w-md w-full">
-                <div className="mb-6 flex justify-center"><Award size={64} className="text-yellow-500" /></div>
-                <h2 className="text-3xl font-extrabold text-slate-800 mb-2">Test Complete</h2>
-                <div className="text-5xl font-black text-blue-600 mb-2">{result.score} <span className="text-2xl text-slate-400 font-medium">/ {result.total_marks}</span></div>
-                <p className="text-slate-500 mb-8">Score Summary</p>
-                <button onClick={() => navigate('/')} className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition-all">Back to Dashboard</button>
+    if (result) {
+        // Safety check for division by zero
+        const total = result.total_marks || 1; 
+        const percentage = Math.round((result.score / total) * 100);
+
+        return (
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans">
+                <div className="bg-white p-10 rounded-2xl shadow-xl text-center max-w-md w-full border border-slate-200">
+                    <div className="mb-6 flex justify-center">
+                        <div className="bg-yellow-100 p-4 rounded-full">
+                            <Award size={48} className="text-yellow-600" />
+                        </div>
+                    </div>
+                    <h2 className="text-3xl font-extrabold text-slate-800 mb-2">Test Complete</h2>
+                    
+                    <div className="my-8">
+                        <div className="text-5xl font-black text-blue-600 mb-2">{result.score} <span className="text-2xl text-slate-400 font-medium">/ {result.total_marks}</span></div>
+                        <div className="inline-block bg-slate-100 px-3 py-1 rounded-full text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            Score Summary
+                        </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-8">
+                        <div className="bg-green-50 p-4 rounded-xl border border-green-100">
+                            <div className="text-2xl font-bold text-green-700">{percentage}%</div>
+                            <div className="text-xs text-green-600 font-bold uppercase">Percentage</div>
+                        </div>
+                        <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
+                            <div className="text-2xl font-bold text-purple-700">{result.status || "Done"}</div>
+                            <div className="text-xs text-purple-600 font-bold uppercase">Status</div>
+                        </div>
+                    </div>
+
+                    <button 
+                        onClick={() => navigate('/')} 
+                        className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                    >
+                        Back to Dashboard
+                    </button>
+                </div>
             </div>
-        </div>
-    );
+        );
+    }
 
     const questions = exam?.questions || [];
     const currentQ = questions[currentQIndex];
@@ -136,7 +170,7 @@ const ExamPage = () => {
                             <span className="font-bold text-slate-500 text-sm">Question {currentQIndex + 1} of {questions.length}</span>
                             <div className="flex gap-2">
                                 <span className="text-xs font-bold bg-green-50 text-green-700 px-2 py-1 rounded">+{currentQ.marks}</span>
-                                <span className="text-xs font-bold bg-red-50 text-red-700 px-2 py-1 rounded">-{currentQ.marks * 0.25}</span>
+                                <span className="text-xs font-bold bg-red-50 text-red-700 px-2 py-1 rounded">-{currentQ.marks * (exam.negative_marking_ratio || 0.25)}</span>
                             </div>
                         </div>
 

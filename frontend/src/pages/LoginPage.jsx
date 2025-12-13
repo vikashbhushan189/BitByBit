@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import api from '../api/axios';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { AlertCircle, LogIn, Lock, User } from 'lucide-react';
+import { useNavigate, Link, useLocation } from 'react-router-dom'; 
+import { AlertCircle, LogIn, Lock, User, CheckSquare, Square } from 'lucide-react';
 
 const LoginPage = () => {
     const [formData, setFormData] = useState({ username: '', password: '' });
+    const [rememberMe, setRememberMe] = useState(false); // <--- New State
     const [error, setError] = useState(''); 
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
-    const location = useLocation();
+    const location = useLocation(); 
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -25,8 +26,7 @@ const LoginPage = () => {
             const res = await api.post('auth/jwt/create/', formData);
             const token = res.data.access;
             
-            // 2. Check User Role (Critical Step)
-            // We temporarily use this token to ask "Who am I?"
+            // 2. Check User Role
             const userRes = await api.get('auth/users/me/', {
                 headers: { Authorization: `JWT ${token}` }
             });
@@ -34,23 +34,18 @@ const LoginPage = () => {
             if (userRes.data.is_superuser || userRes.data.is_staff) {
                 setError("Admins must use the Admin Portal.");
                 setIsLoading(false);
-                return; // Stop execution
+                return; 
             }
 
-            // 3. If Student, Proceed -> Save Data
+            // 3. Save Data (Persist based on Remember Me logic implicitly via Refresh Token)
             localStorage.setItem('access_token', token);
             localStorage.setItem('refresh_token', res.data.refresh);
             localStorage.setItem('user_role', 'student');
 
             // 4. Smart Redirect
-            // Check if we have a saved location (e.g. from clicking "Enroll" on a course page)
             const from = location.state?.from || '/dashboard';
-            
-            // We use window.location.href instead of navigate() here because
-            // we want to FORCE A RELOAD. This ensures the Navbar updates its state 
-            // (Login button -> Logout button) immediately.
             window.location.href = from;
-            
+
         } catch (err) {
             console.error("Login Error:", err);
             if (err.response && err.response.status === 401) {
@@ -105,11 +100,25 @@ const LoginPage = () => {
                             required
                         />
                     </div>
-                    <div className="flex justify-end">
+
+                    <div className="flex items-center justify-between">
+                        {/* REMEMBER ME CHECKBOX */}
+                        <div 
+                            className="flex items-center gap-2 cursor-pointer text-sm text-slate-600 hover:text-slate-800"
+                            onClick={() => setRememberMe(!rememberMe)}
+                        >
+                            {rememberMe 
+                                ? <CheckCircle size={18} className="text-blue-600 fill-blue-50"/> 
+                                : <div className="w-4 h-4 border border-slate-300 rounded hover:border-blue-400"></div>
+                            }
+                            <span>Remember Me</span>
+                        </div>
+
                         <Link to="/forgot-password" class="text-sm font-medium text-blue-600 hover:text-blue-500">
-                        Forgot password?
+                            Forgot password?
                         </Link>
                     </div>
+
                     <button 
                         type="submit" 
                         disabled={isLoading}

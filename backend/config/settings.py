@@ -15,6 +15,8 @@ import dj_database_url
 from decouple import config
 import os
 from corsheaders.defaults import default_headers
+from datetime import timedelta
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -188,6 +190,10 @@ REST_FRAMEWORK = {
 
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT',),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # Short access token for security
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),     # Default session length (1 day)
+    'ROTATE_REFRESH_TOKENS': True,                   # New refresh token on use (keeps session alive)
+    'BLACKLIST_AFTER_ROTATION': True,
 }
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

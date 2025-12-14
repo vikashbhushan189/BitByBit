@@ -18,13 +18,15 @@ from .permissions import IsPaidSubscriberOrAdmin
 
 
 class CourseViewSet(viewsets.ReadOnlyModelViewSet):
-    # OPTIMIZED QUERYSET: Prefetch everything to fix slow loading
+    # OPTIMIZED QUERYSET: Fetch deeply nested relations to prevent N+1 crashes
     queryset = Course.objects.prefetch_related(
         'subjects',
         'subjects__chapters',
-        'subjects__tests', 
-        'mocks',           
-        'pyqs'             
+        'subjects__chapters__topics',      # Needed for legacy quiz check
+        'subjects__chapters__quiz',        # New chapter quizzes
+        'subjects__chapters__topics__quiz_legacy', # Legacy topic quizzes
+        'subjects__tests',                 # Subject tests
+        'mocks'                            # Course mocks/pyqs
     ).all()
     
     serializer_class = CourseSerializer
@@ -37,13 +39,15 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
         
         subscribed_ids = UserSubscription.objects.filter(user=request.user, active=True).values_list('course_id', flat=True)
         
-        # Apply optimization to enrolled query too
+        # Apply EXACT SAME prefetch optimization
         courses = Course.objects.filter(id__in=subscribed_ids).prefetch_related(
             'subjects',
             'subjects__chapters',
+            'subjects__chapters__topics',
+            'subjects__chapters__quiz',
+            'subjects__chapters__topics__quiz_legacy',
             'subjects__tests',
-            'mocks',
-            'pyqs'
+            'mocks'
         )
         
         serializer = self.get_serializer(courses, many=True)

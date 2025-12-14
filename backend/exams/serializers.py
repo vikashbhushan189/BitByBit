@@ -19,20 +19,16 @@ class QuestionSerializer(serializers.ModelSerializer):
     options = OptionSerializer(many=True, read_only=True)
     class Meta:
         model = Question
-        fields = ['id', 'text_content', 'marks', 'explanation', 'options']
+        fields = ['id', 'text_content', 'marks', 'options', 'explanation']
 
-# --- LIGHTWEIGHT EXAM SERIALIZER (Updated with Stats) ---
+# --- LIGHTWEIGHT EXAM SERIALIZER (No Questions, No Count) ---
+# Removing question_count for list views to prevent N+1 DB hits causing 500 timeout
 class SimpleExamSerializer(serializers.ModelSerializer):
-    question_count = serializers.SerializerMethodField()
-
     class Meta:
         model = Exam
-        fields = ['id', 'title', 'duration_minutes', 'total_marks', 'exam_type', 'question_count']
+        fields = ['id', 'title', 'duration_minutes', 'total_marks', 'exam_type']
 
-    def get_question_count(self, obj):
-        return obj.questions.count()
-
-# --- HEAVY EXAM SERIALIZER ---
+# --- HEAVY EXAM SERIALIZER (With Questions) ---
 class ExamSerializer(serializers.ModelSerializer):
     questions = QuestionSerializer(many=True, read_only=True)
     class Meta:
@@ -47,38 +43,37 @@ class TopicSerializer(serializers.ModelSerializer):
 
     def get_quiz_id(self, obj):
         try:
+            # Check both relationships safely
             if hasattr(obj, 'quiz'): return obj.quiz.id
             if hasattr(obj, 'quiz_legacy'): return obj.quiz_legacy.id
         except Exception: pass
         return None
 
 class ChapterSerializer(serializers.ModelSerializer):
+    # Don't load topics unless needed to avoid recursion depth issues
     topics = TopicSerializer(many=True, read_only=True)
-    quiz_details = serializers.SerializerMethodField() # <--- CHANGED: Send full object, not just ID
+    quiz_details = serializers.SerializerMethodField()
     
     class Meta:
         model = Chapter
         fields = ['id', 'title', 'order', 'study_notes', 'topics', 'quiz_details']
 
     def get_quiz_details(self, obj):
-        # Logic to find the exam (Direct or via Topics)
         exam = None
-        # 1. Direct Chapter Link
         try:
+            # 1. Direct Chapter Link
             if hasattr(obj, 'quiz'): exam = obj.quiz
-        except: pass
-        
-        # 2. Legacy Topic Link (Fallback)
-        if not exam:
-            for topic in obj.topics.all():
-                try:
+            
+            # 2. Legacy Topic Link (Fallback)
+            if not exam:
+                for topic in obj.topics.all():
                     if hasattr(topic, 'quiz'): 
                         exam = topic.quiz
                         break
                     if hasattr(topic, 'quiz_legacy'):
                         exam = topic.quiz_legacy
                         break
-                except: continue
+        except Exception: pass
         
         if exam:
             return SimpleExamSerializer(exam).data
@@ -93,7 +88,8 @@ class SubjectSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'section', 'order', 'chapters', 'tests']
     
     def get_tests(self, obj):
-        exams = obj.tests.filter(exam_type='SUBJECT_TEST')
+        # Use Python filtering on the prefetched 'tests' set
+        exams = [e for e in obj.tests.all() if e.exam_type == 'SUBJECT_TEST']
         return SimpleExamSerializer(exams, many=True).data
 
 class CourseSerializer(serializers.ModelSerializer):
@@ -106,11 +102,13 @@ class CourseSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'description', 'is_paid', 'subjects', 'mocks', 'pyqs']
 
     def get_mocks(self, obj):
-        exams = obj.mocks.filter(exam_type='MOCK_FULL')
+        # Use Python filtering to avoid hitting DB again
+        exams = [e for e in obj.mocks.all() if e.exam_type == 'MOCK_FULL']
         return SimpleExamSerializer(exams, many=True).data
 
     def get_pyqs(self, obj):
-        exams = obj.mocks.filter(exam_type='PYQ')
+        # Use Python filtering
+        exams = [e for e in obj.mocks.all() if e.exam_type == 'PYQ']
         return SimpleExamSerializer(exams, many=True).data
 
 class ExamAttemptSerializer(serializers.ModelSerializer):

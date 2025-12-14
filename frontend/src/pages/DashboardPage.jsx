@@ -4,7 +4,7 @@ import api from '../api/axios';
 import { 
     Layout, BookOpen, User, LogOut, ChevronRight, ShoppingCart, 
     Flame, Zap, PlayCircle, Trophy, MoreVertical, Star, Shield, 
-    Clock, CheckCircle, AlertTriangle, Menu, X, TrendingUp
+    Clock, CheckCircle, AlertTriangle, Menu, X, TrendingUp, RefreshCw
 } from 'lucide-react';
 
 const DashboardPage = () => {
@@ -23,39 +23,58 @@ const DashboardPage = () => {
     const [loading, setLoading] = useState(true);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     
-    // Sidebar State: Closed by default on mobile, Open on desktop
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false); 
+    // Sidebar State: Now handles both Mobile (overlay) and Desktop (collapsible)
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Default open on desktop
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
     const [showBatchMenu, setShowBatchMenu] = useState(false);
 
     const navigate = useNavigate();
 
-    // --- INITIAL LOAD ---
+    // Handle Resize for Responsive Sidebar
     useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                // Use Promise.all to fetch concurrently
-                const [userRes, courseRes, histRes] = await Promise.all([
-                    api.get('auth/users/me/'),
-                    api.get('courses/enrolled/'),
-                    api.get('history/')
-                ]);
-
-                setUser({ 
-                    name: userRes.data.first_name || userRes.data.username || "Scholar",
-                    email: userRes.data.email
-                });
-
-                setEnrolledCourses(courseRes.data);
-                if (courseRes.data.length > 0) setActiveCourse(courseRes.data[0]);
-
-                setAttempts(histRes.data);
-
-            } catch (err) {
-                console.error("Dashboard Load Error:", err);
-            } finally {
-                setLoading(false);
-            }
+        const handleResize = () => {
+            const mobile = window.innerWidth < 1024;
+            setIsMobile(mobile);
+            if (mobile) setIsSidebarOpen(false); // Auto-close on mobile
+            else setIsSidebarOpen(true); // Auto-open on desktop
         };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // --- INITIAL LOAD ---
+    const fetchDashboardData = async () => {
+        setLoading(true);
+        try {
+            const [userRes, courseRes, histRes] = await Promise.all([
+                api.get('auth/users/me/'),
+                api.get('courses/enrolled/'),
+                api.get('history/')
+            ]);
+
+            setUser({ 
+                name: userRes.data.first_name || userRes.data.username || "Scholar",
+                email: userRes.data.email
+            });
+
+            setEnrolledCourses(courseRes.data);
+            // FIX: Ensure activeCourse is set if data exists
+            if (courseRes.data.length > 0) {
+                setActiveCourse(courseRes.data[0]);
+            } else {
+                console.warn("No enrolled courses found for user.");
+            }
+
+            setAttempts(histRes.data);
+
+        } catch (err) {
+            console.error("Dashboard Load Error:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchDashboardData();
     }, []);
 
@@ -80,30 +99,38 @@ const DashboardPage = () => {
         window.location.href = '/login';
     };
 
+    const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
     const lastActivity = attempts.length > 0 ? attempts[0] : null;
 
     // --- RENDER ---
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-200 flex">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-200 flex overflow-hidden">
             
-            {/* --- SIDEBAR OVERLAY (Mobile) --- */}
-            {isSidebarOpen && (
+            {/* --- SIDEBAR OVERLAY (Mobile Only) --- */}
+            {isMobile && isSidebarOpen && (
                 <div 
-                    className="fixed inset-0 z-40 bg-black/50 lg:hidden backdrop-blur-sm"
+                    className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
                     onClick={() => setIsSidebarOpen(false)}
                 ></div>
             )}
 
             {/* --- SIDEBAR --- */}
-            <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:relative lg:translate-x-0`}>
-                <div className="p-6 h-full flex flex-col">
+            <aside 
+                className={`fixed lg:relative inset-y-0 left-0 z-50 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-all duration-300 ease-in-out
+                    ${isSidebarOpen ? 'w-64 translate-x-0' : 'w-0 -translate-x-full lg:translate-x-0 lg:w-0 overflow-hidden'}
+                `}
+            >
+                <div className="p-6 h-full flex flex-col w-64"> {/* Fixed width container to prevent layout shift content squishing */}
                     <div className="flex items-center justify-between mb-10">
                         <div className="flex items-center gap-2 text-blue-600 dark:text-white font-black text-2xl">
                             <Zap className="fill-current" /> BitByBit
                         </div>
-                        <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden text-slate-500 hover:text-slate-700">
-                            <X size={24} />
-                        </button>
+                        {isMobile && (
+                            <button onClick={() => setIsSidebarOpen(false)} className="text-slate-500 hover:text-slate-700">
+                                <X size={24} />
+                            </button>
+                        )}
                     </div>
 
                     <nav className="space-y-2 flex-1">
@@ -125,12 +152,16 @@ const DashboardPage = () => {
             </aside>
 
             {/* --- MAIN CONTENT --- */}
-            <div className="flex-1 flex flex-col min-w-0">
+            <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
                 
                 {/* HEADER */}
-                <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 sticky top-0 z-40">
+                <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 sticky top-0 z-40 shrink-0">
                     <div className="flex items-center gap-4">
-                        <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 -ml-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                        {/* GLOBAL MENU BUTTON */}
+                        <button 
+                            onClick={toggleSidebar} 
+                            className="p-2 -ml-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                        >
                             <Menu size={24}/>
                         </button>
                         
@@ -194,7 +225,7 @@ const DashboardPage = () => {
                 </header>
 
                 {/* SCROLLABLE CONTENT */}
-                <main className="p-6 md:p-10 overflow-y-auto pb-32">
+                <main className="flex-1 overflow-y-auto p-6 md:p-10 pb-32">
                     
                     {/* CASE 1: LOADING */}
                     {loading && (
@@ -214,12 +245,20 @@ const DashboardPage = () => {
                             <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-md mx-auto">
                                 You haven't enrolled in any batches yet. Visit the store to start your journey.
                             </p>
-                            <Link 
-                                to="/store" 
-                                className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all"
-                            >
-                                <ShoppingCart size={20}/> Explore Course Store
-                            </Link>
+                            <div className="flex gap-4 justify-center">
+                                <button 
+                                    onClick={fetchDashboardData}
+                                    className="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-6 py-3 rounded-xl font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                                >
+                                    <RefreshCw size={20}/> Refresh
+                                </button>
+                                <Link 
+                                    to="/store" 
+                                    className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all"
+                                >
+                                    <ShoppingCart size={20}/> Explore Course Store
+                                </Link>
+                            </div>
                         </div>
                     )}
 

@@ -1,15 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-    BookOpen, CheckCircle, Clock, Trophy, ChevronDown, ChevronUp, Menu, X, 
-    GraduationCap, ArrowRight, Monitor, Cpu, FileText, Cloud,
-    Atom, Stethoscope, Building2, Scale, Briefcase, Globe, Code,
-    BrainCircuit, Zap, Users, Moon, Sun, LayoutGrid, Calculator,
-    Landmark, Gavel, Plane, Microscope, PenTool, TrendingUp, Search,
-    LayoutDashboard 
+    BookOpen, Clock, Trophy, ArrowRight, 
+    BrainCircuit, Zap, Users, LayoutGrid, X
 } from 'lucide-react';
 import api from '../api/axios';
-import { useTheme } from '../hooks/useTheme';
 
 const mockBanners = [
     {
@@ -32,37 +27,24 @@ const mockBanners = [
     }
 ];
 
-// ... (NAV_LINKS removed here as they are now used in App.jsx Navbar if needed, 
-// OR if you want to keep the mega menu functionality, it should be in App.jsx Navbar. 
-// However, if you want the Mega Menu ONLY on Landing Page, you need a custom Navbar here.
-// But we decided to use a Global Navbar. 
-// So LandingPage.jsx is now just the CONTENT below the Navbar.)
+const EXAM_CATEGORIES_DATA = [
+    { name: "NEET", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 15h11"/><path d="m11 12 11 11"/><path d="M22 17 11 6"/><path d="m13 14-2 2"/></svg>, items: [{name: "Class 11"}, {name: "Class 12"}] },
+    { name: "IIT JEE", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M10 8h4"/><path d="M10 16h4"/><path d="m8 10 4 4 4-4"/></svg>, items: [{name: "Mains"}, {name: "Advanced"}] },
+    { name: "UPSC", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 11a7 7 0 0 0 7-7 7 7 0 0 0-7-7z"/><path d="M12 11a7 7 0 0 1-7-7 7 7 0 0 1 7-7z"/></svg>, items: [{name: "Prelims"}, {name: "Mains"}] },
+    { name: "Defence", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m8 6 4-4 4 4"/><path d="M12 2v20"/><path d="M16 16 12 20 8 16"/></svg>, items: [{name: "NDA"}, {name: "CDS"}, {name: "Agniveer"}] },
+    { name: "Banking", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>, items: [{name: "PO"}, {name: "Clerk"}] },
+    { name: "SSC", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20v-8"/><path d="M18 20v-4"/><path d="M6 20v-4"/><path d="M12 12V4"/><path d="M18 8V4"/><path d="M6 8V4"/></svg>, items: [{name: "CGL"}, {name: "CHSL"}] },
+    { name: "Teaching", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 10l.3-1.6a2 2 0 1 1 4.7 0l.3 1.6"/><path d="M12 22v-4"/><path d="M8 22v-4"/><path d="M16 22v-4"/></svg>, items: [{name: "CTET"}, {name: "BPSC TRE"}] },
+    { name: "GATE", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12V3H2v9a10 10 0 0 0 20 0V3h-3v9a7 7 0 0 1-14 0z"/><path d="M5 3h14"/></svg>, items: [{name: "CS & IT"}, {name: "Mechanical"}] },
+];
 
 const LandingPage = () => {
     const [showAd, setShowAd] = useState(true);
     const [banners, setBanners] = useState([]);
     const [currentAdIndex, setCurrentAdIndex] = useState(0);
-    // Note: Navbar logic is now in App.jsx
 
-    // --- STATE FOR VIEW MORE/LESS EXAM CATEGORIES ---
     const [showAllCategories, setShowAllCategories] = useState(false);
     const INITIAL_CATEGORY_COUNT = 6; 
-
-    // We can reuse the NAV_LINKS data or define exam categories locally for the grid
-    const EXAM_CATEGORIES_DATA = [
-         // ... (Same data as NAV_LINKS categories) ...
-         // For brevity, I'm assuming you have the data structure here or imported
-         // I will put a placeholder for the categories to render the grid
-            { name: "NEET", icon: <Stethoscope size={20} className="text-blue-500"/>, items: [{name: "Class 11"}, {name: "Class 12"}] },
-            { name: "IIT JEE", icon: <Atom size={20} className="text-orange-500"/>, items: [{name: "Mains"}, {name: "Advanced"}] },
-            { name: "UPSC", icon: <Landmark size={20} className="text-orange-600"/>, items: [{name: "Prelims"}, {name: "Mains"}] },
-            { name: "Defence", icon: <CheckCircle size={20} className="text-teal-500"/>, items: [{name: "NDA"}, {name: "CDS"}, {name: "Agniveer"}] },
-            { name: "Banking", icon: <Briefcase size={20} className="text-indigo-500"/>, items: [{name: "PO"}, {name: "Clerk"}] },
-            { name: "SSC", icon: <Building2 size={20} className="text-red-500"/>, items: [{name: "CGL"}, {name: "CHSL"}] },
-            { name: "Teaching", icon: <Users size={20} className="text-green-600"/>, items: [{name: "CTET"}, {name: "BPSC TRE"}] },
-            { name: "GATE", icon: <Cpu size={20} className="text-purple-600"/>, items: [{name: "CS & IT"}, {name: "Mechanical"}] },
-            // ... add more as needed
-    ];
 
     const displayedCategories = showAllCategories ? EXAM_CATEGORIES_DATA : EXAM_CATEGORIES_DATA.slice(0, INITIAL_CATEGORY_COUNT);
 
@@ -105,6 +87,13 @@ const LandingPage = () => {
                             </button>
                         </div>
                     </div>
+                    {banners.length > 1 && (
+                        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1">
+                            {banners.map((_, idx) => (
+                                <div key={idx} className={`w-1.5 h-1.5 rounded-full transition-colors ${idx === currentAdIndex ? 'bg-white' : 'bg-white/30'}`}/>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -174,8 +163,8 @@ const LandingPage = () => {
                                     <div className="flex flex-wrap gap-2 mb-6">
                                         {category.items.map((exam, eIdx) => (
                                             <span key={eIdx} className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5">
-                                                {/* Use category icon for now or specific item icon if available */}
-                                                {React.cloneElement(category.icon, { size: 14 })} 
+                                                {/* Using the Atom icon from the category definition as a placeholder */}
+                                                {React.cloneElement(category.icon || <Atom size={14}/>, { size: 14 })} 
                                                 {exam.name}
                                             </span>
                                         ))}
@@ -198,7 +187,6 @@ const LandingPage = () => {
 
              {/* --- PHILOSOPHY SECTION --- */}
              <section className="py-24 bg-white dark:bg-slate-800 px-6 relative overflow-hidden transition-colors">
-                {/* ... (Keep existing Philosophy Section) ... */}
                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] dark:bg-[radial-gradient(#374151_1px,transparent_1px)] [background-size:16px_16px] opacity-50"></div>
                 <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16 relative z-10">
                     <div className="lg:w-1/2 relative group">
@@ -276,3 +264,5 @@ const FeatureCard = ({ icon, color, title, desc }) => (
         <p className="text-slate-500 dark:text-slate-400 leading-relaxed">{desc}</p>
     </div>
 );
+
+export default LandingPage;

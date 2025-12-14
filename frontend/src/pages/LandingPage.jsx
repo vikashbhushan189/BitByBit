@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-    BookOpen, Clock, Trophy, ArrowRight, 
-    BrainCircuit, Zap, Users, LayoutGrid, X, ChevronDown
+    // UI Icons
+    ChevronDown, ChevronUp, LayoutGrid, X, Search, ArrowRight,
+    
+    // Feature Icons
+    BookOpen, CheckCircle, Clock, Trophy, BrainCircuit, Zap, Users,
+    
+    // Category Icons (Used in the Grid)
+    Atom, Stethoscope, Building2, Scale, Briefcase, Globe, Code, 
+    Calculator, Landmark, Gavel, Plane, Microscope, PenTool, TrendingUp,
+    FileText, Monitor, Cpu, GraduationCap
 } from 'lucide-react';
 import api from '../api/axios';
 

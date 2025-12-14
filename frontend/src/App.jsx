@@ -1,17 +1,19 @@
-import { useTheme } from './hooks/useTheme';
 import React, { useEffect, useState, useRef } from 'react'; 
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { 
-    // Core Navigation & UI Icons
-    LogOut, LayoutDashboard, BookOpen, ArrowLeft, User, ChevronDown, ChevronUp, // Added ChevronUp just in case
-    CreditCard, HelpCircle, GraduationCap, Sun, Moon, Menu, X, Search,
+    // Core Navigation & UI (Placed first)
+    LogOut, LayoutDashboard, BookOpen, ArrowLeft, User, ChevronDown, ChevronUp, 
+    Menu, X, Search, Sun, Moon, GraduationCap,
     
-    // Mega Menu Icons (Ensuring they are all listed)
+    // Profile Menu Helpers
+    CreditCard, HelpCircle, 
+
+    // Mega Menu Icons (Grouped)
     Atom, Stethoscope, Building2, Scale, Briefcase, Globe, Code, 
     Calculator, Landmark, Gavel, Plane, Microscope, PenTool, TrendingUp, 
     FileText, Monitor, Cpu, Trophy, CheckCircle, Users, Zap
 } from 'lucide-react';
-
+import { useTheme } from './hooks/useTheme';
 
 // --- CORE PAGES ---
 import CourseList from './components/CourseList';
@@ -277,7 +279,6 @@ const NAV_LINKS = [
         type: "text",
     }
 ];
-
 // --- HELPER COMPONENTS ---
 
 // 1. Search Modal
@@ -486,7 +487,6 @@ const Navbar = ({ theme, toggleTheme }) => {
 };
 
 // --- ROUTE PROTECTION COMPONENTS ---
-// NOTE: These are defined globally to be accessible by the Routes component.
 const PrivateRoute = ({ children }) => {
     const token = localStorage.getItem('access_token');
     return token ? children : <Navigate to="/login" />;

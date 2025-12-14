@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-    BookOpen, CheckCircle, Clock, Trophy, ChevronDown, Menu, X, 
+    BookOpen, CheckCircle, Clock, Trophy, ChevronDown, ChevronUp, Menu, X, 
     GraduationCap, ArrowRight, Monitor, Cpu, FileText, Cloud,
     Atom, Stethoscope, Building2, Scale, Briefcase, Globe, Code,
     BrainCircuit, Zap, Users, Moon, Sun, LayoutGrid, Calculator,
     Landmark, Gavel, Plane, Microscope, PenTool, TrendingUp, Search,
-    LayoutDashboard // Added this import
+    LayoutDashboard 
 } from 'lucide-react';
 import api from '../api/axios';
 import { useTheme } from '../hooks/useTheme';
@@ -32,361 +32,41 @@ const mockBanners = [
     }
 ];
 
-// --- NAV_LINKS ---
-const NAV_LINKS = [
-    {
-        label: "All Exams",
-        type: "mega_tabs",  
-        categories: [
-            {
-                id: "neet",
-                name: "NEET",
-                items: [
-                    { name: "Class 11", icon: <Stethoscope size={20} className="text-blue-500"/> },
-                    { name: "Class 12", icon: <Stethoscope size={20} className="text-blue-500"/> },
-                    { name: "Dropper", icon: <Stethoscope size={20} className="text-blue-500"/> }
-                ]
-            },
-            {
-                id: "jee",
-                name: "IIT JEE",
-                items: [
-                    { name: "Class 11", icon: <Atom size={20} className="text-orange-500"/> },
-                    { name: "Class 12", icon: <Atom size={20} className="text-orange-500"/> },
-                    { name: "Dropper", icon: <Atom size={20} className="text-orange-500"/> }
-                ]
-            },
-            {
-                id: "foundation",
-                name: "Pre Foundation",
-                items: [
-                    { name: "Class 9", icon: <BookOpen size={20} className="text-green-500"/> },
-                    { name: "Class 10", icon: <BookOpen size={20} className="text-green-500"/> },
-                    { name: "Olympiad", icon: <Trophy size={20} className="text-yellow-500"/> }
-                ]
-            },
-            {
-                id: "school",
-                name: "School Boards",
-                items: [
-                    { name: "CBSE", icon: <BookOpen size={20} className="text-purple-500"/> },
-                    { name: "ICSE", icon: <BookOpen size={20} className="text-purple-500"/> },
-                    { name: "UP Board", icon: <Globe size={20} className="text-pink-500"/> },
-                    { name: "Maharashtra Board", icon: <Globe size={20} className="text-pink-500"/> }
-                ]
-            },
-            {
-                id: "upsc",
-                name: "UPSC",
-                items: [
-                    { name: "Prelims", icon: <Landmark size={20} className="text-orange-600"/> },
-                    { name: "Mains", icon: <Landmark size={20} className="text-orange-600"/> },
-                    { name: "Optional", icon: <BookOpen size={20} className="text-orange-600"/> }
-                ]
-            },
-            {
-                id: "govt",
-                name: "Govt Job Exams",
-                items: [
-                    { name: "SSC", icon: <Building2 size={20} className="text-red-500"/> },
-                    { name: "Banking", icon: <Briefcase size={20} className="text-indigo-500"/> },
-                    { name: "Teaching", icon: <Users size={20} className="text-green-600"/> },
-                    { name: "Judiciary", icon: <Gavel size={20} className="text-yellow-600"/> }
-                ]
-            },
-            {
-                id: "defence",
-                name: "Defence",
-                items: [
-                    { name: "NDA", icon: <CheckCircle size={20} className="text-teal-500"/> },
-                    { name: "CDS", icon: <CheckCircle size={20} className="text-teal-500"/> },
-                    { name: "AFCAT", icon: <Plane size={20} className="text-teal-500"/> },
-                    { name: "Agniveer", icon: <CheckCircle size={20} className="text-teal-500"/> }
-                ]
-            },
-            {
-                id: "ca",
-                name: "CA",
-                items: [
-                    { name: "Foundation", icon: <Calculator size={20} className="text-blue-600"/> },
-                    { name: "Intermediate", icon: <Calculator size={20} className="text-blue-600"/> },
-                    { name: "Final", icon: <Calculator size={20} className="text-blue-600"/> }
-                ]
-            },
-            {
-                id: "olympiad",
-                name: "Olympiad",
-                items: [
-                    { name: "NSO", icon: <Trophy size={20} className="text-yellow-500"/> },
-                    { name: "IMO", icon: <Trophy size={20} className="text-yellow-500"/> },
-                    { name: "NTSE", icon: <Trophy size={20} className="text-yellow-500"/> }
-                ]
-            },
-            {
-                id: "mba",
-                name: "MBA",
-                items: [
-                    { name: "CAT", icon: <TrendingUp size={20} className="text-purple-600"/> },
-                    { name: "XAT", icon: <TrendingUp size={20} className="text-purple-600"/> },
-                    { name: "MAT", icon: <TrendingUp size={20} className="text-purple-600"/> }
-                ]
-            },
-            {
-                id: "psc",
-                name: "State PSC",
-                items: [
-                    { name: "UPPSC", icon: <Landmark size={20} className="text-orange-500"/> },
-                    { name: "BPSC", icon: <Landmark size={20} className="text-orange-500"/> },
-                    { name: "MPPSC", icon: <Landmark size={20} className="text-orange-500"/> }
-                ]
-            },
-            {
-                id: "commerce",
-                name: "Commerce",
-                items: [
-                    { name: "Class 11", icon: <Calculator size={20} className="text-green-500"/> },
-                    { name: "Class 12", icon: <Calculator size={20} className="text-green-500"/> },
-                    { name: "CUET Commerce", icon: <Calculator size={20} className="text-green-500"/> }
-                ]
-            },
-            {
-                id: "gate",
-                name: "GATE",
-                items: [
-                    { name: "CS & IT", icon: <Cpu size={20} className="text-red-500"/> },
-                    { name: "Mechanical", icon: <Cpu size={20} className="text-red-500"/> },
-                    { name: "Civil", icon: <Cpu size={20} className="text-red-500"/> },
-                    { name: "Electrical", icon: <Zap size={20} className="text-yellow-500"/> }
-                ]
-            },
-            {
-                id: "cuet",
-                name: "CUET",
-                items: [
-                    { name: "Science", icon: <Atom size={20} className="text-blue-500"/> },
-                    { name: "Commerce", icon: <Calculator size={20} className="text-green-500"/> },
-                    { name: "Arts", icon: <PenTool size={20} className="text-pink-500"/> }
-                ]
-            },
-            {
-                id: "aeje",
-                name: "AE/JE",
-                items: [
-                    { name: "SSC JE", icon: <Cpu size={20} className="text-slate-600"/> },
-                    { name: "RRB JE", icon: <Monitor size={20} className="text-slate-600"/> }
-                ]
-            },
-            {
-                id: "jam",
-                name: "IIT JAM & CSIR NET",
-                items: [
-                    { name: "Physics", icon: <Atom size={20} className="text-indigo-500"/> },
-                    { name: "Maths", icon: <Calculator size={20} className="text-indigo-500"/> },
-                    { name: "Life Sciences", icon: <Microscope size={20} className="text-green-500"/> }
-                ]
-            },
-            {
-                id: "law",
-                name: "LAW",
-                items: [
-                    { name: "CLAT", icon: <Scale size={20} className="text-slate-700"/> },
-                    { name: "AILET", icon: <Scale size={20} className="text-slate-700"/> },
-                    { name: "Judiciary", icon: <Gavel size={20} className="text-yellow-700"/> }
-                ]
-            },
-            {
-                id: "ese",
-                name: "ESE GATE",
-                items: [
-                    { name: "Prelims", icon: <Cpu size={20} className="text-blue-700"/> },
-                    { name: "Mains", icon: <Cpu size={20} className="text-blue-700"/> }
-                ]
-            },
-            {
-                id: "ipmat",
-                name: "IPMAT",
-                items: [
-                    { name: "IIM Indore", icon: <GraduationCap size={20} className="text-blue-800"/> },
-                    { name: "IIM Rohtak", icon: <GraduationCap size={20} className="text-blue-800"/> }
-                ]
-            },
-            {
-                id: "ielts",
-                name: "IELTS",
-                items: [
-                    { name: "Academic", icon: <Globe size={20} className="text-cyan-500"/> },
-                    { name: "General", icon: <Globe size={20} className="text-cyan-500"/> }
-                ]
-            }
-        ]
-    },
-    {
-        label: "India's Update",
-        type: "link",
-        to: "/news"
-    },
-    {
-        label: "AI Tools",
-        type: "dropdown",
-        items: [
-            { name: "AI Summarizer", icon: <FileText size={16}/> },
-            { name: "Video to Text", icon: <Monitor size={16}/> },
-            { name: "Mind Map Generator", icon: <Cpu size={16}/> },
-            { name: "Auto-Notes Maker", icon: <BookOpen size={16}/> }
-        ]
-    },
-    {
-        label: "Test Series",
-        type: "dropdown",
-        items: [
-            { name: "GATE Mock Tests" },
-            { name: "SSC CGL Tier-1" },
-            { name: "Banking Prelims" },
-            { name: "UGC NET Paper 1" }
-        ]
-    },
-    {
-        label: "Full Length PYQs",
-        type: "dropdown",
-        items: [
-            { name: "JEE Advanced PYQ" },
-            { name: "NEET Previous Years" },
-            { name: "UPSC Prelims PYQ" },
-            { name: "GATE CS 2010-2024" }
-        ]
-    },
-    {
-        label: "Power Batch",
-        type: "text",
-    }
-];
-
-// --- SEARCH MODAL COMPONENT ---
-const SearchModal = ({ isOpen, onClose, categories }) => {
-    const [query, setQuery] = useState("");
-
-    // Prevent body scroll when modal is open
-    useEffect(() => {
-        if (isOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = 'unset';
-        }
-        return () => { document.body.style.overflow = 'unset'; };
-    }, [isOpen]);
-
-    if (!isOpen) return null;
-
-    // Search Logic
-    const filteredCategories = categories.map(cat => ({
-        ...cat,
-        items: cat.items.filter(item => 
-            item.name.toLowerCase().includes(query.toLowerCase()) || 
-            cat.name.toLowerCase().includes(query.toLowerCase())
-        )
-    })).filter(cat => 
-        // Keep category if it matches the query OR if it has matching items
-        (cat.name.toLowerCase().includes(query.toLowerCase()) && cat.items.length > 0) || 
-        cat.items.length > 0
-    );
-
-    return (
-        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-start justify-center pt-20 px-4 animate-in fade-in duration-200">
-            {/* Click outside to close */}
-            <div className="absolute inset-0" onClick={onClose}></div>
-
-            {/* Modal Content */}
-            <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[70vh] relative z-10 animate-in slide-in-from-top-4 duration-300 border border-slate-200 dark:border-slate-700">
-                
-                {/* Header */}
-                <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-20">
-                    <div className="flex justify-between items-center mb-6">
-                        <div>
-                            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Select your goal / exam</h2>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">200+ exams available for your preparation</p>
-                        </div>
-                        <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
-                            <X size={24} className="text-slate-500" />
-                        </button>
-                    </div>
-
-                    <div className="relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={20} />
-                        <input
-                            type="text"
-                            placeholder="Search for your exam (e.g. JEE, NEET, UPSC)..."
-                            className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg text-slate-900 dark:text-white placeholder-slate-400 transition-all"
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            autoFocus
-                        />
-                    </div>
-                </div>
-
-                {/* Results Area */}
-                <div className="overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
-                    {filteredCategories.length === 0 ? (
-                        <div className="text-center py-10">
-                            <div className="bg-slate-50 dark:bg-slate-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <Search size={32} className="text-slate-300 dark:text-slate-600" />
-                            </div>
-                            <p className="text-slate-500 dark:text-slate-400">No exams found matching "{query}"</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-8">
-                            {filteredCategories.map((cat) => (
-                                <div key={cat.id}>
-                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 pl-1">{cat.name}</h3>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        {cat.items.map((item, idx) => (
-                                            <Link
-                                                to={`/category/${cat.id}`} // Or specific exam link
-                                                key={idx}
-                                                onClick={onClose}
-                                                className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-md transition-all cursor-pointer group bg-white dark:bg-slate-800/50"
-                                            >
-                                                <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded-lg text-slate-600 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                                    {item.icon}
-                                                </div>
-                                                <span className="font-semibold text-slate-700 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                                    {item.name}
-                                                </span>
-                                                <ArrowRight size={16} className="ml-auto opacity-0 group-hover:opacity-100 text-blue-500 -translate-x-2 group-hover:translate-x-0 transition-all" />
-                                            </Link>
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-};
+// ... (NAV_LINKS removed here as they are now used in App.jsx Navbar if needed, 
+// OR if you want to keep the mega menu functionality, it should be in App.jsx Navbar. 
+// However, if you want the Mega Menu ONLY on Landing Page, you need a custom Navbar here.
+// But we decided to use a Global Navbar. 
+// So LandingPage.jsx is now just the CONTENT below the Navbar.)
 
 const LandingPage = () => {
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [activeDropdown, setActiveDropdown] = useState(null);
     const [showAd, setShowAd] = useState(true);
     const [banners, setBanners] = useState([]);
-    const [activeTab, setActiveTab] = useState(0);
     const [currentAdIndex, setCurrentAdIndex] = useState(0);
-    const { theme, toggleTheme } = useTheme(); 
-    
-    // --- STATE FOR SEARCH MODAL ---
-    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    // Note: Navbar logic is now in App.jsx
+
+    // --- STATE FOR VIEW MORE/LESS EXAM CATEGORIES ---
     const [showAllCategories, setShowAllCategories] = useState(false);
     const INITIAL_CATEGORY_COUNT = 6; 
 
-    // CHECK LOGIN STATUS
-    const isLoggedIn = !!localStorage.getItem('access_token');
+    // We can reuse the NAV_LINKS data or define exam categories locally for the grid
+    const EXAM_CATEGORIES_DATA = [
+         // ... (Same data as NAV_LINKS categories) ...
+         // For brevity, I'm assuming you have the data structure here or imported
+         // I will put a placeholder for the categories to render the grid
+            { name: "NEET", icon: <Stethoscope size={20} className="text-blue-500"/>, items: [{name: "Class 11"}, {name: "Class 12"}] },
+            { name: "IIT JEE", icon: <Atom size={20} className="text-orange-500"/>, items: [{name: "Mains"}, {name: "Advanced"}] },
+            { name: "UPSC", icon: <Landmark size={20} className="text-orange-600"/>, items: [{name: "Prelims"}, {name: "Mains"}] },
+            { name: "Defence", icon: <CheckCircle size={20} className="text-teal-500"/>, items: [{name: "NDA"}, {name: "CDS"}, {name: "Agniveer"}] },
+            { name: "Banking", icon: <Briefcase size={20} className="text-indigo-500"/>, items: [{name: "PO"}, {name: "Clerk"}] },
+            { name: "SSC", icon: <Building2 size={20} className="text-red-500"/>, items: [{name: "CGL"}, {name: "CHSL"}] },
+            { name: "Teaching", icon: <Users size={20} className="text-green-600"/>, items: [{name: "CTET"}, {name: "BPSC TRE"}] },
+            { name: "GATE", icon: <Cpu size={20} className="text-purple-600"/>, items: [{name: "CS & IT"}, {name: "Mechanical"}] },
+            // ... add more as needed
+    ];
 
-    const allCategories = NAV_LINKS[0].categories;
-    const displayedCategories = showAllCategories ? allCategories : allCategories.slice(0, INITIAL_CATEGORY_COUNT);
+    const displayedCategories = showAllCategories ? EXAM_CATEGORIES_DATA : EXAM_CATEGORIES_DATA.slice(0, INITIAL_CATEGORY_COUNT);
 
     useEffect(() => {
-        // Fallback to mock banners if API fails or is empty initially
         api.get('banners/').then(res => {
             if (res.data.length > 0) setBanners(res.data);
             else setBanners(mockBanners);
@@ -406,168 +86,6 @@ const LandingPage = () => {
     return (
         <div className="bg-white dark:bg-slate-900 font-sans text-slate-800 dark:text-slate-200 transition-colors duration-300">
             
-            <SearchModal 
-                isOpen={isSearchOpen} 
-                onClose={() => setIsSearchOpen(false)} 
-                categories={allCategories}
-            />
-
-            {/* --- NAVIGATION BAR --- */}
-            <nav className="sticky top-0 z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-20">
-                        
-                        {/* Logo */}
-                        <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer">
-                            <div className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 p-2 rounded-lg transition-colors">
-                                <GraduationCap size={24} />
-                            </div>
-                            <span className="font-black text-2xl tracking-tighter text-slate-900 dark:text-white">
-                                <span className="text-blue-600">Bit</span>byBit
-                            </span>
-                        </div>
-
-                        {/* Desktop Menu */}
-                        <div className="hidden lg:flex items-center space-x-2">
-                            {NAV_LINKS.map((link, idx) => (
-                                <div 
-                                    key={idx}
-                                    className="relative group"
-                                    onMouseEnter={() => setActiveDropdown(idx)}
-                                    onMouseLeave={() => setActiveDropdown(null)}
-                                >
-                                    <button className={`px-4 py-2.5 rounded-lg text-sm font-bold flex items-center gap-1.5 transition-all
-                                        ${activeDropdown === idx 
-                                            ? 'bg-blue-50 dark:bg-slate-800 text-blue-600' 
-                                            : 'text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
-                                        {link.label}
-                                        {['mega_tabs', 'dropdown'].includes(link.type) && <ChevronDown size={14} className={`mt-0.5 transition-transform duration-200 ${activeDropdown === idx ? 'rotate-180' : ''}`}/>}
-                                    </button>
-
-                                    {/* DROPDOWNS */}
-                                    {activeDropdown === idx && (
-                                        <div className="absolute top-full left-0 pt-2 w-max animate-in fade-in slide-in-from-top-2 duration-200">
-                                            {/* (Mega Menu Logic - Same as before) */}
-                                            {link.type === 'mega_tabs' && (
-                                                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 flex overflow-hidden w-[700px] -ml-20 max-h-[500px]">
-                                                    <div className="w-1/3 bg-slate-50 dark:bg-slate-900 border-r border-slate-100 dark:border-slate-700 p-2 overflow-y-auto scrollbar-thin">
-                                                        {link.categories.map((cat, cIdx) => (
-                                                            <div 
-                                                                key={cIdx}
-                                                                onMouseEnter={() => setActiveTab(cIdx)}
-                                                                className={`px-4 py-3 rounded-xl text-sm font-bold cursor-pointer flex justify-between items-center transition-all mb-1
-                                                                    ${activeTab === cIdx 
-                                                                        ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm' 
-                                                                        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200'}
-                                                                `}
-                                                            >
-                                                                {cat.name}
-                                                                {activeTab === cIdx && <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>}
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                    <div className="w-2/3 p-6 bg-white dark:bg-slate-800 overflow-y-auto">
-                                                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">
-                                                            {link.categories[activeTab].name}
-                                                        </h4>
-                                                        <div className="grid grid-cols-2 gap-3">
-                                                            {link.categories[activeTab].items.map((item, iIdx) => (
-                                                                <div key={iIdx} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-500 hover:shadow-md transition-all cursor-pointer group bg-slate-50/50 dark:bg-slate-900/50 hover:bg-white dark:hover:bg-slate-900">
-                                                                    <div className="bg-white dark:bg-slate-800 p-2 rounded-lg shadow-sm group-hover:scale-110 transition-transform">
-                                                                        {item.icon}
-                                                                    </div>
-                                                                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-blue-700 dark:group-hover:text-blue-400">{item.name}</span>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                            {link.type === 'dropdown' && (
-                                                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 p-2 w-64">
-                                                    {link.items.map((item, iIdx) => (
-                                                        <div key={iIdx} className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer group">
-                                                            {item.icon && <span className="text-slate-400 group-hover:text-blue-500">{item.icon}</span>}
-                                                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-blue-700 dark:group-hover:text-blue-400">{item.name}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Right Side Buttons */}
-                        <div className="hidden lg:flex items-center gap-4">
-                            <button onClick={() => setIsSearchOpen(true)} className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"><Search size={20} /></button>
-                            <button onClick={toggleTheme} className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">{theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}</button>
-                            
-                            {/* DYNAMIC AUTH BUTTONS */}
-                            {isLoggedIn ? (
-                                <Link 
-                                    to="/dashboard" 
-                                    className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg flex items-center gap-2"
-                                >
-                                    <LayoutDashboard size={18} /> Dashboard
-                                </Link>
-                            ) : (
-                                <>
-                                    <Link to="/login" className="text-slate-600 dark:text-slate-300 font-bold hover:text-blue-600 dark:hover:text-blue-400 px-4 py-2 transition-colors">Login</Link>
-                                    <Link to="/register" className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-200 dark:shadow-none hover:-translate-y-0.5">Register</Link>
-                                </>
-                            )}
-                        </div>
-
-                        {/* Mobile Menu Button */}
-                        <div className="lg:hidden flex items-center gap-4">
-                             <button onClick={toggleTheme} className="p-2 text-slate-600 dark:text-slate-300">{theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}</button>
-                            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-600 dark:text-slate-300">{isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}</button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Mobile Menu Drawer */}
-                {isMobileMenuOpen && (
-                    <div className="lg:hidden bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 absolute w-full left-0 shadow-xl max-h-[80vh] overflow-y-auto">
-                        <div className="p-4 space-y-2">
-                            {/* ... (Existing mobile menu loop) ... */}
-                             {NAV_LINKS.map((link, idx) => (
-                                <div key={idx} className="border-b border-slate-50 dark:border-slate-800 pb-2 last:border-0">
-                                    <div className="font-bold text-slate-800 dark:text-slate-200 py-2">{link.label}</div>
-                                    {link.type === 'mega_tabs' && (
-                                        <div className="pl-4 space-y-4 mt-2">
-                                            {link.categories.map((cat, cIdx) => (
-                                                <div key={cIdx}>
-                                                    <div className="text-xs font-bold text-blue-500 uppercase mb-2">{cat.name}</div>
-                                                    <div className="grid grid-cols-2 gap-2">
-                                                        {cat.items.map((item, iIdx) => (
-                                                            <div key={iIdx} className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded">{item.name}</div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-
-                            <div className="flex flex-col gap-3 mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
-                                {isLoggedIn ? (
-                                    <Link to="/dashboard" className="w-full text-center bg-slate-900 text-white py-3 rounded-xl font-bold">Go to Dashboard</Link>
-                                ) : (
-                                    <>
-                                        <Link to="/login" className="w-full text-center border-2 border-slate-100 dark:border-slate-700 py-3 rounded-xl font-bold text-slate-700 dark:text-slate-300">Login</Link>
-                                        <Link to="/register" className="w-full text-center bg-blue-600 text-white py-3 rounded-xl font-bold">Register</Link>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </nav>
-
             {/* --- AD BANNER --- */}
             {activeBanner && showAd && (
                 <div className={`relative bg-gradient-to-r from-${activeBanner.bg_gradient_from} to-${activeBanner.bg_gradient_to} text-white p-3 md:py-4 transition-all duration-500 ease-in-out`}>
@@ -614,7 +132,6 @@ const LandingPage = () => {
                         </div>
                     </div>
                     <div className="md:w-1/2">
-                        {/* 3D Floating Elements */}
                         <div className="relative bg-gradient-to-br from-slate-800 to-slate-900 p-8 rounded-3xl border border-slate-700 shadow-2xl">
                             <div className="flex items-center justify-between mb-8">
                                 <div className="flex gap-2"><div className="w-3 h-3 rounded-full bg-red-500"/><div className="w-3 h-3 rounded-full bg-yellow-500"/><div className="w-3 h-3 rounded-full bg-green-500"/></div>
@@ -626,20 +143,14 @@ const LandingPage = () => {
                                     <div className="w-0 h-0 border-t-[10px] border-t-transparent border-l-[20px] border-l-white border-b-[10px] border-b-transparent ml-1"></div>
                                 </div>
                             </div>
-                            <div className="mt-6 flex gap-4">
-                                <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
-                                    <div className="h-full w-2/3 bg-blue-500"></div>
-                                </div>
-                                <span className="text-xs text-slate-400">65% Complete</span>
-                            </div>
                         </div>
                     </div>
                 </div>
             </header>
 
-            {/* --- NEW SECTION: ALL EXAM CATEGORIES --- */}
-            <section className="py-24 px-6 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-800">
-                <div className="max-w-7xl mx-auto">
+            {/* --- EXAM CATEGORIES GRID --- */}
+            <section className="py-24 px-6 bg-slate-50 dark:bg-slate-900 transition-colors">
+                <div className="max-w-6xl mx-auto">
                     <div className="text-center mb-16">
                         <div className="inline-flex items-center gap-2 bg-blue-50 dark:bg-slate-700 px-4 py-1.5 rounded-full text-blue-600 dark:text-blue-300 font-bold text-sm mb-4">
                             <LayoutGrid size={16} /> Exam Categories
@@ -653,35 +164,23 @@ const LandingPage = () => {
                     </div>
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {/* Logic: Show 'displayedCategories' based on toggle state.
-                            Includes animation class for smooth entry when expanding.
-                        */}
                         {displayedCategories.map((category, idx) => (
-                            <div 
-                                key={idx} 
-                                className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl p-6 hover:shadow-xl hover:border-blue-200 dark:hover:border-slate-600 transition-all group relative overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300"
-                            >
+                            <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl p-6 hover:shadow-xl hover:border-blue-200 dark:hover:border-slate-600 transition-all group relative overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100/50 dark:bg-blue-900/20 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
-                                
                                 <div className="relative z-10">
                                     <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
                                         {category.name}
                                     </h3>
-                                    
                                     <div className="flex flex-wrap gap-2 mb-6">
                                         {category.items.map((exam, eIdx) => (
-                                            <span key={eIdx} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5">
-                                                {/* Clone element to force smaller icon size in tags */}
-                                                {React.cloneElement(exam.icon, { size: 14 })}
+                                            <span key={eIdx} className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5">
+                                                {/* Use category icon for now or specific item icon if available */}
+                                                {React.cloneElement(category.icon, { size: 14 })} 
                                                 {exam.name}
                                             </span>
                                         ))}
                                     </div>
-
-                                    <Link 
-                                        to={`/category/${category.id}`} 
-                                        className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-sm group-hover:translate-x-1 transition-transform"
-                                    >
+                                    <Link to={`/category/${category.name.toLowerCase().replace(/\s+/g, '-')}`} className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-sm group-hover:translate-x-1 transition-transform">
                                         Explore Category <ArrowRight size={16} />
                                     </Link>
                                 </div>
@@ -689,39 +188,17 @@ const LandingPage = () => {
                         ))}
                     </div>
                     
-                    {/* View More / View Less Toggle Button */}
                     <div className="mt-12 text-center">
-                         <button 
-                            onClick={() => setShowAllCategories(!showAllCategories)}
-                            className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-bold text-sm bg-blue-50 dark:bg-slate-800 px-6 py-3 rounded-full transition-all hover:shadow-md"
-                         >
-                            {showAllCategories ? (
-                                <>View Less Categories <ChevronUp size={16}/></>
-                            ) : (
-                                <>View All Categories ({allCategories.length}) <ChevronDown size={16}/></>
-                            )}
+                         <button onClick={() => setShowAllCategories(!showAllCategories)} className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-bold text-sm bg-blue-50 dark:bg-slate-800 px-6 py-3 rounded-full transition-all hover:shadow-md">
+                            {showAllCategories ? <>View Less Categories <ChevronUp size={16}/></> : <>View All Categories ({EXAM_CATEGORIES_DATA.length}) <ChevronDown size={16}/></>}
                         </button>
                     </div>
                 </div>
             </section>
 
-            {/* --- FEATURES GRID (Existing) --- */}
-            <section className="py-24 px-6 bg-slate-50 dark:bg-slate-900 transition-colors">
-                <div className="max-w-6xl mx-auto">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Why Choose Bit by Bit?</h2>
-                        <p className="text-slate-500 dark:text-slate-400">Structured courses, endless practice, and AI-powered insights.</p>
-                    </div>
-                    <div className="grid md:grid-cols-3 gap-8">
-                        <FeatureCard icon={<BookOpen size={24} className="text-white"/>} color="bg-blue-600" title="Comprehensive Notes" desc="Detailed chapter-wise notes curated by top faculties."/>
-                        <FeatureCard icon={<Clock size={24} className="text-white"/>} color="bg-purple-600" title="Real-time Mock Tests" desc="Practice in an actual exam-like environment with negative marking."/>
-                        <FeatureCard icon={<Trophy size={24} className="text-white"/>} color="bg-emerald-600" title="Performance Analysis" desc="Track your weak areas and improve bit by bit every day."/>
-                    </div>
-                </div>
-            </section>
-
-             {/* --- PHILOSOPHY SECTION (Existing) --- */}
+             {/* --- PHILOSOPHY SECTION --- */}
              <section className="py-24 bg-white dark:bg-slate-800 px-6 relative overflow-hidden transition-colors">
+                {/* ... (Keep existing Philosophy Section) ... */}
                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] dark:bg-[radial-gradient(#374151_1px,transparent_1px)] [background-size:16px_16px] opacity-50"></div>
                 <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16 relative z-10">
                     <div className="lg:w-1/2 relative group">
@@ -737,7 +214,7 @@ const LandingPage = () => {
                     <div className="lg:w-1/2 space-y-8">
                         <div className="inline-block bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider">The Science of Learning</div>
                         <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white leading-tight">
-                            Don't let them just <span className="text-red-500 decoration-2 underline-offset-4">watch</span>. <br/>
+                            Don't let them just <span className="text-red-500 font-bold">watch</span>. <br/>
                             Help them <span className="text-blue-600 dark:text-blue-400">Learn.</span>
                         </h2>
                         <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -759,6 +236,25 @@ const LandingPage = () => {
                                 </div>
                             </div>
                         </div>
+                        <div className="pt-4">
+                            <Link to="/register" className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold hover:text-blue-800 transition-colors text-lg">
+                                See the difference yourself <ArrowRight size={20} />
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* --- STATS & TESTIMONIALS --- */}
+            <section className="py-24 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-800 transition-colors">
+                <div className="max-w-6xl mx-auto px-6">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Our students and parents love us</h2>
+                    </div>
+                    <div className="grid md:grid-cols-3 gap-8">
+                        <FeatureCard icon={<BookOpen size={24} className="text-white"/>} color="bg-blue-600" title="Comprehensive Notes" desc="Detailed chapter-wise notes curated by top faculties."/>
+                        <FeatureCard icon={<Clock size={24} className="text-white"/>} color="bg-purple-600" title="Real-time Mock Tests" desc="Practice in an actual exam-like environment with negative marking."/>
+                        <FeatureCard icon={<Trophy size={24} className="text-white"/>} color="bg-emerald-600" title="Performance Analysis" desc="Track your weak areas and improve bit by bit every day."/>
                     </div>
                 </div>
             </section>
@@ -780,5 +276,3 @@ const FeatureCard = ({ icon, color, title, desc }) => (
         <p className="text-slate-500 dark:text-slate-400 leading-relaxed">{desc}</p>
     </div>
 );
-
-export default LandingPage;

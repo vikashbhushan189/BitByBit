@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import api from '../api/axios';
 import { useNavigate, Link, useLocation } from 'react-router-dom'; 
-import { AlertCircle, LogIn, Lock, User, CheckSquare, Square } from 'lucide-react';
+import { AlertCircle, LogIn, Lock, User, CheckCircle } from 'lucide-react'; // <--- Added CheckCircle
 
 const LoginPage = () => {
     const [formData, setFormData] = useState({ username: '', password: '' });
-    const [rememberMe, setRememberMe] = useState(false); // <--- New State
+    const [rememberMe, setRememberMe] = useState(false); 
     const [error, setError] = useState(''); 
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();

@@ -1,13 +1,17 @@
+import { useTheme } from './hooks/useTheme';
 import React, { useEffect, useState, useRef } from 'react'; 
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { 
-    LogOut, LayoutDashboard, BookOpen, ArrowLeft, User, ChevronDown, 
+    // Core Navigation & UI Icons
+    LogOut, LayoutDashboard, BookOpen, ArrowLeft, User, ChevronDown, ChevronUp, // Added ChevronUp just in case
     CreditCard, HelpCircle, GraduationCap, Sun, Moon, Menu, X, Search,
+    
+    // Mega Menu Icons (Ensuring they are all listed)
     Atom, Stethoscope, Building2, Scale, Briefcase, Globe, Code, 
     Calculator, Landmark, Gavel, Plane, Microscope, PenTool, TrendingUp, 
     FileText, Monitor, Cpu, Trophy, CheckCircle, Users, Zap
 } from 'lucide-react';
-import { useTheme } from './hooks/useTheme';
+
 
 // --- CORE PAGES ---
 import CourseList from './components/CourseList';

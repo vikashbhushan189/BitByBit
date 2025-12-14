@@ -26,8 +26,6 @@ import AdminNotesEditorPage from './pages/AdminNotesEditorPage';
 // --- COURSE INTRO PAGES ---
 import AgniveerPage from './pages/courses/defence/AgniveerPage';
 import BpscTrePage from './pages/courses/teaching/BpscTrePage';
-// import NeetPage from './pages/courses/medical/NeetPage';
-// import JeePage from './pages/courses/engineering/JeePage';
 
 // --- Components ---
 
@@ -50,8 +48,7 @@ const Navbar = () => {
         }
     };
 
-    // Determine if Back Button should be shown
-    // We hide it on main dashboard to prevent confusion
+    // Determine if Back Button should be shown (hide on main landing & dashboard)
     const showBackButton = location.pathname !== '/dashboard' && location.pathname !== '/';
 
     return (
@@ -115,15 +112,13 @@ const AdminRoute = ({ children }) => {
     return token ? children : <Navigate to="/admin-portal" />;
 };
 
+// Layout Component to Handle Navbar Visibility
 const Layout = ({ children }) => {
     const location = useLocation();
-
-    // Hide Student Navbar on Admin Pages OR Landing Page OR Agniveer Page
-    const hideNavbar = 
-        location.pathname.startsWith('/admin') || 
-        location.pathname === '/' || 
-        location.pathname === '/defence/agniveer' ||
-        location.pathname === '/teaching/bpsc_tre'; 
+    
+    // UPDATED LOGIC: Only hide Navbar on Admin pages.
+    // It will now show on Landing Page ('/') and Course Intro pages.
+    const hideNavbar = location.pathname.startsWith('/admin');
 
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-100">
@@ -132,7 +127,6 @@ const Layout = ({ children }) => {
         </div>
     );
 };
-
 
 function App() {
   const isLoggedIn = !!localStorage.getItem('access_token');
@@ -153,31 +147,26 @@ function App() {
             window.location.href = '/login';
         }
     };
-
-    window.addEventListener('pageshow', handleFocus);    
-    return () => {
-        window.removeEventListener('pageshow', handleFocus);
-    };
+    window.addEventListener('pageshow', handleFocus);
+    return () => window.removeEventListener('pageshow', handleFocus);
   }, []);
 
   return (
     <Router>
         <Layout>
             <Routes>
-                {/* Landing / Home */}
-                {/* 1. PUBLIC ROUTES (Allow everyone, including logged-in users) */}
-                <Route path="/" element={<LandingPage />} /> {/* REMOVED: isLogged check */}
-
+                {/* 1. PUBLIC ROUTES */}
+                <Route path="/" element={<LandingPage />} />
+                
                 {/* Public Course Pages */}
                 <Route path="/defence/agniveer" element={<AgniveerPage />} />
                 <Route path="/teaching/bpsc_tre" element={<BpscTrePage />} />
                 <Route path="/course/:category/:courseId" element={<AgniveerPage />} />
                 <Route path="/category/:categoryId" element={<CategoryPage />} />
                 
-                {/* Store can be browsed publicly now if you wish, or keep private */}
                 <Route path="/store" element={<CourseStorePage />} /> 
 
-                {/* 2. PROTECTED ROUTES (Login Required) */}
+                {/* 2. PROTECTED ROUTES */}
                 <Route path="/courses" element={<PrivateRoute><CourseList /></PrivateRoute>} />
                 <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
                 <Route path="/exam/:examId" element={<PrivateRoute><ExamPage /></PrivateRoute>} />
@@ -197,7 +186,6 @@ function App() {
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/password-reset/:uid/:token" element={<ResetPasswordPage />} />
-
             </Routes>
         </Layout>
     </Router>

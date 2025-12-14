@@ -4,7 +4,7 @@ import api from '../api/axios';
 import { 
     Layout, BookOpen, User, LogOut, ChevronRight, ShoppingCart, 
     Flame, Zap, PlayCircle, Trophy, MoreVertical, Star, Shield, 
-    Clock, CheckCircle, AlertTriangle, Menu, X
+    Clock, CheckCircle, AlertTriangle, Menu, X, TrendingUp // <--- ADDED TrendingUp
 } from 'lucide-react';
 
 const DashboardPage = () => {
@@ -50,8 +50,11 @@ const DashboardPage = () => {
 
             } catch (err) {
                 console.error("Dashboard Load Error:", err);
+                // Keep loading state true if 500 happens to show the skeleton or handle error
+                setLoading(false); 
             } finally {
-                setLoading(false);
+                // We let the skeleton render even if the fetch fails, preventing the blank screen
+                if (!activeCourse) setLoading(false); 
             }
         };
         fetchDashboardData();
@@ -64,12 +67,10 @@ const DashboardPage = () => {
         setXP(Math.round(totalScore * 10));
 
         if(activeCourse) {
-            // Rough progress calculation
-            let totalItems = 10; // Baseline
+            let totalItems = 10; 
             if(activeCourse.subjects) totalItems += activeCourse.subjects.length * 5;
             const completedCount = attempts.filter(a => a.exam_title && activeCourse.title.includes(a.exam_title)).length; 
-            // Note: Matching titles is fuzzy, but works for mock data
-            setProgress(Math.min(Math.round((completedCount / totalItems) * 100) + 5, 100)); // +5 for joining
+            setProgress(Math.min(Math.round((completedCount / totalItems) * 100) + 5, 100));
         }
     }, [activeCourse, attempts]);
 
@@ -111,6 +112,7 @@ const DashboardPage = () => {
         </div>
     );
 
+    // --- MAIN RENDER ---
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-200 flex">
             

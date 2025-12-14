@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
     BookOpen, Clock, Trophy, ArrowRight, 
-    BrainCircuit, Zap, Users, LayoutGrid, X
+    BrainCircuit, Zap, Users, LayoutGrid, X, ChevronDown
 } from 'lucide-react';
 import api from '../api/axios';
 

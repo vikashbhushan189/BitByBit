@@ -5,7 +5,7 @@ import {
     CreditCard, HelpCircle, GraduationCap, Sun, Moon, Menu, X, Search,
     Atom, Stethoscope, Building2, Scale, Briefcase, Globe, Code, 
     Calculator, Landmark, Gavel, Plane, Microscope, PenTool, TrendingUp, 
-    FileText, Monitor, Cpu, Trophy, CheckCircle
+    FileText, Monitor, Cpu, Trophy, CheckCircle, Users, Zap // FIX: Added Users and Zap (which was missing)
 } from 'lucide-react';
 import { useTheme } from './hooks/useTheme';
 

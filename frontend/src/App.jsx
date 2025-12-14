@@ -1,17 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react'; 
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { 
-    // Core Navigation & UI (Placed first)
-    LogOut, LayoutDashboard, BookOpen, ArrowLeft, User, ChevronDown, ChevronUp, 
-    Menu, X, Search, Sun, Moon, GraduationCap,
-    
-    // Profile Menu Helpers
-    CreditCard, HelpCircle, 
-
-    // Mega Menu Icons (Grouped)
-    Atom, Stethoscope, Building2, Scale, Briefcase, Globe, Code, 
-    Calculator, Landmark, Gavel, Plane, Microscope, PenTool, TrendingUp, 
-    FileText, Monitor, Cpu, Trophy, CheckCircle, Users, Zap
+    ArrowLeft, Atom, BookOpen, Briefcase, Building2, Calculator, CheckCircle, 
+    ChevronDown, ChevronUp, Clock, Code, Cpu, CreditCard, FileText, Gavel, 
+    Globe, GraduationCap, HelpCircle, Landmark, LayoutDashboard, LogOut, 
+    Menu, Microscope, Monitor, Moon, PenTool, Plane, Scale, Search, 
+    Stethoscope, Sun, TrendingUp, Trophy, User, Users, X, Zap 
 } from 'lucide-react';
 import { useTheme } from './hooks/useTheme';
 
@@ -49,7 +43,6 @@ import GatePage from './pages/courses/engineering/GatePage';
 import NeetPage from './pages/courses/medical/NeetPage';
 import CtetPage from './pages/courses/teaching/CtetPage';
 import UgcNetPage from './pages/courses/teaching/UgcNetPage';
-
 
 // --- DATA: NAV LINKS (The Mega Menu Structure) ---
 const NAV_LINKS = [

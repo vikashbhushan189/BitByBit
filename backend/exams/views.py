@@ -16,8 +16,17 @@ from .permissions import IsPaidSubscriberOrAdmin
 
 # --- STUDENT VIEWS ---
 
+
 class CourseViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Course.objects.all()
+    # OPTIMIZED QUERYSET: Prefetch everything to fix slow loading
+    queryset = Course.objects.prefetch_related(
+        'subjects',
+        'subjects__chapters',
+        'subjects__tests', 
+        'mocks',           
+        'pyqs'             
+    ).all()
+    
     serializer_class = CourseSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -25,8 +34,18 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
     def enrolled(self, request):
         if not request.user.is_authenticated:
             return Response([])
+        
         subscribed_ids = UserSubscription.objects.filter(user=request.user, active=True).values_list('course_id', flat=True)
-        courses = Course.objects.filter(id__in=subscribed_ids)
+        
+        # Apply optimization to enrolled query too
+        courses = Course.objects.filter(id__in=subscribed_ids).prefetch_related(
+            'subjects',
+            'subjects__chapters',
+            'subjects__tests',
+            'mocks',
+            'pyqs'
+        )
+        
         serializer = self.get_serializer(courses, many=True)
         return Response(serializer.data)
 
@@ -102,23 +121,14 @@ class ExamViewSet(viewsets.ReadOnlyModelViewSet):
     def check_answer(self, request, pk=None):
         question_id = request.data.get('question_id')
         option_id = request.data.get('option_id')
-        
-        # Validate Inputs
-        if not question_id:
-            return Response({"error": "Question ID required"}, status=400)
-
         question = get_object_or_404(Question, id=question_id)
-        
-        # Check against database
         correct_option = question.options.filter(is_correct=True).first()
         is_correct = False
-        
         if option_id:
             try:
                 selected = Option.objects.get(id=option_id)
                 is_correct = selected.is_correct
             except: pass
-            
         return Response({
             "is_correct": is_correct,
             "correct_option_id": correct_option.id if correct_option else None,

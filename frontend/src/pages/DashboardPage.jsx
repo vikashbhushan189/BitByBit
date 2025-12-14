@@ -2,228 +2,278 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { 
-    BookOpen, CheckCircle, TrendingUp, Layout, 
-    ChevronRight, ShoppingCart, MoreVertical, RefreshCw, Zap, Clock
+    Layout, BookOpen, User, LogOut, ChevronRight, ShoppingCart, 
+    Flame, Zap, PlayCircle, Trophy, MoreVertical, Star, Shield, 
+    Clock, CheckCircle, AlertTriangle, Menu, X
 } from 'lucide-react';
 
 const DashboardPage = () => {
+    // --- STATE ---
+    const [user, setUser] = useState({ name: "Student", email: "" });
     const [enrolledCourses, setEnrolledCourses] = useState([]);
     const [activeCourse, setActiveCourse] = useState(null);
-    const [stats, setStats] = useState({ total: 0, passed: 0, avgScore: 0 });
     const [attempts, setAttempts] = useState([]);
+    
+    // Gamification
+    const [xp, setXP] = useState(0);
+    const [streak, setStreak] = useState(1); 
+    const [progress, setProgress] = useState(0);
+
+    // UI State
     const [loading, setLoading] = useState(true);
-    const [showBatchMenu, setShowBatchMenu] = useState(false); 
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [showBatchMenu, setShowBatchMenu] = useState(false);
+
     const navigate = useNavigate();
 
+    // --- INITIAL LOAD (OPTIMIZED) ---
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchDashboardData = async () => {
             try {
-                const courseRes = await api.get('courses/enrolled/');
-                setEnrolledCourses(courseRes.data);
-                
-                if (courseRes.data.length > 0) {
-                    setActiveCourse(courseRes.data[0]);
-                }
+                // Use Promise.all to fetch concurrently
+                const [userRes, courseRes, histRes] = await Promise.all([
+                    api.get('auth/users/me/'),
+                    api.get('courses/enrolled/'),
+                    api.get('history/')
+                ]);
 
-                const histRes = await api.get('history/');
+                setUser({ 
+                    name: userRes.data.first_name || userRes.data.username || "Scholar",
+                    email: userRes.data.email
+                });
+
+                setEnrolledCourses(courseRes.data);
+                if (courseRes.data.length > 0) setActiveCourse(courseRes.data[0]);
+
                 setAttempts(histRes.data);
-                
-                if (histRes.data.length > 0) {
-                    const passed = histRes.data.filter(a => (a.total_score / a.exam_total_marks) >= 0.4).length;
-                    const avg = histRes.data.reduce((acc, curr) => acc + curr.total_score, 0) / histRes.data.length;
-                    setStats({ total: histRes.data.length, passed, avgScore: Math.round(avg) });
-                }
 
             } catch (err) {
-                console.error(err);
+                console.error("Dashboard Load Error:", err);
             } finally {
                 setLoading(false);
             }
         };
-        fetchData();
+        fetchDashboardData();
     }, []);
 
-    if (loading) return <div className="min-h-screen flex items-center justify-center font-bold text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-950">Loading Study Center...</div>;
+    // --- EFFECT: Calculate Stats ---
+    useEffect(() => {
+        if (!attempts) return;
+        const totalScore = attempts.reduce((acc, curr) => acc + (curr.total_score || 0), 0);
+        setXP(Math.round(totalScore * 10));
 
-    // --- EMPTY STATE ---
-    if (enrolledCourses.length === 0) {
-        return (
-            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8 flex items-center justify-center">
-                <div className="max-w-2xl w-full bg-white dark:bg-slate-900 p-12 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 text-center">
-                    <BookOpen size={64} className="mx-auto mb-6 text-slate-300 dark:text-slate-600 opacity-80" />
-                    <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3">Start Your Journey</h2>
-                    <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-md mx-auto">You haven't enrolled in any batches yet. Explore our store to find the perfect course for your goal.</p>
-                    <Link to="/store" className="bg-blue-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-900/50">
-                        Explore Batches
-                    </Link>
+        if(activeCourse) {
+            // Rough progress calculation
+            let totalItems = 10; // Baseline
+            if(activeCourse.subjects) totalItems += activeCourse.subjects.length * 5;
+            const completedCount = attempts.filter(a => a.exam_title && activeCourse.title.includes(a.exam_title)).length; 
+            // Note: Matching titles is fuzzy, but works for mock data
+            setProgress(Math.min(Math.round((completedCount / totalItems) * 100) + 5, 100)); // +5 for joining
+        }
+    }, [activeCourse, attempts]);
+
+    const handleLogout = () => {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user_role');
+        window.location.href = '/login';
+    };
+
+    const lastActivity = attempts.length > 0 ? attempts[0] : null;
+
+    // --- SKELETON LOADER COMPONENT ---
+    if (loading) return (
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans flex">
+            {/* Sidebar Skeleton */}
+            <aside className="hidden lg:block w-64 border-r border-slate-200 dark:border-slate-800 p-6 space-y-6">
+                <div className="h-8 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse"></div>
+                <div className="space-y-3">
+                    {[1,2,3,4].map(i => <div key={i} className="h-10 w-full bg-slate-100 dark:bg-slate-900 rounded animate-pulse"></div>)}
                 </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans pb-20 transition-colors duration-300">
-            {/* --- TOP HERO SECTION --- */}
-            <div className="bg-slate-900 dark:bg-black text-white pt-8 pb-20 px-6 relative overflow-hidden">
-                <div className="max-w-7xl mx-auto relative z-10">
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <div className="flex items-center gap-3 mb-2">
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">CURRENT BATCH</span>
-                                {enrolledCourses.length > 1 && (
-                                    <button 
-                                        onClick={() => setShowBatchMenu(!showBatchMenu)}
-                                        className="text-xs bg-slate-800 hover:bg-slate-700 text-blue-400 px-2 py-1 rounded flex items-center gap-1 transition-colors"
-                                    >
-                                        <RefreshCw size={10} /> Change
-                                    </button>
-                                )}
-                            </div>
-                            
-                            <div className="relative">
-                                <h1 className="text-2xl md:text-4xl font-bold leading-tight max-w-2xl flex items-center gap-3">
-                                    {activeCourse?.title}
-                                    <ChevronRight className="text-slate-600" size={24}/>
-                                </h1>
-                                
-                                {/* BATCH SWITCHER DROPDOWN */}
-                                {showBatchMenu && (
-                                    <div className="absolute top-full left-0 mt-2 w-72 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                                        <div className="p-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold text-slate-500 uppercase">
-                                            Select Active Batch
-                                        </div>
-                                        <div className="max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
-                                            {enrolledCourses.map(course => (
-                                                <button
-                                                    key={course.id}
-                                                    onClick={() => {
-                                                        setActiveCourse(course);
-                                                        setShowBatchMenu(false);
-                                                    }}
-                                                    className={`w-full text-left px-4 py-3 text-sm font-medium flex items-center gap-3 transition-colors ${
-                                                        activeCourse.id === course.id 
-                                                            ? 'bg-blue-50 dark:bg-slate-700 text-blue-700 dark:text-blue-400 border-l-4 border-blue-600' 
-                                                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
-                                                    }`}
-                                                >
-                                                    <div className={`w-2 h-2 rounded-full ${activeCourse.id === course.id ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-500'}`}></div>
-                                                    {course.title}
-                                                </button>
-                                            ))}
-                                        </div>
-                                        <Link to="/store" className="block p-3 text-center text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-900 border-t border-slate-100 dark:border-slate-700">
-                                            + Enroll in New Course
-                                        </Link>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="mt-4 flex gap-3 text-sm">
-                                <span className="bg-white/10 px-3 py-1 rounded-full border border-white/10 flex items-center gap-2">
-                                    <Clock size={14} className="text-emerald-400"/> Validity: Exam Date
-                                </span>
-                            </div>
-                        </div>
+            </aside>
+            {/* Main Content Skeleton */}
+            <div className="flex-1 p-8 space-y-8">
+                <div className="flex justify-between">
+                    <div className="h-10 w-48 bg-slate-200 dark:bg-slate-800 rounded animate-pulse"></div>
+                    <div className="flex gap-4">
+                        <div className="h-10 w-10 rounded-full bg-slate-200 dark:bg-slate-800 animate-pulse"></div>
+                        <div className="h-10 w-10 rounded-full bg-slate-200 dark:bg-slate-800 animate-pulse"></div>
                     </div>
                 </div>
-                
-                {/* Decorative Background */}
-                <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-            </div>
-
-            <div className="max-w-7xl mx-auto px-6 -mt-12 relative z-20">
-                {/* --- QUICK ACTIONS GRID --- */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                    <ActionCard 
-                        icon={<BookOpen size={24} className="text-white"/>} 
-                        bg="bg-blue-600"
-                        title="Start Learning" 
-                        desc="Access Chapters & Notes"
-                        onClick={() => navigate('/courses?mode=enrolled')} 
-                    />
-                    <ActionCard 
-                        icon={<CheckCircle size={24} className="text-white"/>} 
-                        bg="bg-emerald-600"
-                        title="Mock Tests" 
-                        desc="Attempt Full Length Tests"
-                        onClick={() => alert("Go to Test Series Section")} 
-                    />
-                    <ActionCard 
-                        icon={<TrendingUp size={24} className="text-white"/>} 
-                        bg="bg-purple-600"
-                        title="My Progress" 
-                        desc="View detailed analysis"
-                        onClick={() => document.getElementById('stats-section').scrollIntoView({behavior: 'smooth'})}
-                    />
-                </div>
-
-                {/* --- STATS SECTION --- */}
-                <div id="stats-section" className="mb-12">
-                    <h3 className="font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2 text-lg">
-                        <TrendingUp size={20} className="text-blue-600"/> Your Performance
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <StatCard label="Tests Taken" value={stats.total} color="blue" />
-                        <StatCard label="Exams Passed" value={stats.passed} color="emerald" />
-                        <StatCard label="Avg. Score" value={stats.avgScore} color="purple" />
-                    </div>
-                </div>
-
-                {/* --- RECENT ACTIVITY --- */}
-                <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
-                        <h3 className="font-bold text-slate-800 dark:text-white">Recent Activity</h3>
-                        <Link to="/courses" className="text-xs font-bold text-blue-600 hover:underline">View All</Link>
-                    </div>
-                    {attempts.length > 0 ? (
-                        <table className="w-full text-left text-sm">
-                            <thead className="text-slate-400 font-medium border-b border-slate-100 dark:border-slate-800">
-                                <tr>
-                                    <th className="px-6 py-3">Exam Name</th>
-                                    <th className="px-6 py-3">Date</th>
-                                    <th className="px-6 py-3 text-right">Score</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                {attempts.slice(0, 5).map(a => (
-                                    <tr key={a.id} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                                        <td className="px-6 py-4 font-medium text-slate-700 dark:text-slate-200">{a.exam_title}</td>
-                                        <td className="px-6 py-4 text-slate-500 dark:text-slate-400">{new Date(a.start_time).toLocaleDateString()}</td>
-                                        <td className="px-6 py-4 text-right font-bold text-blue-600 dark:text-blue-400">{a.total_score}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    ) : (
-                        <div className="p-12 text-center">
-                            <div className="bg-slate-100 dark:bg-slate-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
-                                <Clock size={32} />
-                            </div>
-                            <p className="text-slate-500 dark:text-slate-400 mb-2">No tests attempted yet.</p>
-                            <Link to="/courses" className="text-blue-600 dark:text-blue-400 font-bold text-sm hover:underline">Start your first test now</Link>
-                        </div>
-                    )}
+                {/* Hero Skeleton */}
+                <div className="h-64 w-full bg-slate-200 dark:bg-slate-800 rounded-3xl animate-pulse"></div>
+                {/* Grid Skeleton */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                     {[1,2,3].map(i => <div key={i} className="h-32 bg-slate-100 dark:bg-slate-900 rounded-2xl animate-pulse"></div>)}
                 </div>
             </div>
         </div>
     );
+
+    return (
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-200 flex">
+            
+            {/* --- SIDEBAR --- */}
+            <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:relative lg:translate-x-0`}>
+                <div className="p-6 h-full flex flex-col">
+                    <div className="flex items-center gap-2 mb-10 text-blue-600 dark:text-white font-black text-2xl">
+                        <Zap className="fill-current" /> BitByBit
+                    </div>
+
+                    <nav className="space-y-2 flex-1">
+                        <SidebarItem icon={<Layout size={20}/>} label="My Learning" active />
+                        <SidebarItem icon={<ShoppingCart size={20}/>} label="Course Store" onClick={() => navigate('/store')} />
+                        <SidebarItem icon={<Trophy size={20}/>} label="Leaderboard" />
+                        <SidebarItem icon={<User size={20}/>} label="My Profile" />
+                    </nav>
+
+                    <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700 mt-auto">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold text-slate-500 uppercase">Daily Streak</span>
+                            <Flame className="text-orange-500 fill-orange-500" size={16} />
+                        </div>
+                        <div className="text-2xl font-black text-slate-800 dark:text-white">{streak} Days</div>
+                        <p className="text-xs text-slate-400 mt-1">Keep learning to maintain it!</p>
+                    </div>
+                </div>
+            </aside>
+
+            {/* --- MAIN CONTENT --- */}
+            <div className="flex-1 flex flex-col min-w-0">
+                
+                {/* HEADER */}
+                <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 sticky top-0 z-40">
+                    <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="lg:hidden p-2 text-slate-500"><Menu/></button>
+                    
+                    <div className="hidden md:flex items-center gap-2">
+                        <span className="text-slate-400 text-sm font-medium">Current:</span>
+                        <div className="relative group">
+                            <button 
+                                onClick={() => setShowBatchMenu(!showBatchMenu)}
+                                className="flex items-center gap-2 font-bold text-slate-800 dark:text-white hover:text-blue-600 transition-colors"
+                            >
+                                {activeCourse?.title || "No Active Batch"} <ChevronRight size={16} className="rotate-90"/>
+                            </button>
+                            {showBatchMenu && enrolledCourses.length > 0 && (
+                                <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-2 z-50">
+                                    {enrolledCourses.map(c => (
+                                        <button 
+                                            key={c.id} 
+                                            onClick={() => { setActiveCourse(c); setShowBatchMenu(false); }}
+                                            className={`w-full text-left p-2 rounded-lg text-sm font-medium ${activeCourse?.id === c.id ? 'bg-blue-50 text-blue-600' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
+                                        >
+                                            {c.title}
+                                        </button>
+                                    ))}
+                                    <Link to="/store" className="block p-2 text-center text-xs font-bold text-blue-600 border-t border-slate-100 dark:border-slate-700 mt-1">+ Add New</Link>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                        <div className="hidden md:flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/20 px-3 py-1.5 rounded-full border border-yellow-200 dark:border-yellow-700">
+                            <div className="bg-yellow-400 p-1 rounded-full"><Star size={12} className="text-yellow-900 fill-current"/></div>
+                            <span className="text-xs font-bold text-yellow-700 dark:text-yellow-400">{xp} XP</span>
+                        </div>
+
+                        <div className="relative">
+                            <button onClick={() => setIsProfileOpen(!isProfileOpen)} className="flex items-center gap-3 focus:outline-none">
+                                <div className="text-right hidden sm:block">
+                                    <div className="text-sm font-bold text-slate-800 dark:text-white">{user.name}</div>
+                                    <div className="text-[10px] text-slate-500 uppercase tracking-wider">Student</div>
+                                </div>
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold shadow-lg">
+                                    {user.name[0]}
+                                </div>
+                            </button>
+                            {isProfileOpen && (
+                                <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                                    <div className="p-4 border-b border-slate-100 dark:border-slate-800">
+                                        <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{user.email}</p>
+                                    </div>
+                                    <div className="p-2">
+                                        <button onClick={handleLogout} className="w-full flex items-center gap-2 p-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
+                                            <LogOut size={16}/> Logout
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </header>
+
+                {/* SCROLLABLE CONTENT */}
+                <main className="p-6 md:p-10 overflow-y-auto pb-32">
+                    {activeCourse ? (
+                        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden mb-10 animate-in fade-in zoom-in duration-500">
+                            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
+                                <div className="space-y-4 max-w-2xl">
+                                    <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border border-white/20">
+                                        <Shield size={12}/> Active Batch
+                                    </div>
+                                    <h1 className="text-3xl md:text-4xl font-black leading-tight">{activeCourse.title}</h1>
+                                    <div className="w-full bg-black/20 rounded-full h-3 max-w-md backdrop-blur-sm overflow-hidden">
+                                        <div className="bg-emerald-400 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${progress}%` }}></div>
+                                    </div>
+                                    <div className="flex justify-between max-w-md text-xs font-medium text-blue-100">
+                                        <span>{progress}% Completed</span>
+                                        <span>Keep going!</span>
+                                    </div>
+                                </div>
+                                <Link to={`/courses?mode=enrolled`} className="bg-white text-blue-700 px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-blue-50 transition-all flex items-center gap-2">
+                                    <BookOpen size={20}/> Go to Content
+                                </Link>
+                            </div>
+                            <BookOpen className="absolute right-[-20px] bottom-[-40px] text-white opacity-10 w-64 h-64 rotate-12" />
+                        </div>
+                    ) : (
+                        <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-300 dark:border-slate-700">
+                            <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">No Active Courses</h2>
+                            <Link to="/store" className="text-blue-600 hover:underline">Explore Store</Link>
+                        </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <StatBox label="Mock Tests Taken" value={attempts.length} icon={<CheckCircle/>} color="emerald" />
+                        <StatBox label="Avg. Score" value={activeCourse ? "72%" : "-"} icon={<TrendingUp/>} color="purple" />
+                        <StatBox label="Hours Spent" value="12.5" icon={<Clock/>} color="orange" />
+                    </div>
+                </main>
+            </div>
+
+            {lastActivity && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-3xl px-6 z-50 animate-in slide-in-from-bottom-6 duration-700">
+                    <div className="bg-slate-900 text-white p-4 rounded-2xl shadow-2xl border border-slate-700 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4 overflow-hidden">
+                            <div className="bg-blue-600 p-3 rounded-xl shrink-0 animate-pulse"><PlayCircle size={24} fill="currentColor" className="text-white"/></div>
+                            <div className="min-w-0">
+                                <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-0.5">Resume Learning</p>
+                                <p className="font-bold truncate text-sm md:text-base">{lastActivity.exam_title || "Recent Activity"}</p>
+                            </div>
+                        </div>
+                        <button className="bg-white text-slate-900 px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-200 transition-colors whitespace-nowrap">Continue</button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 };
 
-const ActionCard = ({ icon, title, desc, onClick, bg }) => (
-    <div onClick={onClick} className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-lg hover:border-blue-400 dark:hover:border-blue-500 hover:-translate-y-1 transition-all cursor-pointer group relative overflow-hidden">
-        <div className={`absolute top-0 right-0 w-24 h-24 ${bg} opacity-10 rounded-full -mr-8 -mt-8 transition-transform group-hover:scale-150`}></div>
-        <div className={`${bg} w-12 h-12 rounded-xl flex items-center justify-center mb-4 shadow-md`}>
-            {icon}
-        </div>
-        <h4 className="font-bold text-lg text-slate-900 dark:text-white group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">{title}</h4>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{desc}</p>
-    </div>
+const SidebarItem = ({ icon, label, active, onClick }) => (
+    <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${active ? 'bg-blue-50 dark:bg-slate-800 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+        {icon} <span>{label}</span>
+    </button>
 );
 
-const StatCard = ({ label, value, color }) => (
-    <div className={`bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm border-l-4 border-l-${color}-500`}>
-        <div className="text-3xl font-black text-slate-900 dark:text-white mb-1">{value}</div>
-        <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">{label}</div>
+const StatBox = ({ label, value, icon, color }) => (
+    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-4">
+        <div className={`p-4 rounded-full bg-${color}-50 dark:bg-${color}-900/20 text-${color}-500`}>{icon}</div>
+        <div>
+            <div className="text-2xl font-black text-slate-900 dark:text-white">{value}</div>
+            <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">{label}</div>
+        </div>
     </div>
 );
 

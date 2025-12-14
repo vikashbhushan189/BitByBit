@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react'; 
+import React, { useEffect, useState, useRef } from 'react'; 
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { 
-    LogOut, LayoutDashboard, BookOpen, ArrowLeft, User, ChevronDown, ChevronUp, CreditCard, 
-    Settings, HelpCircle, GraduationCap, Sun, Moon, Menu, X, Search,
-    Atom, Stethoscope, Building2, Scale, Briefcase, Globe, Code, Calculator, Landmark, Gavel, Plane, Microscope, PenTool, TrendingUp, FileText, Monitor, Cpu, Trophy, CheckCircle
+    LogOut, LayoutDashboard, BookOpen, ArrowLeft, User, ChevronDown, 
+    CreditCard, HelpCircle, GraduationCap, Sun, Moon, Menu, X, Search,
+    Atom, Stethoscope, Building2, Scale, Briefcase, Globe, Code, 
+    Calculator, Landmark, Gavel, Plane, Microscope, PenTool, TrendingUp, 
+    FileText, Monitor, Cpu, Trophy, CheckCircle
 } from 'lucide-react';
 import { useTheme } from './hooks/useTheme';
 
-// --- PAGES ---
+// --- CORE PAGES ---
 import CourseList from './components/CourseList';
 import ExamPage from './pages/ExamPage';
 import LoginPage from './pages/LoginPage';
@@ -19,16 +21,30 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import CategoryPage from './pages/CategoryPage';
 import CourseStorePage from './pages/CourseStorePage';
+
+// --- ADMIN PAGES ---
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminGeneratorPage from './pages/AdminGeneratorPage';
 import AdminNotesUploadPage from './pages/AdminNotesUploadPage';
 import AdminAdManagerPage from './pages/AdminAdManagerPage';
 import AdminNotesEditorPage from './pages/AdminNotesEditorPage';
+
+// --- COURSE INTRO PAGES ---
 import AgniveerPage from './pages/courses/defence/AgniveerPage';
 import BpscTrePage from './pages/courses/teaching/BpscTrePage';
+import NdaPage from './pages/courses/defence/NdaPage';
+import CdsPage from './pages/courses/defence/CdsPage';
+import AfcatPage from './pages/courses/defence/AfcatPage';
+import UpscPage from './pages/courses/civil-services/UpscPage';
+import BpscPage from './pages/courses/civil-services/BpscPage';
+import JeePage from './pages/courses/engineering/JeePage';
+import GatePage from './pages/courses/engineering/GatePage';
+import NeetPage from './pages/courses/medical/NeetPage';
+import CtetPage from './pages/courses/teaching/CtetPage';
+import UgcNetPage from './pages/courses/teaching/UgcNetPage';
 
-// --- DATA: NAV LINKS (Moved from LandingPage) ---
+// --- DATA: NAV LINKS (The Mega Menu Structure) ---
 const NAV_LINKS = [
     {
         label: "All Exams",
@@ -257,7 +273,29 @@ const NAV_LINKS = [
     }
 ];
 
-// --- COMPONENT: PROFILE DROPDOWN ---
+// --- HELPER COMPONENTS ---
+
+// 1. Search Modal
+const SearchModal = ({ isOpen, onClose }) => {
+    if (!isOpen) return null;
+    return (
+        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-start justify-center pt-20 px-4 animate-in fade-in duration-200">
+            <div className="absolute inset-0" onClick={onClose}></div>
+            <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl p-6 relative z-10 border border-slate-200 dark:border-slate-800">
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-bold dark:text-white">Search Exams</h2>
+                    <button onClick={onClose}><X className="text-slate-400 hover:text-slate-600"/></button>
+                </div>
+                <div className="relative">
+                    <Search className="absolute left-4 top-3.5 text-slate-400" size={20} />
+                    <input type="text" placeholder="Search for JEE, NEET, UPSC..." className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border-none focus:ring-2 focus:ring-blue-500 outline-none dark:text-white" autoFocus />
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// 2. Profile Dropdown
 const ProfileMenu = ({ handleLogout }) => {
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef(null);
@@ -278,7 +316,7 @@ const ProfileMenu = ({ handleLogout }) => {
 
     return (
         <div className="relative" ref={menuRef}>
-            <button onClick={() => setIsOpen(!isOpen)} className="flex items-center gap-2 p-1.5 pr-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+            <button onClick={() => setIsOpen(!isOpen)} className="flex items-center gap-2 p-1.5 pr-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700">
                 <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-sm">U</div>
                 <ChevronDown size={16} className={`text-slate-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </button>
@@ -300,27 +338,7 @@ const ProfileMenu = ({ handleLogout }) => {
     );
 };
 
-// --- COMPONENT: SEARCH MODAL ---
-const SearchModal = ({ isOpen, onClose }) => {
-    if (!isOpen) return null;
-    return (
-        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-start justify-center pt-20 px-4">
-            <div className="absolute inset-0" onClick={onClose}></div>
-            <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl p-6 relative z-10">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-bold dark:text-white">Search Exams</h2>
-                    <button onClick={onClose}><X className="text-slate-400"/></button>
-                </div>
-                <div className="relative">
-                    <Search className="absolute left-4 top-3 text-slate-400" size={20} />
-                    <input type="text" placeholder="Search..." className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border-none focus:ring-2 focus:ring-blue-500 outline-none dark:text-white" autoFocus />
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// --- MAIN NAVBAR COMPONENT ---
+// --- MAIN NAVBAR ---
 const Navbar = ({ theme, toggleTheme }) => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -350,10 +368,10 @@ const Navbar = ({ theme, toggleTheme }) => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-20">
                         
-                        {/* Left: Logo & Back */}
+                        {/* LEFT: Logo & Back */}
                         <div className="flex items-center gap-4">
                             {showBackButton && (
-                                <button onClick={() => navigate(-1)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors md:hidden">
+                                <button onClick={() => navigate(-1)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors" title="Go Back">
                                     <ArrowLeft size={20} />
                                 </button>
                             )}
@@ -363,7 +381,7 @@ const Navbar = ({ theme, toggleTheme }) => {
                             </Link>
                         </div>
 
-                        {/* Center: Desktop Mega Menu */}
+                        {/* CENTER: Mega Menu */}
                         <div className="hidden lg:flex items-center space-x-1">
                             {NAV_LINKS.map((link, idx) => (
                                 <div key={idx} className="relative group" onMouseEnter={() => setActiveDropdown(idx)} onMouseLeave={() => setActiveDropdown(null)}>
@@ -376,6 +394,7 @@ const Navbar = ({ theme, toggleTheme }) => {
                                     {activeDropdown === idx && link.type === 'mega_tabs' && (
                                         <div className="absolute top-full left-0 pt-2 w-max animate-in fade-in slide-in-from-top-2 duration-200">
                                             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 flex overflow-hidden w-[700px] -ml-20">
+                                                {/* Sidebar */}
                                                 <div className="w-1/3 bg-slate-50 dark:bg-slate-900 border-r border-slate-100 dark:border-slate-700 p-2">
                                                     {link.categories.map((cat, cIdx) => (
                                                         <div key={cIdx} onMouseEnter={() => setActiveTab(cIdx)} className={`px-4 py-3 rounded-xl text-sm font-bold cursor-pointer flex justify-between items-center transition-all mb-1 ${activeTab === cIdx ? 'bg-white dark:bg-slate-800 text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
@@ -384,6 +403,7 @@ const Navbar = ({ theme, toggleTheme }) => {
                                                         </div>
                                                     ))}
                                                 </div>
+                                                {/* Grid */}
                                                 <div className="w-2/3 p-6 bg-white dark:bg-slate-800">
                                                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">{link.categories[activeTab].name}</h4>
                                                     <div className="grid grid-cols-2 gap-3">
@@ -402,7 +422,7 @@ const Navbar = ({ theme, toggleTheme }) => {
                             ))}
                         </div>
 
-                        {/* Right: Actions */}
+                        {/* RIGHT: Actions */}
                         <div className="flex items-center gap-3">
                             <button onClick={() => setIsSearchOpen(true)} className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors hidden sm:block"><Search size={20} /></button>
                             <button onClick={toggleTheme} className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">{theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}</button>
@@ -412,7 +432,7 @@ const Navbar = ({ theme, toggleTheme }) => {
                             ) : (
                                 <div className="hidden sm:flex items-center gap-3">
                                     <Link to="/login" className="text-slate-600 dark:text-slate-300 font-bold hover:text-blue-600 px-3 py-2">Login</Link>
-                                    <Link to="/register" className="bg-blue-600 text-white px-5 py-2 rounded-lg font-bold hover:bg-blue-700 shadow-md">Register</Link>
+                                    <Link to="/register" className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 px-5 py-2 rounded-lg font-bold text-sm shadow-lg shadow-slate-900/20 dark:shadow-none transition-all hover:-translate-y-0.5">Get Started</Link>
                                 </div>
                             )}
 
@@ -433,22 +453,6 @@ const Navbar = ({ theme, toggleTheme }) => {
                             {NAV_LINKS.map((link, idx) => (
                                 <div key={idx} className="border-b border-slate-50 dark:border-slate-800 pb-2">
                                     <div className="font-bold text-slate-800 dark:text-slate-200 py-2">{link.label}</div>
-                                    {link.type === 'mega_tabs' && (
-                                        <div className="pl-4 space-y-4 mt-2">
-                                            {link.categories.map((cat, cIdx) => (
-                                                <div key={cIdx}>
-                                                    <div className="text-xs font-bold text-blue-500 uppercase mb-2">{cat.name}</div>
-                                                    <div className="grid grid-cols-2 gap-2">
-                                                        {cat.items.map((item, iIdx) => (
-                                                            <Link to={item.link || '#'} key={iIdx} onClick={() => setIsMobileMenuOpen(false)} className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded">
-                                                                {item.name}
-                                                            </Link>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
                                 </div>
                             ))}
                             {!isLoggedIn && (
@@ -465,7 +469,7 @@ const Navbar = ({ theme, toggleTheme }) => {
     );
 };
 
-// --- MAIN APP ---
+// --- APP & LAYOUT ---
 const Layout = ({ children, theme, toggleTheme }) => {
     const location = useLocation();
     const hideNavbar = location.pathname.startsWith('/admin');
@@ -481,25 +485,57 @@ function App() {
   const isLoggedIn = !!localStorage.getItem('access_token');
   const { theme, toggleTheme } = useTheme();
 
+  // FIX: Force re-validation
+  useEffect(() => {
+    const handleFocus = () => {
+        const publicPaths = [
+            '/', '/login', '/register', '/forgot-password', 
+            '/store'
+        ].includes(window.location.pathname) || 
+        window.location.pathname.startsWith('/category/') ||
+        window.location.pathname.startsWith('/course/') ||
+        window.location.pathname.startsWith('/defence/') ||
+        window.location.pathname.startsWith('/teaching/') ||
+        window.location.pathname.startsWith('/engineering/') ||
+        window.location.pathname.startsWith('/medical/') ||
+        window.location.pathname.startsWith('/password-reset');
+
+        const hasToken = !!localStorage.getItem('access_token');
+        if (!isPublic && !hasToken) window.location.href = '/login';
+    };
+    window.addEventListener('pageshow', handleFocus);
+    return () => window.removeEventListener('pageshow', handleFocus);
+  }, []);
+
   return (
     <Router>
         <Layout theme={theme} toggleTheme={toggleTheme}>
             <Routes>
-                {/* Routes remain the same as before */}
+                {/* 1. PUBLIC ROUTES */}
                 <Route path="/" element={<LandingPage />} />
+                
+                {/* Public Course Pages */}
                 <Route path="/defence/agniveer" element={<AgniveerPage />} />
                 <Route path="/teaching/bpsc_tre" element={<BpscTrePage />} />
                 <Route path="/course/:category/:courseId" element={<AgniveerPage />} />
                 <Route path="/category/:categoryId" element={<CategoryPage />} />
+                
+                {/* Store */}
                 <Route path="/store" element={<CourseStorePage />} /> 
 
+                {/* 2. PROTECTED ROUTES */}
                 <Route path="/courses" element={<PrivateRoute><CourseList /></PrivateRoute>} />
                 <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
                 <Route path="/exam/:examId" element={<PrivateRoute><ExamPage /></PrivateRoute>} />
                 <Route path="/topic/:topicId/notes" element={<PrivateRoute><NotesPage /></PrivateRoute>} />
                 <Route path="/chapter/:chapterId/notes" element={<PrivateRoute><NotesPage /></PrivateRoute>} />
-                <Route path="/purchases" element={<PrivateRoute><Navigate to="/dashboard" /></PrivateRoute>} />
                 
+                {/* Profile Placeholders */}
+                <Route path="/purchases" element={<PrivateRoute><Navigate to="/dashboard" /></PrivateRoute>} />
+                <Route path="/profile" element={<PrivateRoute><Navigate to="/dashboard" /></PrivateRoute>} />
+                <Route path="/help" element={<PrivateRoute><Navigate to="/dashboard" /></PrivateRoute>} />
+
+                {/* 3. ADMIN ROUTES */}
                 <Route path="/admin-portal" element={<AdminLoginPage />} />
                 <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
                 <Route path="/admin-generator" element={<AdminRoute><AdminGeneratorPage /></AdminRoute>} />
@@ -507,6 +543,7 @@ function App() {
                 <Route path="/admin-notes-editor" element={<AdminRoute><AdminNotesEditorPage /></AdminRoute>} />
                 <Route path="/admin-ads" element={<AdminRoute><AdminAdManagerPage /></AdminRoute>} /> 
 
+                {/* 4. AUTH ROUTES */}
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />

@@ -5,7 +5,7 @@ import {
     CreditCard, HelpCircle, GraduationCap, Sun, Moon, Menu, X, Search,
     Atom, Stethoscope, Building2, Scale, Briefcase, Globe, Code, 
     Calculator, Landmark, Gavel, Plane, Microscope, PenTool, TrendingUp, 
-    FileText, Monitor, Cpu, Trophy, CheckCircle, Users, Zap // FIX: Added Users and Zap (which was missing)
+    FileText, Monitor, Cpu, Trophy, CheckCircle, Users, Zap
 } from 'lucide-react';
 import { useTheme } from './hooks/useTheme';
 
@@ -43,6 +43,7 @@ import GatePage from './pages/courses/engineering/GatePage';
 import NeetPage from './pages/courses/medical/NeetPage';
 import CtetPage from './pages/courses/teaching/CtetPage';
 import UgcNetPage from './pages/courses/teaching/UgcNetPage';
+
 
 // --- DATA: NAV LINKS (The Mega Menu Structure) ---
 const NAV_LINKS = [
@@ -326,11 +327,23 @@ const ProfileMenu = ({ handleLogout }) => {
                         <p className="text-sm font-bold text-slate-900 dark:text-white">Student Account</p>
                     </div>
                     <div className="p-2 space-y-1">
-                        <button onClick={() => handleNav('/dashboard')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-left"><LayoutDashboard size={16} className="text-blue-500"/> Dashboard</button>
-                        <button onClick={() => handleNav('/courses?mode=enrolled')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-left"><BookOpen size={16} className="text-emerald-500"/> My Library</button>
+                        <button onClick={() => handleNav('/dashboard')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-left">
+                            <LayoutDashboard size={16} className="text-blue-500"/> Dashboard
+                        </button>
+                        <button onClick={() => handleNav('/courses?mode=enrolled')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-left">
+                            <BookOpen size={16} className="text-emerald-500"/> My Library
+                        </button>
+                        <button onClick={() => handleNav('/purchases')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-left">
+                            <CreditCard size={16} className="text-purple-500"/> My Purchases
+                        </button>
                     </div>
                     <div className="p-2 border-t border-slate-100 dark:border-slate-800">
-                        <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-left"><LogOut size={16} /> Logout</button>
+                        <button onClick={() => handleNav('/help')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-left">
+                            <HelpCircle size={16} className="text-slate-400"/> Help & Support
+                        </button>
+                        <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-left">
+                            <LogOut size={16} /> Logout
+                        </button>
                     </div>
                 </div>
             )}
@@ -344,7 +357,6 @@ const Navbar = ({ theme, toggleTheme }) => {
     const location = useLocation();
     const isLoggedIn = !!localStorage.getItem('access_token');
     
-    // UI State
     const [activeDropdown, setActiveDropdown] = useState(null);
     const [activeTab, setActiveTab] = useState(0);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -375,7 +387,7 @@ const Navbar = ({ theme, toggleTheme }) => {
                                     <ArrowLeft size={20} />
                                 </button>
                             )}
-                            <Link to="/" className="flex items-center gap-2 cursor-pointer">
+                            <Link to={isLoggedIn ? "/dashboard" : "/"} className="flex items-center gap-2 cursor-pointer">
                                 <div className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 p-2 rounded-lg transition-colors"><GraduationCap size={24} /></div>
                                 <span className="font-black text-2xl tracking-tighter text-slate-900 dark:text-white"><span className="text-blue-600">Bit</span>byBit</span>
                             </Link>
@@ -430,8 +442,8 @@ const Navbar = ({ theme, toggleTheme }) => {
                             {isLoggedIn ? (
                                 <ProfileMenu handleLogout={handleLogout} />
                             ) : (
-                                <div className="hidden sm:flex items-center gap-3">
-                                    <Link to="/login" className="text-slate-600 dark:text-slate-300 font-bold hover:text-blue-600 px-3 py-2">Login</Link>
+                                <div className="flex items-center gap-3">
+                                    <Link to="/login" className="text-slate-600 dark:text-slate-300 font-bold hover:text-blue-600 px-3 py-2 hidden sm:block">Login</Link>
                                     <Link to="/register" className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 px-5 py-2 rounded-lg font-bold text-sm shadow-lg shadow-slate-900/20 dark:shadow-none transition-all hover:-translate-y-0.5">Get Started</Link>
                                 </div>
                             )}
@@ -449,7 +461,7 @@ const Navbar = ({ theme, toggleTheme }) => {
                 {/* Mobile Drawer */}
                 {isMobileMenuOpen && (
                     <div className="lg:hidden bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 absolute w-full left-0 shadow-xl h-screen overflow-y-auto pb-20">
-                        <div className="p-4 space-y-4">
+                        <div className="p-4 space-y-2">
                             {NAV_LINKS.map((link, idx) => (
                                 <div key={idx} className="border-b border-slate-50 dark:border-slate-800 pb-2">
                                     <div className="font-bold text-slate-800 dark:text-slate-200 py-2">{link.label}</div>
@@ -467,6 +479,18 @@ const Navbar = ({ theme, toggleTheme }) => {
             </nav>
         </>
     );
+};
+
+// --- ROUTE PROTECTION COMPONENTS ---
+// NOTE: These are defined globally to be accessible by the Routes component.
+const PrivateRoute = ({ children }) => {
+    const token = localStorage.getItem('access_token');
+    return token ? children : <Navigate to="/login" />;
+};
+
+const AdminRoute = ({ children }) => {
+    const token = localStorage.getItem('access_token');
+    return token ? children : <Navigate to="/admin-portal" />;
 };
 
 // --- APP & LAYOUT ---
@@ -488,7 +512,7 @@ function App() {
   // FIX: Force re-validation
   useEffect(() => {
     const handleFocus = () => {
-        const publicPaths = [
+        const isPublic = [
             '/', '/login', '/register', '/forgot-password', 
             '/store'
         ].includes(window.location.pathname) || 
@@ -504,7 +528,11 @@ function App() {
         if (!isPublic && !hasToken) window.location.href = '/login';
     };
     window.addEventListener('pageshow', handleFocus);
-    return () => window.removeEventListener('pageshow', handleFocus);
+    window.addEventListener('popstate', handleFocus);
+    return () => {
+        window.removeEventListener('pageshow', handleFocus);
+        window.removeEventListener('popstate', handleFocus);
+    };
   }, []);
 
   return (
@@ -514,13 +542,27 @@ function App() {
                 {/* 1. PUBLIC ROUTES */}
                 <Route path="/" element={<LandingPage />} />
                 
-                {/* Public Course Pages */}
+                {/* Public Course Pages (All Categories) */}
                 <Route path="/defence/agniveer" element={<AgniveerPage />} />
+                <Route path="/defence/nda" element={<NdaPage />} />
+                <Route path="/defence/cds" element={<CdsPage />} />
+                <Route path="/defence/afcat" element={<AfcatPage />} />
+                
+                <Route path="/civil-services/upsc" element={<UpscPage />} />
+                <Route path="/civil-services/bpsc" element={<BpscPage />} />
+
+                <Route path="/engineering/jee" element={<JeePage />} />
+                <Route path="/engineering/gate" element={<GatePage />} />
+
+                <Route path="/medical/neet" element={<NeetPage />} />
+
                 <Route path="/teaching/bpsc_tre" element={<BpscTrePage />} />
+                <Route path="/teaching/ctet" element={<CtetPage />} />
+                <Route path="/teaching/ugc_net" element={<UgcNetPage />} />
+
+                {/* Dynamic & Store Pages */}
                 <Route path="/course/:category/:courseId" element={<AgniveerPage />} />
                 <Route path="/category/:categoryId" element={<CategoryPage />} />
-                
-                {/* Store */}
                 <Route path="/store" element={<CourseStorePage />} /> 
 
                 {/* 2. PROTECTED ROUTES */}

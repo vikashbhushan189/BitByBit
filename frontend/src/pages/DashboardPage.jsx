@@ -4,7 +4,7 @@ import api from '../api/axios';
 import { 
     Layout, BookOpen, User, LogOut, ChevronRight, ShoppingCart, 
     Flame, Zap, PlayCircle, Trophy, MoreVertical, Star, Shield, 
-    Clock, CheckCircle, AlertTriangle, Menu, X, TrendingUp // <--- ADDED TrendingUp
+    Clock, CheckCircle, AlertTriangle, Menu, X, TrendingUp
 } from 'lucide-react';
 
 const DashboardPage = () => {
@@ -22,12 +22,14 @@ const DashboardPage = () => {
     // UI State
     const [loading, setLoading] = useState(true);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    
+    // Sidebar State: Closed by default on mobile, Open on desktop
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false); 
     const [showBatchMenu, setShowBatchMenu] = useState(false);
 
     const navigate = useNavigate();
 
-    // --- INITIAL LOAD (OPTIMIZED) ---
+    // --- INITIAL LOAD ---
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
@@ -50,11 +52,8 @@ const DashboardPage = () => {
 
             } catch (err) {
                 console.error("Dashboard Load Error:", err);
-                // Keep loading state true if 500 happens to show the skeleton or handle error
-                setLoading(false); 
             } finally {
-                // We let the skeleton render even if the fetch fails, preventing the blank screen
-                if (!activeCourse) setLoading(false); 
+                setLoading(false);
             }
         };
         fetchDashboardData();
@@ -83,44 +82,28 @@ const DashboardPage = () => {
 
     const lastActivity = attempts.length > 0 ? attempts[0] : null;
 
-    // --- SKELETON LOADER COMPONENT ---
-    if (loading) return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans flex">
-            {/* Sidebar Skeleton */}
-            <aside className="hidden lg:block w-64 border-r border-slate-200 dark:border-slate-800 p-6 space-y-6">
-                <div className="h-8 w-32 bg-slate-200 dark:bg-slate-800 rounded animate-pulse"></div>
-                <div className="space-y-3">
-                    {[1,2,3,4].map(i => <div key={i} className="h-10 w-full bg-slate-100 dark:bg-slate-900 rounded animate-pulse"></div>)}
-                </div>
-            </aside>
-            {/* Main Content Skeleton */}
-            <div className="flex-1 p-8 space-y-8">
-                <div className="flex justify-between">
-                    <div className="h-10 w-48 bg-slate-200 dark:bg-slate-800 rounded animate-pulse"></div>
-                    <div className="flex gap-4">
-                        <div className="h-10 w-10 rounded-full bg-slate-200 dark:bg-slate-800 animate-pulse"></div>
-                        <div className="h-10 w-10 rounded-full bg-slate-200 dark:bg-slate-800 animate-pulse"></div>
-                    </div>
-                </div>
-                {/* Hero Skeleton */}
-                <div className="h-64 w-full bg-slate-200 dark:bg-slate-800 rounded-3xl animate-pulse"></div>
-                {/* Grid Skeleton */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                     {[1,2,3].map(i => <div key={i} className="h-32 bg-slate-100 dark:bg-slate-900 rounded-2xl animate-pulse"></div>)}
-                </div>
-            </div>
-        </div>
-    );
-
-    // --- MAIN RENDER ---
+    // --- RENDER ---
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-200 flex">
             
+            {/* --- SIDEBAR OVERLAY (Mobile) --- */}
+            {isSidebarOpen && (
+                <div 
+                    className="fixed inset-0 z-40 bg-black/50 lg:hidden backdrop-blur-sm"
+                    onClick={() => setIsSidebarOpen(false)}
+                ></div>
+            )}
+
             {/* --- SIDEBAR --- */}
             <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:relative lg:translate-x-0`}>
                 <div className="p-6 h-full flex flex-col">
-                    <div className="flex items-center gap-2 mb-10 text-blue-600 dark:text-white font-black text-2xl">
-                        <Zap className="fill-current" /> BitByBit
+                    <div className="flex items-center justify-between mb-10">
+                        <div className="flex items-center gap-2 text-blue-600 dark:text-white font-black text-2xl">
+                            <Zap className="fill-current" /> BitByBit
+                        </div>
+                        <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden text-slate-500 hover:text-slate-700">
+                            <X size={24} />
+                        </button>
                     </div>
 
                     <nav className="space-y-2 flex-1">
@@ -146,31 +129,35 @@ const DashboardPage = () => {
                 
                 {/* HEADER */}
                 <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 sticky top-0 z-40">
-                    <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="lg:hidden p-2 text-slate-500"><Menu/></button>
-                    
-                    <div className="hidden md:flex items-center gap-2">
-                        <span className="text-slate-400 text-sm font-medium">Current:</span>
-                        <div className="relative group">
-                            <button 
-                                onClick={() => setShowBatchMenu(!showBatchMenu)}
-                                className="flex items-center gap-2 font-bold text-slate-800 dark:text-white hover:text-blue-600 transition-colors"
-                            >
-                                {activeCourse?.title || "No Active Batch"} <ChevronRight size={16} className="rotate-90"/>
-                            </button>
-                            {showBatchMenu && enrolledCourses.length > 0 && (
-                                <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-2 z-50">
-                                    {enrolledCourses.map(c => (
-                                        <button 
-                                            key={c.id} 
-                                            onClick={() => { setActiveCourse(c); setShowBatchMenu(false); }}
-                                            className={`w-full text-left p-2 rounded-lg text-sm font-medium ${activeCourse?.id === c.id ? 'bg-blue-50 text-blue-600' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
-                                        >
-                                            {c.title}
-                                        </button>
-                                    ))}
-                                    <Link to="/store" className="block p-2 text-center text-xs font-bold text-blue-600 border-t border-slate-100 dark:border-slate-700 mt-1">+ Add New</Link>
-                                </div>
-                            )}
+                    <div className="flex items-center gap-4">
+                        <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 -ml-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                            <Menu size={24}/>
+                        </button>
+                        
+                        <div className="hidden md:flex items-center gap-2">
+                            <span className="text-slate-400 text-sm font-medium">Current:</span>
+                            <div className="relative group">
+                                <button 
+                                    onClick={() => setShowBatchMenu(!showBatchMenu)}
+                                    className="flex items-center gap-2 font-bold text-slate-800 dark:text-white hover:text-blue-600 transition-colors"
+                                >
+                                    {activeCourse?.title || "No Active Batch"} <ChevronRight size={16} className="rotate-90"/>
+                                </button>
+                                {showBatchMenu && enrolledCourses.length > 0 && (
+                                    <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-2 z-50">
+                                        {enrolledCourses.map(c => (
+                                            <button 
+                                                key={c.id} 
+                                                onClick={() => { setActiveCourse(c); setShowBatchMenu(false); }}
+                                                className={`w-full text-left p-2 rounded-lg text-sm font-medium ${activeCourse?.id === c.id ? 'bg-blue-50 text-blue-600' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
+                                            >
+                                                {c.title}
+                                            </button>
+                                        ))}
+                                        <Link to="/store" className="block p-2 text-center text-xs font-bold text-blue-600 border-t border-slate-100 dark:border-slate-700 mt-1">+ Add New</Link>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -191,7 +178,7 @@ const DashboardPage = () => {
                                 </div>
                             </button>
                             {isProfileOpen && (
-                                <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                                <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-in fade-in slide-in-from-top-2 z-50">
                                     <div className="p-4 border-b border-slate-100 dark:border-slate-800">
                                         <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{user.email}</p>
                                     </div>
@@ -208,43 +195,71 @@ const DashboardPage = () => {
 
                 {/* SCROLLABLE CONTENT */}
                 <main className="p-6 md:p-10 overflow-y-auto pb-32">
-                    {activeCourse ? (
-                        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden mb-10 animate-in fade-in zoom-in duration-500">
-                            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
-                                <div className="space-y-4 max-w-2xl">
-                                    <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border border-white/20">
-                                        <Shield size={12}/> Active Batch
-                                    </div>
-                                    <h1 className="text-3xl md:text-4xl font-black leading-tight">{activeCourse.title}</h1>
-                                    <div className="w-full bg-black/20 rounded-full h-3 max-w-md backdrop-blur-sm overflow-hidden">
-                                        <div className="bg-emerald-400 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${progress}%` }}></div>
-                                    </div>
-                                    <div className="flex justify-between max-w-md text-xs font-medium text-blue-100">
-                                        <span>{progress}% Completed</span>
-                                        <span>Keep going!</span>
-                                    </div>
-                                </div>
-                                <Link to={`/courses?mode=enrolled`} className="bg-white text-blue-700 px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-blue-50 transition-all flex items-center gap-2">
-                                    <BookOpen size={20}/> Go to Content
-                                </Link>
-                            </div>
-                            <BookOpen className="absolute right-[-20px] bottom-[-40px] text-white opacity-10 w-64 h-64 rotate-12" />
-                        </div>
-                    ) : (
-                        <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-300 dark:border-slate-700">
-                            <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">No Active Courses</h2>
-                            <Link to="/store" className="text-blue-600 hover:underline">Explore Store</Link>
+                    
+                    {/* CASE 1: LOADING */}
+                    {loading && (
+                        <div className="flex flex-col items-center justify-center py-20">
+                            <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                            <p className="text-slate-500 font-medium">Loading your learning space...</p>
                         </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <StatBox label="Mock Tests Taken" value={attempts.length} icon={<CheckCircle/>} color="emerald" />
-                        <StatBox label="Avg. Score" value={activeCourse ? "72%" : "-"} icon={<TrendingUp/>} color="purple" />
-                        <StatBox label="Hours Spent" value="12.5" icon={<Clock/>} color="orange" />
-                    </div>
+                    {/* CASE 2: EMPTY STATE (No Courses) */}
+                    {!loading && enrolledCourses.length === 0 && (
+                         <div className="max-w-2xl mx-auto text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 p-8">
+                            <div className="bg-slate-50 dark:bg-slate-800 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300 dark:text-slate-600">
+                                <BookOpen size={40} />
+                            </div>
+                            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">No Active Courses</h2>
+                            <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-md mx-auto">
+                                You haven't enrolled in any batches yet. Visit the store to start your journey.
+                            </p>
+                            <Link 
+                                to="/store" 
+                                className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all"
+                            >
+                                <ShoppingCart size={20}/> Explore Course Store
+                            </Link>
+                        </div>
+                    )}
+
+                    {/* CASE 3: ACTIVE COURSE DASHBOARD */}
+                    {!loading && activeCourse && (
+                        <>
+                            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden mb-10 animate-in fade-in zoom-in duration-500">
+                                <div className="relative z-10 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
+                                    <div className="space-y-4 max-w-2xl">
+                                        <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border border-white/20">
+                                            <Shield size={12}/> Active Batch
+                                        </div>
+                                        <h1 className="text-3xl md:text-4xl font-black leading-tight">{activeCourse.title}</h1>
+                                        <div className="w-full bg-black/20 rounded-full h-3 max-w-md backdrop-blur-sm overflow-hidden">
+                                            <div className="bg-emerald-400 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${progress}%` }}></div>
+                                        </div>
+                                        <div className="flex justify-between max-w-md text-xs font-medium text-blue-100">
+                                            <span>{progress}% Completed</span>
+                                            <span>Keep going!</span>
+                                        </div>
+                                    </div>
+                                    <Link to={`/courses?mode=enrolled`} className="bg-white text-blue-700 px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-blue-50 transition-all flex items-center gap-2">
+                                        <BookOpen size={20}/> Go to Content
+                                    </Link>
+                                </div>
+                                <BookOpen className="absolute right-[-20px] bottom-[-40px] text-white opacity-10 w-64 h-64 rotate-12" />
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <StatBox label="Mock Tests Taken" value={attempts.length} icon={<CheckCircle/>} color="emerald" />
+                                <StatBox label="Avg. Score" value={activeCourse ? "72%" : "-"} icon={<TrendingUp/>} color="purple" />
+                                <StatBox label="Hours Spent" value="12.5" icon={<Clock/>} color="orange" />
+                            </div>
+                        </>
+                    )}
+
                 </main>
             </div>
 
+            {/* --- FLOATING RESUME BAR --- */}
             {lastActivity && (
                 <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-3xl px-6 z-50 animate-in slide-in-from-bottom-6 duration-700">
                     <div className="bg-slate-900 text-white p-4 rounded-2xl shadow-2xl border border-slate-700 flex items-center justify-between gap-4">

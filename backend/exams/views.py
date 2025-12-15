@@ -1,24 +1,25 @@
-from rest_framework import viewsets, permissions, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
+import random
+import csv
+import codecs
+from io import TextIOWrapper
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db import transaction
-import csv
-import io
-import codecs
-from io import TextIOWrapper
-import chardet
-from .models import Course, Exam, ExamAttempt, Question, Option, StudentResponse, Topic, Chapter, Subject, AdBanner, UserSubscription
+from django.conf import settings # Import settings to check DEBUG mode
+
+# DRF & JWT Imports
+from rest_framework import viewsets, permissions, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+# Project Imports
+from .models import Course, Exam, ExamAttempt, Question, Option, StudentResponse, Topic, Chapter, Subject, AdBanner, UserSubscription, User, OTP
 from .serializers import CourseSerializer, ExamSerializer, ExamAttemptSerializer, TopicSerializer, AdBannerSerializer, ChapterSerializer
 from .ai_service import generate_questions_from_text, generate_question_from_image
 from .permissions import IsPaidSubscriberOrAdmin
-
-import random
-from rest_framework_simplejwt.tokens import RefreshToken
-from .models import User, OTP
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 # --- CUSTOM PASSWORD LOGIN (With Single Device Check) ---
@@ -41,6 +42,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
+# --- OTP LOGIN VIEWS ---
 class AuthViewSet(viewsets.ViewSet):
     permission_classes = [permissions.AllowAny]
 
@@ -50,13 +52,18 @@ class AuthViewSet(viewsets.ViewSet):
         if not phone:
             return Response({"error": "Phone number required"}, status=400)
         
-        # Generate 4-digit OTP
         otp_code = str(random.randint(1000, 9999))
         OTP.objects.create(phone_number=phone, otp_code=otp_code)
         
-        # In production, integrate SMS Gateway (Twilio/Fast2SMS) here.
-        # For now, print to console.
         print(f"XXX OTP for {phone} is: {otp_code} XXX")
+        
+        # DEV MODE CONVENIENCE: Return OTP in response so you can login easily
+        if settings.DEBUG:
+            return Response({
+                "status": "success", 
+                "message": f"OTP sent to {phone}",
+                "debug_otp": otp_code  # <--- COPY THIS FROM NETWORK TAB OR ALERT
+            })
         
         return Response({"status": "success", "message": "OTP sent successfully"})
 
@@ -64,41 +71,31 @@ class AuthViewSet(viewsets.ViewSet):
     def verify_otp(self, request):
         phone = request.data.get('phone')
         otp_input = request.data.get('otp')
-        force_login = request.data.get('force_login', False) # User confirmed logout elsewhere
+        force_login = request.data.get('force_login', False)
         
         # 1. Verify OTP
         otp_record = OTP.objects.filter(phone_number=phone, otp_code=otp_input).last()
         if not otp_record or not otp_record.is_valid():
             return Response({"error": "Invalid or expired OTP"}, status=400)
         
-        # 2. Get or Create User
+        # 2. Get or Create User (Auto-Registration for Phone Users)
         user, created = User.objects.get_or_create(username=phone, defaults={'phone_number': phone})
         
-        # 3. Single Device Check (Skip if forcing)
-        # We check if token_version is 0 (never logged in) or force_login is True
-        # If user has logged in before and isn't forcing, we warn them.
-        # But actually, standard flow is:
-        # If we want to strictly enforce, we just increment version on EVERY login.
-        # This automatically logs out others.
-        # The user requested: "Asked if wants to logout from other devices".
-        
-        if not force_login and not created and user.last_login:
-             # If user exists and has logged in before, we simulate a conflict check
-             # Ideally we'd check active sessions, but for stateless JWT, we assume "active"
+        # 3. Single Device Check
+        if not force_login and not created and user.token_version > 0:
              return Response({
                  "status": "conflict", 
-                 "message": "You are logged in on another device. Logout from there?",
+                 "message": "You are logged in on another device. Do you want to logout from there?",
                  "requires_confirmation": True
              }, status=409)
 
-        # 4. Perform Login (Invalidate old sessions)
-        user.token_version += 1 # This kills all old tokens
+        # 4. Perform Login
+        user.token_version += 1
         user.last_login = timezone.now()
         user.save()
         
-        # Generate Token with Version
         refresh = RefreshToken.for_user(user)
-        refresh['token_version'] = user.token_version # Embed version in token
+        refresh['token_version'] = user.token_version
         
         return Response({
             "status": "success",
@@ -106,7 +103,7 @@ class AuthViewSet(viewsets.ViewSet):
             "refresh": str(refresh),
             "role": "admin" if user.is_superuser else "student"
         })
-
+    
 
 # --- STUDENT VIEWS ---
 class CourseViewSet(viewsets.ReadOnlyModelViewSet):

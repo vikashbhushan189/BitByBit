@@ -1,6 +1,6 @@
 Django>=5.0,<6.0
 djangorestframework
-django-rest-framework-social-oauth2==2.1.2
+django-rest-framework-social-oauth2==1.2.0
 social-auth-app-django==5.2.0
 django-cors-headers
 psycopg2-binary

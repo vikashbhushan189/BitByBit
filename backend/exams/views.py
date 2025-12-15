@@ -365,28 +365,39 @@ class BulkNotesViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'])
     def upload_csv(self, request):
+        # DEBUG: Print what we received
+        print(f"DEBUG: upload_csv called. User: {request.user}")
+        print(f"DEBUG: FILES keys: {request.FILES.keys()}")
+
         file_obj = request.FILES.get('file')
         if not file_obj: 
-            return Response({"error": "No file uploaded"}, status=400)
+            return Response({"error": "No file uploaded. Key 'file' missing in request."}, status=400)
 
-        if not file_obj.name.endswith('.csv'):
-            return Response({"error": "File must be a CSV"}, status=400)
+        # Case-insensitive check
+        if not file_obj.name.lower().endswith('.csv'):
+            return Response({"error": f"File '{file_obj.name}' is not a CSV"}, status=400)
 
         try:
-            # 1. Stream & Decode
-            decoded_file = codecs.iterdecode(file_obj, 'utf-8-sig')
+            # 1. Detect Encoding
+            raw_data = file_obj.read()
+            result = chardet.detect(raw_data)
+            encoding = result['encoding'] or 'utf-8'
+            file_obj.seek(0)
+            
+            # 2. Stream & Decode
+            decoded_file = raw_data.decode(encoding, errors='replace').splitlines()
             reader = csv.DictReader(decoded_file)
             
-            # 2. Smart Header Map (Now includes "Paper" or "Section")
+            # 3. Map Headers
             header_map = {}
             if reader.fieldnames:
                 for field in reader.fieldnames:
                     clean = field.strip().lower()
                     if 'course' in clean: header_map['course'] = field
-                    # Look for "Paper", "Section", or "Part"
-                    elif 'paper' in clean or 'section' in clean or 'part' in clean: header_map['section'] = field
+                    elif 'paper' in clean or 'section' in clean: header_map['section'] = field
                     elif 'subject' in clean: header_map['subject'] = field
                     elif 'chapter' in clean: header_map['chapter'] = field
+                    elif 'topic' in clean: header_map['topic'] = field
                     elif 'note' in clean: header_map['notes'] = field 
 
             updated_count = 0
@@ -394,25 +405,20 @@ class BulkNotesViewSet(viewsets.ViewSet):
             
             for row in reader:
                 c_title = row.get(header_map.get('course'), '').strip()
-                # Get Section/Paper (Default to "Main" if missing)
                 sec_title = row.get(header_map.get('section'), 'Main').strip() 
                 s_title = row.get(header_map.get('subject'), '').strip()
                 ch_title = row.get(header_map.get('chapter'), '').strip()
                 notes = row.get(header_map.get('notes'), '').strip()
 
-                if not (c_title and s_title and ch_title):
-                    continue
+                if not (c_title and s_title and ch_title): continue
 
                 course, _ = Course.objects.get_or_create(title=c_title)
                 
-                # Update Subject with Section info
                 subject, _ = Subject.objects.get_or_create(
                     title=s_title, 
                     course=course,
                     defaults={'section': sec_title} 
                 )
-                
-                # If subject exists but section name is different/updated in CSV, update it
                 if subject.section != sec_title and sec_title:
                     subject.section = sec_title
                     subject.save()
@@ -432,7 +438,7 @@ class BulkNotesViewSet(viewsets.ViewSet):
 
         except Exception as e:
             print(f"CSV ERROR: {e}")
-            return Response({"error": f"Server Error: {str(e)}"}, status=500)   
+            return Response({"error": f"Server Error: {str(e)}"}, status=500)
 
 class AdBannerViewSet(viewsets.ModelViewSet):
     queryset = AdBanner.objects.filter(is_active=True).order_by('-created_at')

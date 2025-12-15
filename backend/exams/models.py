@@ -4,11 +4,9 @@ from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 import uuid
 
-
-
 # --- 1. CUSTOM USER MODEL ---
 class User(AbstractUser):
-    phone_number = models.CharField(max_length=15, unique=True, blank=True, null=True) # Made optional for existing users/admin
+    phone_number = models.CharField(max_length=15, unique=True, blank=True, null=True)
     # This field is the key to Single Device Login. 
     # Incrementing this invalidates ALL old tokens.
     token_version = models.IntegerField(default=0) 
@@ -25,6 +23,9 @@ class User(AbstractUser):
         blank=True
     )
 
+    class Meta:
+        app_label = 'exams'  # <--- CRITICAL FIX: Explicitly set app_label
+
     def __str__(self):
         return self.phone_number or self.username
 
@@ -34,60 +35,51 @@ class OTP(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     is_verified = models.BooleanField(default=False)
 
+    class Meta:
+        app_label = 'exams'
+
     def is_valid(self):
         # Valid for 5 minutes
         return (timezone.now() - self.created_at).total_seconds() < 300
-    
-# --- 1. Course Hierarchy ---
+
+# ... (Course, Subject, Chapter, Topic, Exam, etc.) ...
 class Course(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     is_paid = models.BooleanField(default=False, help_text="If checked, requires subscription")
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    
-    def __str__(self):
-        return self.title
+    class Meta: app_label = 'exams'
+    def __str__(self): return self.title
 
 class Subject(models.Model):
     course = models.ForeignKey(Course, related_name='subjects', on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
-    # Group subjects into sections (e.g., "Paper 1", "Paper 2")
-    section = models.CharField(
-        max_length=100, 
-        default="Main", 
-        help_text="e.g. 'Paper 1', 'Technical', 'General Studies'"
-    )
+    section = models.CharField(max_length=100, default="Main", help_text="e.g. 'Paper 1'")
     order = models.IntegerField(default=1)
-
-    class Meta:
+    class Meta: 
         ordering = ['order']
-    
-    def __str__(self):
-        return f"{self.course.title} - {self.section} - {self.title}"
+        app_label = 'exams'
+    def __str__(self): return f"{self.course.title} - {self.section} - {self.title}"
 
 class Chapter(models.Model):
     subject = models.ForeignKey(Subject, related_name='chapters', on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
     order = models.IntegerField(default=1)
-    
-    # MOVED: Notes are now here
     study_notes = models.TextField(blank=True, help_text="Markdown/HTML content")
-
-    class Meta:
+    class Meta: 
         ordering = ['order']
-
-    def __str__(self):
-        return f"{self.subject.title} - {self.title}"
+        app_label = 'exams'
+    def __str__(self): return f"{self.subject.title} - {self.title}"
 
 class Topic(models.Model):
-    # Keeping this model temporarily to avoid migration errors, but it's deprecated.
     chapter = models.ForeignKey(Chapter, related_name='topics', on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
     order = models.IntegerField(default=1)
-    class Meta: ordering = ['order']
+    class Meta: 
+        ordering = ['order']
+        app_label = 'exams'
     def __str__(self): return self.title
 
-# --- 2. Exam System ---
 class Exam(models.Model):
     EXAM_TYPES = (
         ('TOPIC_QUIZ', 'Topic Quiz Card'),
@@ -95,49 +87,40 @@ class Exam(models.Model):
         ('MOCK_FULL', 'Full Length Mock'),
         ('PYQ', 'Previous Year Question'),
     )
-    
     title = models.CharField(max_length=255)
     exam_type = models.CharField(max_length=20, choices=EXAM_TYPES)
-    
-    
-    # NEW: Direct Link to Chapter
     chapter = models.OneToOneField(Chapter, null=True, blank=True, on_delete=models.SET_NULL, related_name='quiz')
-    # Old Links (Keep for safety or Subject/Course tests)
     topic = models.OneToOneField(Topic, null=True, blank=True, on_delete=models.SET_NULL, related_name='quiz_legacy')
     subject = models.ForeignKey(Subject, null=True, blank=True, on_delete=models.SET_NULL, related_name='tests')
     course = models.ForeignKey(Course, null=True, blank=True, on_delete=models.SET_NULL, related_name='mocks')
-
     duration_minutes = models.IntegerField(default=30)
     total_marks = models.IntegerField(default=100)
     negative_marking_ratio = models.FloatField(default=0.25)
-    
-    def __str__(self):
-        return f"{self.get_exam_type_display()} - {self.title}" 
+    class Meta: app_label = 'exams'
+    def __str__(self): return f"{self.get_exam_type_display()} - {self.title}"
 
 class Question(models.Model):
     exam = models.ForeignKey(Exam, related_name='questions', on_delete=models.CASCADE)
     text_content = models.TextField()
     marks = models.FloatField(default=1.0)
-    # NEW: Store the explanation
     explanation = models.TextField(blank=True, default="", help_text="Explanation for the correct answer")
-
-    def __str__(self):
-        return self.text_content[:50]
+    class Meta: app_label = 'exams'
+    def __str__(self): return self.text_content[:50]
     
 class Option(models.Model):
     question = models.ForeignKey(Question, related_name='options', on_delete=models.CASCADE)
     text = models.CharField(max_length=255)
     is_correct = models.BooleanField(default=False)
-
-    def __str__(self):
-        return self.text
+    class Meta: app_label = 'exams'
+    def __str__(self): return self.text
 
 class UserSubscription(models.Model):
-    # FIX: Use explicit string reference 'exams.User'
-    user = models.ForeignKey('exams.User', on_delete=models.CASCADE) 
+    # FIX: Use settings.AUTH_USER_MODEL to avoid lazy reference errors
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     active = models.BooleanField(default=True)
     purchase_date = models.DateTimeField(auto_now_add=True)
+    class Meta: app_label = 'exams'
 
 class AdBanner(models.Model):
     title = models.CharField(max_length=100)
@@ -148,19 +131,18 @@ class AdBanner(models.Model):
     bg_gradient_to = models.CharField(max_length=50, default="purple-600")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    class Meta: app_label = 'exams'
+    def __str__(self): return self.title
 
-    def __str__(self):
-        return self.title
-
-# --- 3. Progress Tracking ---
 class ExamAttempt(models.Model):
-    # FIX: Use explicit string reference 'exams.User'
-    user = models.ForeignKey('exams.User', on_delete=models.CASCADE, null=True, blank=True)
+    # FIX: Use settings.AUTH_USER_MODEL to avoid lazy reference errors
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     exam = models.ForeignKey(Exam, on_delete=models.CASCADE)
     start_time = models.DateTimeField(auto_now_add=True)
     submit_time = models.DateTimeField(null=True, blank=True)
     total_score = models.FloatField(default=0.0)
     is_completed = models.BooleanField(default=False)
+    class Meta: app_label = 'exams'
     def __str__(self): return f"{self.user} - {self.exam.title}"
 
 class StudentResponse(models.Model):
@@ -168,6 +150,6 @@ class StudentResponse(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     selected_option = models.ForeignKey(Option, null=True, blank=True, on_delete=models.SET_NULL)
     status = models.CharField(max_length=20, default='answered')
-
-    class Meta:
+    class Meta: 
         unique_together = ('attempt', 'question')
+        app_label = 'exams'

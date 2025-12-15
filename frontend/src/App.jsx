@@ -1,11 +1,18 @@
 import React, { useEffect, useState, useRef } from 'react'; 
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { 
-    ArrowLeft, Atom, BookOpen, Briefcase, Building2, Calculator, CheckCircle, 
-    ChevronDown, ChevronUp, Clock, Code, Cpu, CreditCard, FileText, Gavel, 
-    Globe, GraduationCap, HelpCircle, Landmark, LayoutDashboard, LogOut, 
-    Menu, Microscope, Monitor, Moon, PenTool, Plane, Scale, Search, 
-    Stethoscope, Sun, TrendingUp, Trophy, User, Users, X, Zap 
+    // Core Navigation & UI (Placed first)
+    LogOut, LayoutDashboard, BookOpen, ArrowLeft, User, ChevronDown, ChevronUp, 
+    Menu, X, Search, Sun, Moon, GraduationCap, Home, // ADDED HOME
+    
+    // Profile Menu Helpers
+    CreditCard, HelpCircle, 
+
+    // Mega Menu Icons (Grouped)
+    Atom, Stethoscope, Building2, Scale, Briefcase, Globe, Code, 
+    Calculator, Landmark, Gavel, Plane, Microscope, PenTool, TrendingUp, 
+    FileText, Monitor, Cpu, Trophy, CheckCircle, Users, Zap
+    
 } from 'lucide-react';
 import { useTheme } from './hooks/useTheme';
 
@@ -378,13 +385,23 @@ const Navbar = ({ theme, toggleTheme }) => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-20">
                         
-                        {/* LEFT: Logo & Back */}
+                        {/* LEFT: Logo & Back/Home Navigation */}
                         <div className="flex items-center gap-4">
+                            {/* Back Button */}
                             {showBackButton && (
                                 <button onClick={() => navigate(-1)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors" title="Go Back">
                                     <ArrowLeft size={20} />
                                 </button>
                             )}
+
+                            {/* Home Button (Always visible as a shortcut, hides when on '/') */}
+                            {location.pathname !== '/' && (
+                                <Link to="/" className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors" title="Go Home">
+                                    <Home size={20} />
+                                </Link>
+                            )}
+
+                            {/* Logo */}
                             <Link to={isLoggedIn ? "/dashboard" : "/"} className="flex items-center gap-2 cursor-pointer">
                                 <div className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 p-2 rounded-lg transition-colors"><GraduationCap size={24} /></div>
                                 <span className="font-black text-2xl tracking-tighter text-slate-900 dark:text-white"><span className="text-blue-600">Bit</span>byBit</span>

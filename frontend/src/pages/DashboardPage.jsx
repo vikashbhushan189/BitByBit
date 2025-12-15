@@ -135,7 +135,6 @@ const DashboardPage = () => {
                     </div>
 
                     <nav className="space-y-2 flex-1">
-                        <SidebarItem icon={<Home size={20}/>} label="Home" onClick={() => navigate('/')} /> {/* ADDED HOME BUTTON */}
                         <SidebarItem icon={<Layout size={20}/>} label="My Learning" active />
                         <SidebarItem icon={<ShoppingCart size={20}/>} label="Course Store" onClick={() => navigate('/store')} />
                         <SidebarItem icon={<Trophy size={20}/>} label="Leaderboard" />

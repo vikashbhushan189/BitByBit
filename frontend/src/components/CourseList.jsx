@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import api from '../api/axios';
 import { 
     BookOpen, ChevronRight, GraduationCap, FileText, Lock, 
-    PlayCircle, AlertCircle, Clock, Zap, BookMarked, Trophy 
+    PlayCircle, AlertCircle, Clock, Zap, BookMarked, Trophy, Layers 
 } from 'lucide-react';
 
 const CourseCard = ({ course, mode }) => {
@@ -15,7 +15,6 @@ const CourseCard = ({ course, mode }) => {
     const formatSubtitle = (prefix, details) => {
         const parts = [];
         if (prefix) parts.push(prefix);
-        // Only add if value exists to avoid "undefined Qs"
         if (details.question_count) parts.push(`${details.question_count} Qs`);
         if (details.total_marks) parts.push(`${details.total_marks} Marks`);
         if (details.duration_minutes) parts.push(`${details.duration_minutes} Mins`);
@@ -24,53 +23,58 @@ const CourseCard = ({ course, mode }) => {
 
     // --- DATA AGGREGATION ---
     
-    // 1. Notes
+    // 1. Notes (Added 'section')
     const notesData = course.subjects?.flatMap(sub => 
         sub.chapters?.filter(ch => ch.study_notes).map(ch => ({
             id: ch.id, 
             title: ch.title, 
-            subtitle: sub.title, // Just Subject Name for notes
+            subtitle: sub.title,
+            section: sub.section || "General", // Grouping Key
             type: 'note', 
             link: `/chapter/${ch.id}/notes`
         }))
     ) || [];
 
-    // 2. Chapter Quizzes
+    // 2. Chapter Quizzes (Added 'section')
     const chapterQuizData = course.subjects?.flatMap(sub => 
         sub.chapters?.filter(ch => ch.quiz_details).map(ch => ({
             id: ch.quiz_details.id, 
             title: ch.quiz_details.title || ch.title, 
             subtitle: formatSubtitle(sub.title, ch.quiz_details), 
+            section: sub.section || "General",
             type: 'quiz', 
             link: `/exam/${ch.quiz_details.id}`
         }))
     ) || [];
 
-    // 3. Subject Quizzes
+    // 3. Subject Quizzes (Added 'section')
     const subjectQuizData = course.subjects?.flatMap(sub => 
         sub.tests?.map(test => ({
             id: test.id, 
             title: test.title, 
             subtitle: formatSubtitle(sub.title, test), 
+            section: sub.section || "General",
             type: 'quiz', 
             link: `/exam/${test.id}`
         }))
     ) || [];
 
-    // 4. Mocks
+    // 4. Mocks (Global, no section usually, default to "Full Syllabus")
     const mockData = course.mocks?.map(m => ({
         id: m.id, 
         title: m.title, 
         subtitle: formatSubtitle("Full Syllabus", m), 
+        section: "Full Mock Tests",
         type: 'mock', 
         link: `/exam/${m.id}`
     })) || [];
 
-    // 5. PYQs
+    // 5. PYQs (Global)
     const pyqData = course.pyqs?.map(p => ({
         id: p.id, 
         title: p.title, 
         subtitle: formatSubtitle("Previous Year", p), 
+        section: "Previous Year Papers",
         type: 'pyq', 
         link: `/exam/${p.id}`
     })) || [];
@@ -84,29 +88,49 @@ const CourseCard = ({ course, mode }) => {
             </div>
         );
 
-        return (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {items.map((item, idx) => (
-                    <div key={idx} className="group relative bg-white border border-slate-200 rounded-xl p-4 hover:shadow-lg hover:border-blue-400 transition-all duration-300">
-                        <div className="flex justify-between items-start mb-3">
-                            <div className={`p-2 rounded-lg ${item.type === 'note' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600'}`}>
-                                {item.type === 'note' ? <FileText size={20}/> : <Clock size={20}/>}
-                            </div>
-                            {isLocked ? <Lock size={16} className="text-slate-400"/> : <div className="h-2 w-2 rounded-full bg-green-500"></div>}
-                        </div>
-                        
-                        <h4 className="font-bold text-slate-800 text-sm line-clamp-2 mb-1" title={item.title}>{item.title}</h4>
-                        <p className="text-xs text-slate-500 font-medium mb-4">{item.subtitle}</p>
+        // Group items by Section
+        const groupedItems = items.reduce((acc, item) => {
+            const sec = item.section;
+            if (!acc[sec]) acc[sec] = [];
+            acc[sec].push(item);
+            return acc;
+        }, {});
 
-                        {isLocked ? (
-                            <button disabled className="w-full py-2 rounded-lg bg-slate-100 text-slate-400 text-xs font-bold cursor-not-allowed">
-                                Locked
-                            </button>
-                        ) : (
-                            <Link to={item.link} className="block w-full py-2 rounded-lg bg-slate-900 text-white text-xs font-bold text-center group-hover:bg-blue-600 transition-colors">
-                                {item.type === 'note' ? 'Read Notes' : 'Start Test'}
-                            </Link>
-                        )}
+        return (
+            <div className="space-y-8">
+                {Object.keys(groupedItems).map((sectionTitle) => (
+                    <div key={sectionTitle}>
+                        {/* Section Header */}
+                        <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2 border-b border-slate-200 pb-2">
+                            <Layers size={14} /> {sectionTitle}
+                        </h3>
+                        
+                        {/* Grid for this Section */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {groupedItems[sectionTitle].map((item, idx) => (
+                                <div key={idx} className="group relative bg-white border border-slate-200 rounded-xl p-4 hover:shadow-lg hover:border-blue-400 transition-all duration-300">
+                                    <div className="flex justify-between items-start mb-3">
+                                        <div className={`p-2 rounded-lg ${item.type === 'note' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600'}`}>
+                                            {item.type === 'note' ? <FileText size={20}/> : <Clock size={20}/>}
+                                        </div>
+                                        {isLocked ? <Lock size={16} className="text-slate-400"/> : <div className="h-2 w-2 rounded-full bg-green-500"></div>}
+                                    </div>
+                                    
+                                    <h4 className="font-bold text-slate-800 text-sm line-clamp-2 mb-1" title={item.title}>{item.title}</h4>
+                                    <p className="text-xs text-slate-500 font-medium mb-4">{item.subtitle}</p>
+
+                                    {isLocked ? (
+                                        <button disabled className="w-full py-2 rounded-lg bg-slate-100 text-slate-400 text-xs font-bold cursor-not-allowed">
+                                            Locked
+                                        </button>
+                                    ) : (
+                                        <Link to={item.link} className="block w-full py-2 rounded-lg bg-slate-900 text-white text-xs font-bold text-center group-hover:bg-blue-600 transition-colors">
+                                            {item.type === 'note' ? 'Read Notes' : 'Start Test'}
+                                        </Link>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 ))}
             </div>

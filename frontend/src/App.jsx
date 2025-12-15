@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react'; 
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { 
-    // Core Navigation & UI (Placed first)
     LogOut, LayoutDashboard, BookOpen, ArrowLeft, User, ChevronDown, ChevronUp, 
-    Menu, X, Search, Sun, Moon, GraduationCap, Home, // ADDED HOME
+    Menu, X, Search, Sun, Moon, GraduationCap, Home,
     
     // Profile Menu Helpers
     CreditCard, HelpCircle, 
@@ -28,6 +27,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import CategoryPage from './pages/CategoryPage';
 import CourseStorePage from './pages/CourseStorePage';
+import ProfilePage from './pages/ProfilePage';
 
 // --- ADMIN PAGES ---
 import AdminLoginPage from './pages/AdminLoginPage';
@@ -335,8 +335,8 @@ const ProfileMenu = ({ handleLogout }) => {
                         <button onClick={() => handleNav('/dashboard')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-left">
                             <LayoutDashboard size={16} className="text-blue-500"/> Dashboard
                         </button>
-                        <button onClick={() => handleNav('/courses?mode=enrolled')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-left">
-                            <BookOpen size={16} className="text-emerald-500"/> My Library
+                        <button onClick={() => handleNav('/profile')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-left">
+                            <User size={16} className="text-orange-500"/> My Profile
                         </button>
                         <button onClick={() => handleNav('/purchases')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-left">
                             <CreditCard size={16} className="text-purple-500"/> My Purchases

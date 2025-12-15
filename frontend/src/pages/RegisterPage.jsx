@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import api from '../api/axios';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { AlertCircle, User, Mail, Lock, CheckCircle } from 'lucide-react';
 
 const RegisterPage = () => {

@@ -1,125 +1,118 @@
 import React, { useState } from 'react';
-import api from '../api/axios';
-import { UploadCloud, FileText, CheckCircle, AlertTriangle, Download, Loader2 } from 'lucide-react';
+import api from '../../api/axios';
+import { UploadCloud, FileText, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 
 const AdminNotesUploadPage = () => {
-    const [file, setFile] = useState(null);
-    const [uploading, setUploading] = useState(false);
-    const [result, setResult] = useState(null);
+    const [csvFile, setCsvFile] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [statusMessage, setStatusMessage] = useState({ type: 'info', text: 'Ready to upload notes.' });
+    const [uploadSummary, setUploadSummary] = useState(null);
 
     const handleFileChange = (e) => {
-        setFile(e.target.files[0]);
-        setResult(null);
-    };
-
-    const handleUpload = async () => {
-        if (!file) return alert("Please select a file first");
-        
-        setUploading(true);
-        setResult(null);
-        
-        const formData = new FormData();
-        formData.append('file', file);
-
-        try {
-            // FIX: Let Axios handle headers automatically for boundary
-            const res = await api.post('bulk-notes/upload_csv/', formData);
-            setResult({ type: 'success', message: res.data.message });
-            setFile(null); 
-            // Reset the file input visually
-            document.getElementById('fileInput').value = "";
-        } catch (err) {
-            console.error(err);
-            const errorMsg = err.response?.data?.error || "Upload Failed. Check console.";
-            setResult({ type: 'error', message: errorMsg });
-        } finally {
-            setUploading(false);
+        const file = e.target.files[0];
+        if (file && file.name.endsWith('.csv')) {
+            setCsvFile(file);
+            setStatusMessage({ type: 'info', text: `File selected: ${file.name}` });
+        } else {
+            setCsvFile(null);
+            setStatusMessage({ type: 'error', text: 'Please select a valid CSV file.' });
         }
     };
 
-    // UPDATED TEMPLATE: Removed 'Topic' column
-    const downloadTemplate = () => {
-        const csvContent = "data:text/csv;charset=utf-8," 
-            + "Course,Paper,Subject,Chapter,Notes\n"
-            + "UGC NET Computer Science,Paper 1,Teaching Aptitude,Methods of Teaching,# Markdown Notes here...\n"
-            + "UGC NET Computer Science,Paper 2,Operating System,Process Management,# OS Notes here...";
-        
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "ugc_net_template.csv");
-        document.body.appendChild(link);
-        link.click();
+    const handleUpload = async () => {
+        if (!csvFile) {
+            setStatusMessage({ type: 'error', text: 'Please select a CSV file first.' });
+            return;
+        }
+
+        setLoading(true);
+        setStatusMessage({ type: 'info', text: 'Uploading and processing file... This may take a moment.' });
+        setUploadSummary(null);
+
+        try {
+            const formData = new FormData();
+            // CRITICAL FIX: Ensure the key is 'file' as expected by Django request.FILES.get('file')
+            formData.append('file', csvFile);
+
+            const res = await api.post('bulk-notes/upload_csv/', formData, {
+                // IMPORTANT: When using FormData, let Axios set the Content-Type header
+                // which includes the correct boundary marker. Do NOT manually set it to 'application/json'.
+            });
+
+            setStatusMessage({ type: 'success', text: res.data.message || 'Notes uploaded successfully!' });
+            setUploadSummary(res.data);
+            setCsvFile(null); // Clear file input
+        } catch (err) {
+            console.error("Upload Error:", err);
+            const errorText = err.response?.data?.error || "Upload failed due to a server error (check console for details).";
+            setStatusMessage({ type: 'error', text: errorText });
+        } finally {
+            setLoading(false);
+        }
     };
     
+    // Helper for Message Styling
+    const getStatusClasses = (type) => {
+        switch (type) {
+            case 'success': return 'bg-green-100 border-green-300 text-green-700';
+            case 'error': return 'bg-red-100 border-red-300 text-red-700';
+            default: return 'bg-blue-100 border-blue-300 text-blue-700';
+        }
+    };
 
     return (
-        <div className="min-h-screen bg-slate-900 text-white p-8 font-sans">
-            <div className="max-w-3xl mx-auto">
-                <h1 className="text-3xl font-bold mb-8 flex items-center gap-3">
-                    <UploadCloud className="text-blue-400"/> Bulk Notes Uploader
-                </h1>
+        <div className="max-w-4xl mx-auto p-8 font-sans">
+            <h1 className="text-3xl font-bold text-slate-800 mb-6 flex items-center gap-3">
+                <FileText className="text-blue-600" size={28} /> Bulk Notes Uploader
+            </h1>
 
-                <div className="bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-xl">
-                    {/* Step 1: Template */}
-                    <div className="mb-8 pb-8 border-b border-slate-700">
-                        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                            <span className="bg-slate-700 w-8 h-8 rounded-full flex items-center justify-center text-sm">1</span>
-                            Get Template
-                        </h2>
-                        <p className="text-slate-400 mb-4">
-                            Download the updated CSV template. <br/>
-                            <strong>Structure:</strong> Course &gt; Subject &gt; Chapter &gt; Notes.
-                        </p>
-                        <button 
-                            onClick={downloadTemplate}
-                            className="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg transition-colors text-sm font-medium"
-                        >
-                            <Download size={16} /> Download CSV Template
-                        </button>
-                    </div>
-
-                    {/* Step 2: Upload */}
-                    <div>
-                        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                            <span className="bg-slate-700 w-8 h-8 rounded-full flex items-center justify-center text-sm">2</span>
-                            Upload Data
-                        </h2>
-                        
-                        <div className="border-2 border-dashed border-slate-600 rounded-xl p-8 text-center hover:border-blue-500 transition-colors bg-slate-800/50">
-                            <input 
-                                type="file" 
-                                accept=".csv"
-                                onChange={handleFileChange}
-                                className="hidden" 
-                                id="fileInput"
-                            />
-                            <label htmlFor="fileInput" className="cursor-pointer flex flex-col items-center">
-                                <FileText size={48} className="text-slate-500 mb-4" />
-                                <span className="text-lg font-medium text-slate-300">
-                                    {file ? file.name : "Click to select CSV file"}
-                                </span>
-                                <span className="text-sm text-slate-500 mt-2">Maximum file size: 5MB</span>
-                            </label>
-                        </div>
-
-                        {/* Result Message */}
-                        {result && (
-                            <div className={`mt-6 p-4 rounded-lg flex items-center gap-3 ${result.type === 'success' ? 'bg-green-900/30 text-green-400 border border-green-800' : 'bg-red-900/30 text-red-400 border border-red-800'}`}>
-                                {result.type === 'success' ? <CheckCircle /> : <AlertTriangle />}
-                                {result.message}
-                            </div>
-                        )}
-
-                        <button 
-                            onClick={handleUpload}
-                            disabled={!file || uploading}
-                            className="w-full mt-6 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
-                        >
-                            {uploading ? <Loader2 className="animate-spin" /> : "Upload & Sync Database"}
-                        </button>
-                    </div>
+            <div className="bg-white p-8 rounded-xl shadow-lg border border-slate-200 space-y-6">
+                
+                {/* Status Message */}
+                <div className={`p-4 rounded-lg border flex items-center gap-3 font-medium ${getStatusClasses(statusMessage.type)}`}>
+                    {statusMessage.type === 'error' ? <AlertCircle size={20} /> : <CheckCircle size={20} />}
+                    <span>{statusMessage.text}</span>
                 </div>
+
+                {/* File Input Area */}
+                <div className="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center bg-slate-50 hover:border-blue-400 transition-colors cursor-pointer" onClick={() => document.getElementById('csvInput').click()}>
+                    <input 
+                        type="file" 
+                        accept=".csv" 
+                        onChange={handleFileChange} 
+                        className="hidden" 
+                        id="csvInput"
+                        disabled={loading}
+                    />
+                    <UploadCloud className="mx-auto text-slate-400 mb-3" size={40} />
+                    <p className="text-sm text-slate-600 font-medium">
+                        {csvFile ? 
+                            <span className="font-bold text-blue-600">{csvFile.name}</span> : 
+                            "Drag & drop your CSV here, or click to browse"
+                        }
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">
+                        Supported columns: Course, Subject, Chapter, Study Notes
+                    </p>
+                </div>
+
+                {/* Action Button */}
+                <button 
+                    onClick={handleUpload} 
+                    disabled={!csvFile || loading}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold shadow-md transition-all flex justify-center items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    {loading ? <Loader2 className="animate-spin" size={20} /> : <UploadCloud size={20} />}
+                    {loading ? 'Processing on Server...' : 'Start Bulk Upload'}
+                </button>
+
+                {/* Summary (after successful upload) */}
+                {uploadSummary && (
+                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <h3 className="font-bold text-green-700 mb-2">Upload Results:</h3>
+                        <p className="text-sm text-green-800">{uploadSummary.message}</p>
+                    </div>
+                )}
             </div>
         </div>
     );

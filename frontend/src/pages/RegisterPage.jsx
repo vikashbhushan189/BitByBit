@@ -4,13 +4,16 @@ import { useNavigate, Link } from 'react-router-dom';
 import { AlertCircle, User, Mail, Lock, CheckCircle } from 'lucide-react';
 
 const RegisterPage = () => {
+
+    const location = useLocation();
     // Added re_password to state
-    const [formData, setFormData] = useState({ 
-        username: '', 
-        email: '', 
-        password: '', 
-        re_password: '' 
-    });
+    const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    re_password: '',
+    phone: location.state?.phone || ''
+});
     
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);

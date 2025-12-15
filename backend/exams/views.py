@@ -62,36 +62,36 @@ class AuthViewSet(viewsets.ViewSet):
         
         return self._perform_login(phone, force_login)
 
-    # --- NEW: FIREBASE EXCHANGE ---
     @action(detail=False, methods=['post'])
     def firebase_exchange(self, request):
-        """
-        Called after Frontend successfully verifies OTP with Firebase.
-        Exchanges the phone number for a Django JWT.
-        """
         phone = request.data.get('phone')
-        # In a production app, you should also send the Firebase ID Token here 
-        # and verify it with firebase-admin SDK to prevent spoofing.
-        # For now, we trust the frontend sent a valid phone after verification.
-        
         force_login = request.data.get('force_login', False)
         
-        if not phone:
-             return Response({"error": "Phone number required"}, status=400)
+        if not phone: return Response({"error": "Phone number required"}, status=400)
 
         return self._perform_login(phone, force_login)
 
-    # Helper method to handle login logic for both Local OTP and Firebase
     def _perform_login(self, phone, force_login):
-        user, created = User.objects.get_or_create(username=phone, defaults={'phone_number': phone})
-        
-        if not force_login and not created and user.token_version > 0:
+        # FIX: Do NOT auto-create. Check if user exists first.
+        try:
+            user = User.objects.get(phone_number=phone)
+        except User.DoesNotExist:
+            # If user doesn't exist, tell frontend to redirect to Register
+            return Response({
+                "status": "not_registered",
+                "message": "Account does not exist. Please register first.",
+                "phone": phone
+            }, status=404) # 404 Not Found is appropriate here
+
+        # 3. Single Device Check
+        if not force_login and user.token_version > 0:
              return Response({
                  "status": "conflict", 
                  "message": "You are logged in on another device. Do you want to logout from there?",
                  "requires_confirmation": True
              }, status=409)
 
+        # 4. Perform Login
         user.token_version += 1
         user.last_login = timezone.now()
         user.save()

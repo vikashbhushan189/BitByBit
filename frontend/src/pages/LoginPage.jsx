@@ -125,35 +125,41 @@ const LoginPage = () => {
         setIsLoading(true);
         setError('');
         try {
+            let res;
             if (isMockMode) {
-                // --- MOCK VERIFY ---
-                const res = await api.post('auth-otp/verify_otp/', { 
+                res = await api.post('auth-otp/verify_otp/', { 
                     phone: phone.startsWith('+') ? phone : `+91${phone}`,
                     otp, 
                     force_login: force 
                 });
-                handleLoginSuccess(res.data);
             } else {
-                // --- FIREBASE VERIFY ---
                 const result = await confirmationResult.confirm(otp);
                 const user = result.user;
-                // Exchange Firebase User for Django Token
-                const res = await api.post('auth-otp/firebase_exchange/', { 
+                res = await api.post('auth-otp/firebase_exchange/', { 
                     phone: user.phoneNumber, 
                     force_login: force 
                 });
-                handleLoginSuccess(res.data);
             }
+            
+            handleLoginSuccess(res.data);
 
         } catch (err) {
             console.error(err);
-            if (err.response && err.response.status === 409) {
-                // Device Conflict
-                if(window.confirm(err.response.data.message)) {
-                    handleVerifyOTP(true); 
+            if (err.response) {
+                if (err.response.status === 409) {
+                    // Conflict (Already logged in)
+                    if(window.confirm(err.response.data.message)) {
+                        handleVerifyOTP(true); 
+                    }
+                } else if (err.response.status === 404) {
+                    // FIX: User not found -> Redirect to Register
+                    alert("Account not found! Redirecting to Registration...");
+                    navigate('/register', { state: { phone: phone } }); // Pass phone to register page
+                } else {
+                    setError(err.response.data.error || "Verification Failed");
                 }
             } else {
-                setError("Invalid OTP or Verification Failed.");
+                setError("Network Error");
             }
         } finally {
             setIsLoading(false);

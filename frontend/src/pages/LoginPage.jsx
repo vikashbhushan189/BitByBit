@@ -1,25 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
 import { useNavigate, Link, useLocation } from 'react-router-dom'; 
-import { AlertCircle, LogIn, Lock, User, CheckCircle, Smartphone, ArrowRight, KeyRound, Loader2, AlertTriangle } from 'lucide-react';
+import { AlertCircle, LogIn, Lock, User, CheckCircle, Smartphone, ArrowRight, KeyRound, Loader2, AlertTriangle, ShieldAlert } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
 import { initializeApp } from "firebase/app";
 import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 
-// --- FIREBASE CONFIG (PASTE YOUR KEYS HERE) ---
+// --- CONFIGURATION ---
+// 1. To use Real SMS: Replace these with keys from https://console.firebase.google.com/
+// 2. To use Mock/Test Mode: Leave these as they are. The app will auto-detect and switch to Mock mode.
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "SENDER_ID",
-  appId: "APP_ID"
+  apiKey: "AIzaSyDkKhMareDbHJP2wNSY91r1B6LCpJNBYZw",
+  authDomain: "bitbybit-c99de.firebaseapp.com",
+  projectId: "bitbybit-c99de",
+  storageBucket: "bitbybit-c99de.firebasestorage.app",
+  messagingSenderId: "486805649744",
+  appId: "1:486805649744:web:9a2d0a1b82136bf27a1455",
+  measurementId: "G-B9LWQGQ6VP"
 };
 
-// Initialize Firebase (only once)
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+// Logic to detect if we should use Firebase or Mock Mode
+const isFirebaseConfigured = firebaseConfig.apiKey !== "YOUR_API_KEY";
+
+let auth = null;
+if (isFirebaseConfigured) {
+    try {
+        const app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+    } catch (e) {
+        console.error("Firebase Init Error:", e);
+    }
+}
 
 const LoginPage = () => {
     const [loginMethod, setLoginMethod] = useState('password'); 
@@ -29,21 +41,28 @@ const LoginPage = () => {
     const [otpStep, setOtpStep] = useState(1); 
     const [confirmationResult, setConfirmationResult] = useState(null);
     
+    // Test Mode State
+    const [isMockMode, setIsMockMode] = useState(!isFirebaseConfigured);
+    const [mockOtp, setMockOtp] = useState(''); // Store the mock OTP to verify against
+
     const [error, setError] = useState(''); 
     const [isLoading, setIsLoading] = useState(false);
     
     const navigate = useNavigate();
     const location = useLocation(); 
 
-    // --- RECAPTCHA SETUP ---
+    // --- RECAPTCHA SETUP (Only for Real Firebase) ---
     useEffect(() => {
-        if (!window.recaptchaVerifier && loginMethod === 'otp') {
-            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                'size': 'invisible',
-                'callback': (response) => {
-                    // reCAPTCHA solved
-                }
-            });
+        if (isFirebaseConfigured && !window.recaptchaVerifier && loginMethod === 'otp') {
+            try {
+                window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                    'size': 'invisible',
+                    'callback': () => { /* reCAPTCHA solved */ }
+                });
+            } catch (e) {
+                console.warn("Recaptcha init failed, falling back to mock mode");
+                setIsMockMode(true);
+            }
         }
     }, [loginMethod]);
 
@@ -63,52 +82,75 @@ const LoginPage = () => {
         }
     };
 
-    // --- FIREBASE OTP LOGIN ---
+    // --- OTP: SEND ---
     const handleSendOTP = async (e) => {
         e.preventDefault();
         setIsLoading(true);
         setError('');
         
-        // Add +91 prefix if missing (adjust for your region)
         const phoneNumber = phone.startsWith('+') ? phone : `+91${phone}`;
 
-        try {
-            const appVerifier = window.recaptchaVerifier;
-            const confirmation = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
-            setConfirmationResult(confirmation);
-            setOtpStep(2);
-        } catch (err) {
-            console.error(err);
-            setError("Failed to send OTP. Too many requests or invalid number.");
-            // Reset recaptcha if failed
-            if(window.recaptchaVerifier) window.recaptchaVerifier.clear();
-        } finally {
-            setIsLoading(false);
+        if (isMockMode) {
+            // --- MOCK FLOW (Backend generates OTP) ---
+            try {
+                const res = await api.post('auth-otp/send_otp/', { phone: phoneNumber });
+                if (res.data.debug_otp) {
+                    alert(`🔐 TEST OTP: ${res.data.debug_otp}`); // Show Popup
+                    console.log("Mock OTP:", res.data.debug_otp);
+                    // In a real app, we don't store OTP on client, but for this mock simulation:
+                    // We will trust the backend verify_otp endpoint.
+                }
+                setOtpStep(2);
+            } catch (err) {
+                setError("Failed to send Mock OTP. Is Backend running?");
+            }
+        } else {
+            // --- REAL FIREBASE FLOW ---
+            try {
+                const appVerifier = window.recaptchaVerifier;
+                const confirmation = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+                setConfirmationResult(confirmation);
+                setOtpStep(2);
+            } catch (err) {
+                console.error(err);
+                setError(`Firebase Error: ${err.message}. Switching to Mock Mode.`);
+                setIsMockMode(true); // Fallback automatically if Firebase fails
+            }
         }
+        setIsLoading(false);
     };
 
+    // --- OTP: VERIFY ---
     const handleVerifyOTP = async (force = false) => {
         setIsLoading(true);
         setError('');
         try {
-            // 1. Verify with Firebase
-            const result = await confirmationResult.confirm(otp);
-            const user = result.user;
-            
-            // 2. Exchange with Backend (Send Phone)
-            const res = await api.post('auth-otp/firebase_exchange/', { 
-                phone: user.phoneNumber, // Format: +919999999999
-                force_login: force 
-            });
-            
-            handleLoginSuccess(res.data);
+            if (isMockMode) {
+                // --- MOCK VERIFY ---
+                const res = await api.post('auth-otp/verify_otp/', { 
+                    phone: phone.startsWith('+') ? phone : `+91${phone}`,
+                    otp, 
+                    force_login: force 
+                });
+                handleLoginSuccess(res.data);
+            } else {
+                // --- FIREBASE VERIFY ---
+                const result = await confirmationResult.confirm(otp);
+                const user = result.user;
+                // Exchange Firebase User for Django Token
+                const res = await api.post('auth-otp/firebase_exchange/', { 
+                    phone: user.phoneNumber, 
+                    force_login: force 
+                });
+                handleLoginSuccess(res.data);
+            }
 
         } catch (err) {
             console.error(err);
             if (err.response && err.response.status === 409) {
                 // Device Conflict
                 if(window.confirm(err.response.data.message)) {
-                    handleVerifyOTP(true); // Retry with force=true
+                    handleVerifyOTP(true); 
                 }
             } else {
                 setError("Invalid OTP or Verification Failed.");
@@ -150,6 +192,14 @@ const LoginPage = () => {
                         <span>{error}</span>
                     </div>
                 )}
+                
+                {/* INFO ALERT FOR MOCK MODE */}
+                {loginMethod === 'otp' && isMockMode && (
+                    <div className="mb-6 bg-blue-50 border border-blue-200 text-blue-700 px-4 py-2 rounded-lg flex items-start gap-2 text-xs">
+                        <ShieldAlert size={14} className="mt-0.5 shrink-0"/>
+                        <span><strong>Test Mode:</strong> Enter any phone number. You will receive a mock OTP in an alert box.</span>
+                    </div>
+                )}
 
                 {/* PASSWORD LOGIN FORM */}
                 {loginMethod === 'password' && (
@@ -170,7 +220,6 @@ const LoginPage = () => {
                 {/* OTP LOGIN FORM */}
                 {loginMethod === 'otp' && (
                     <div className="space-y-5 animate-in fade-in slide-in-from-left-4 duration-300">
-                        {/* Hidden ReCAPTCHA Container */}
                         <div id="recaptcha-container"></div>
                         
                         {otpStep === 1 ? (

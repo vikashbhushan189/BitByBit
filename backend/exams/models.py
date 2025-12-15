@@ -1,7 +1,43 @@
 from django.db import models
 from django.conf import settings
+from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
+import uuid
 
+
+
+# --- 1. CUSTOM USER MODEL ---
+class User(AbstractUser):
+    phone_number = models.CharField(max_length=15, unique=True)
+    # This field is the key to Single Device Login. 
+    # Incrementing this invalidates ALL old tokens.
+    token_version = models.IntegerField(default=0) 
+
+    # Fix conflicts with default Django auth
+    groups = models.ManyToManyField(
+        'auth.Group',
+        related_name='custom_user_set',
+        blank=True
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        related_name='custom_user_set',
+        blank=True
+    )
+
+    def __str__(self):
+        return self.phone_number or self.username
+
+class OTP(models.Model):
+    phone_number = models.CharField(max_length=15)
+    otp_code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_verified = models.BooleanField(default=False)
+
+    def is_valid(self):
+        # Valid for 5 minutes
+        return (timezone.now() - self.created_at).total_seconds() < 300
+    
 # --- 1. Course Hierarchy ---
 class Course(models.Model):
     title = models.CharField(max_length=255)

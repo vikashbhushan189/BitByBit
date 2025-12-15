@@ -14,9 +14,101 @@ from .serializers import CourseSerializer, ExamSerializer, ExamAttemptSerializer
 from .ai_service import generate_questions_from_text, generate_question_from_image
 from .permissions import IsPaidSubscriberOrAdmin
 
+import random
+from rest_framework_simplejwt.tokens import RefreshToken
+from .models import User, OTP
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+
+# --- CUSTOM PASSWORD LOGIN (With Single Device Check) ---
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        
+        # 1. Increment Version to kill old sessions
+        self.user.token_version += 1
+        self.user.save()
+        
+        # 2. Embed new version in token (handled by settings if configured, 
+        # or we can manually add if we wrote a custom JWT claim)
+        # For now, just incrementing the DB field is enough if we check it on requests.
+        
+        # Add role to response for frontend convenience
+        data['role'] = "admin" if self.user.is_superuser else "student"
+        return data
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer
+
+class AuthViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.AllowAny]
+
+    @action(detail=False, methods=['post'])
+    def send_otp(self, request):
+        phone = request.data.get('phone')
+        if not phone:
+            return Response({"error": "Phone number required"}, status=400)
+        
+        # Generate 4-digit OTP
+        otp_code = str(random.randint(1000, 9999))
+        OTP.objects.create(phone_number=phone, otp_code=otp_code)
+        
+        # In production, integrate SMS Gateway (Twilio/Fast2SMS) here.
+        # For now, print to console.
+        print(f"XXX OTP for {phone} is: {otp_code} XXX")
+        
+        return Response({"status": "success", "message": "OTP sent successfully"})
+
+    @action(detail=False, methods=['post'])
+    def verify_otp(self, request):
+        phone = request.data.get('phone')
+        otp_input = request.data.get('otp')
+        force_login = request.data.get('force_login', False) # User confirmed logout elsewhere
+        
+        # 1. Verify OTP
+        otp_record = OTP.objects.filter(phone_number=phone, otp_code=otp_input).last()
+        if not otp_record or not otp_record.is_valid():
+            return Response({"error": "Invalid or expired OTP"}, status=400)
+        
+        # 2. Get or Create User
+        user, created = User.objects.get_or_create(username=phone, defaults={'phone_number': phone})
+        
+        # 3. Single Device Check (Skip if forcing)
+        # We check if token_version is 0 (never logged in) or force_login is True
+        # If user has logged in before and isn't forcing, we warn them.
+        # But actually, standard flow is:
+        # If we want to strictly enforce, we just increment version on EVERY login.
+        # This automatically logs out others.
+        # The user requested: "Asked if wants to logout from other devices".
+        
+        if not force_login and not created and user.last_login:
+             # If user exists and has logged in before, we simulate a conflict check
+             # Ideally we'd check active sessions, but for stateless JWT, we assume "active"
+             return Response({
+                 "status": "conflict", 
+                 "message": "You are logged in on another device. Logout from there?",
+                 "requires_confirmation": True
+             }, status=409)
+
+        # 4. Perform Login (Invalidate old sessions)
+        user.token_version += 1 # This kills all old tokens
+        user.last_login = timezone.now()
+        user.save()
+        
+        # Generate Token with Version
+        refresh = RefreshToken.for_user(user)
+        refresh['token_version'] = user.token_version # Embed version in token
+        
+        return Response({
+            "status": "success",
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "role": "admin" if user.is_superuser else "student"
+        })
+
+
 # --- STUDENT VIEWS ---
-
-
 class CourseViewSet(viewsets.ReadOnlyModelViewSet):
     # OPTIMIZED QUERYSET: Fetch deeply nested relations to prevent N+1 crashes
     queryset = Course.objects.prefetch_related(

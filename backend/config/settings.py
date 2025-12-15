@@ -41,6 +41,8 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
     "authorization",
 ]
 
+AUTH_USER_MODEL = 'exams.User'
+
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "https://bitbybit-seven.vercel.app",  # <--- REPLACE THIS with your actual Vercel URL

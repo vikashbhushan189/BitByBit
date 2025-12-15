@@ -8,7 +8,7 @@ import csv
 import io
 import codecs
 from io import TextIOWrapper
-
+import chardet
 from .models import Course, Exam, ExamAttempt, Question, Option, StudentResponse, Topic, Chapter, Subject, AdBanner, UserSubscription
 from .serializers import CourseSerializer, ExamSerializer, ExamAttemptSerializer, TopicSerializer, AdBannerSerializer, ChapterSerializer
 from .ai_service import generate_questions_from_text, generate_question_from_image

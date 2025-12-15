@@ -30,12 +30,6 @@ ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com', '.run.app']
 # --- CRITICAL FIX: Custom User Model ---
 AUTH_USER_MODEL = 'exams.User'
 
-# --- CRITICAL FIX: Redirect Admin Migrations ---
-# This prevents the 'admin.LogEntry.user' lazy reference error during build
-MIGRATION_MODULES = {
-    'admin': 'exams.admin_migrations',
-}
-
 
 # Application definition
 
@@ -147,14 +141,11 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
     "authorization",
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "https://bitbybit-seven.vercel.app",
-]
+CORS_ALLOW_ALL_ORIGINS = True 
 
 # Trust for POST requests (Login/Register)
 CSRF_TRUSTED_ORIGINS = [
-    "https://bitbybit-wudx.onrender.com/",
+    "https://bitbybit-wudx.onrender.com",
     "https://bitbybit-seven.vercel.app", 
 ]
 
@@ -177,7 +168,8 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),     
     'ROTATE_REFRESH_TOKENS': True,                   
     'BLACKLIST_AFTER_ROTATION': True,
-    # Add custom token user to handle versioning if needed
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
     'TOKEN_USER_CLASS': 'rest_framework_simplejwt.authentication.JWTTokenUser',
 }
 

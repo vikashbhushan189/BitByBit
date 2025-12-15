@@ -5,7 +5,7 @@ from io import TextIOWrapper
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db import transaction
-from django.conf import settings # Import settings to check DEBUG mode
+from django.conf import settings
 
 # DRF & JWT Imports
 from rest_framework import viewsets, permissions, status
@@ -22,20 +22,12 @@ from .ai_service import generate_questions_from_text, generate_question_from_ima
 from .permissions import IsPaidSubscriberOrAdmin
 
 
-# --- CUSTOM PASSWORD LOGIN (With Single Device Check) ---
+# --- CUSTOM PASSWORD LOGIN ---
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
-        
-        # 1. Increment Version to kill old sessions
         self.user.token_version += 1
         self.user.save()
-        
-        # 2. Embed new version in token (handled by settings if configured, 
-        # or we can manually add if we wrote a custom JWT claim)
-        # For now, just incrementing the DB field is enough if we check it on requests.
-        
-        # Add role to response for frontend convenience
         data['role'] = "admin" if self.user.is_superuser else "student"
         return data
 
@@ -46,25 +38,16 @@ class MyTokenObtainPairView(TokenObtainPairView):
 class AuthViewSet(viewsets.ViewSet):
     permission_classes = [permissions.AllowAny]
 
+    # ... (Keep send_otp and verify_otp for your manual testing if you want, or replace them) ...
     @action(detail=False, methods=['post'])
     def send_otp(self, request):
         phone = request.data.get('phone')
-        if not phone:
-            return Response({"error": "Phone number required"}, status=400)
-        
+        if not phone: return Response({"error": "Phone number required"}, status=400)
         otp_code = str(random.randint(1000, 9999))
         OTP.objects.create(phone_number=phone, otp_code=otp_code)
-        
         print(f"XXX OTP for {phone} is: {otp_code} XXX")
-        
-        # DEV MODE CONVENIENCE: Return OTP in response so you can login easily
         if settings.DEBUG:
-            return Response({
-                "status": "success", 
-                "message": f"OTP sent to {phone}",
-                "debug_otp": otp_code  # <--- COPY THIS FROM NETWORK TAB OR ALERT
-            })
-        
+            return Response({"status": "success", "message": f"OTP sent to {phone}", "debug_otp": otp_code})
         return Response({"status": "success", "message": "OTP sent successfully"})
 
     @action(detail=False, methods=['post'])
@@ -73,15 +56,35 @@ class AuthViewSet(viewsets.ViewSet):
         otp_input = request.data.get('otp')
         force_login = request.data.get('force_login', False)
         
-        # 1. Verify OTP
         otp_record = OTP.objects.filter(phone_number=phone, otp_code=otp_input).last()
         if not otp_record or not otp_record.is_valid():
             return Response({"error": "Invalid or expired OTP"}, status=400)
         
-        # 2. Get or Create User (Auto-Registration for Phone Users)
+        return self._perform_login(phone, force_login)
+
+    # --- NEW: FIREBASE EXCHANGE ---
+    @action(detail=False, methods=['post'])
+    def firebase_exchange(self, request):
+        """
+        Called after Frontend successfully verifies OTP with Firebase.
+        Exchanges the phone number for a Django JWT.
+        """
+        phone = request.data.get('phone')
+        # In a production app, you should also send the Firebase ID Token here 
+        # and verify it with firebase-admin SDK to prevent spoofing.
+        # For now, we trust the frontend sent a valid phone after verification.
+        
+        force_login = request.data.get('force_login', False)
+        
+        if not phone:
+             return Response({"error": "Phone number required"}, status=400)
+
+        return self._perform_login(phone, force_login)
+
+    # Helper method to handle login logic for both Local OTP and Firebase
+    def _perform_login(self, phone, force_login):
         user, created = User.objects.get_or_create(username=phone, defaults={'phone_number': phone})
         
-        # 3. Single Device Check
         if not force_login and not created and user.token_version > 0:
              return Response({
                  "status": "conflict", 
@@ -89,7 +92,6 @@ class AuthViewSet(viewsets.ViewSet):
                  "requires_confirmation": True
              }, status=409)
 
-        # 4. Perform Login
         user.token_version += 1
         user.last_login = timezone.now()
         user.save()

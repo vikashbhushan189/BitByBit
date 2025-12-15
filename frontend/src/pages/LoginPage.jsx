@@ -1,20 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
 import { useNavigate, Link, useLocation } from 'react-router-dom'; 
 import { AlertCircle, LogIn, Lock, User, CheckCircle, Smartphone, ArrowRight, KeyRound, Loader2, AlertTriangle } from 'lucide-react';
 
+// --- FIREBASE IMPORTS ---
+import { initializeApp } from "firebase/app";
+import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
+
+// --- FIREBASE CONFIG (PASTE YOUR KEYS HERE) ---
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "SENDER_ID",
+  appId: "APP_ID"
+};
+
+// Initialize Firebase (only once)
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
 const LoginPage = () => {
-    const [loginMethod, setLoginMethod] = useState('password'); // 'password' or 'otp'
+    const [loginMethod, setLoginMethod] = useState('password'); 
     const [formData, setFormData] = useState({ username: '', password: '' });
     const [phone, setPhone] = useState('');
     const [otp, setOtp] = useState('');
-    const [otpStep, setOtpStep] = useState(1); // 1: Send, 2: Verify
+    const [otpStep, setOtpStep] = useState(1); 
+    const [confirmationResult, setConfirmationResult] = useState(null);
     
     const [error, setError] = useState(''); 
     const [isLoading, setIsLoading] = useState(false);
     
     const navigate = useNavigate();
     const location = useLocation(); 
+
+    // --- RECAPTCHA SETUP ---
+    useEffect(() => {
+        if (!window.recaptchaVerifier && loginMethod === 'otp') {
+            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                'size': 'invisible',
+                'callback': (response) => {
+                    // reCAPTCHA solved
+                }
+            });
+        }
+    }, [loginMethod]);
 
     // --- PASSWORD LOGIN ---
     const handlePasswordLogin = async (e) => {
@@ -32,16 +63,25 @@ const LoginPage = () => {
         }
     };
 
-    // --- OTP LOGIN ---
+    // --- FIREBASE OTP LOGIN ---
     const handleSendOTP = async (e) => {
         e.preventDefault();
         setIsLoading(true);
         setError('');
+        
+        // Add +91 prefix if missing (adjust for your region)
+        const phoneNumber = phone.startsWith('+') ? phone : `+91${phone}`;
+
         try {
-            await api.post('auth-otp/send_otp/', { phone });
+            const appVerifier = window.recaptchaVerifier;
+            const confirmation = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+            setConfirmationResult(confirmation);
             setOtpStep(2);
         } catch (err) {
-            setError("Failed to send OTP. Check number.");
+            console.error(err);
+            setError("Failed to send OTP. Too many requests or invalid number.");
+            // Reset recaptcha if failed
+            if(window.recaptchaVerifier) window.recaptchaVerifier.clear();
         } finally {
             setIsLoading(false);
         }
@@ -51,31 +91,37 @@ const LoginPage = () => {
         setIsLoading(true);
         setError('');
         try {
-            const res = await api.post('auth-otp/verify_otp/', { 
-                phone, otp, force_login: force 
+            // 1. Verify with Firebase
+            const result = await confirmationResult.confirm(otp);
+            const user = result.user;
+            
+            // 2. Exchange with Backend (Send Phone)
+            const res = await api.post('auth-otp/firebase_exchange/', { 
+                phone: user.phoneNumber, // Format: +919999999999
+                force_login: force 
             });
+            
             handleLoginSuccess(res.data);
+
         } catch (err) {
+            console.error(err);
             if (err.response && err.response.status === 409) {
-                // Conflict: Handle force login UI if needed (simplified here)
+                // Device Conflict
                 if(window.confirm(err.response.data.message)) {
-                    handleVerifyOTP(true);
+                    handleVerifyOTP(true); // Retry with force=true
                 }
             } else {
-                setError("Invalid OTP");
+                setError("Invalid OTP or Verification Failed.");
             }
         } finally {
             setIsLoading(false);
         }
     };
 
-    // --- SHARED SUCCESS LOGIC ---
     const handleLoginSuccess = (data) => {
         localStorage.setItem('access_token', data.access);
         localStorage.setItem('refresh_token', data.refresh);
-        // Default to student if role not sent (Password login adds it now, OTP adds it)
         localStorage.setItem('user_role', data.role || 'student');
-
         const from = location.state?.from || '/dashboard';
         window.location.href = from;
     };
@@ -94,18 +140,8 @@ const LoginPage = () => {
 
                 {/* TOGGLE TABS */}
                 <div className="flex bg-slate-100 p-1 rounded-xl mb-8">
-                    <button 
-                        onClick={() => setLoginMethod('password')}
-                        className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${loginMethod === 'password' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                    >
-                        <KeyRound size={16}/> Password
-                    </button>
-                    <button 
-                        onClick={() => setLoginMethod('otp')}
-                        className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${loginMethod === 'otp' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                    >
-                        <Smartphone size={16}/> OTP
-                    </button>
+                    <button onClick={() => setLoginMethod('password')} className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${loginMethod === 'password' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}><KeyRound size={16}/> Password</button>
+                    <button onClick={() => setLoginMethod('otp')} className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-all ${loginMethod === 'otp' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}><Smartphone size={16}/> OTP</button>
                 </div>
 
                 {error && (
@@ -115,64 +151,33 @@ const LoginPage = () => {
                     </div>
                 )}
 
-                {/* --- FORM 1: PASSWORD --- */}
+                {/* PASSWORD LOGIN FORM */}
                 {loginMethod === 'password' && (
                     <form onSubmit={handlePasswordLogin} className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
                         <div className="relative">
                             <User className="absolute left-3 top-3.5 text-gray-400 w-5 h-5" />
-                            <input
-                                type="text"
-                                name="username"
-                                placeholder="Username / Email"
-                                onChange={(e) => setFormData({...formData, username: e.target.value})}
-                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                required
-                            />
+                            <input type="text" name="username" placeholder="Username / Email" onChange={(e) => setFormData({...formData, username: e.target.value})} className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required />
                         </div>
-                        
                         <div className="relative">
                             <Lock className="absolute left-3 top-3.5 text-gray-400 w-5 h-5" />
-                            <input
-                                type="password"
-                                name="password"
-                                placeholder="Password"
-                                onChange={(e) => setFormData({...formData, password: e.target.value})}
-                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                required
-                            />
+                            <input type="password" name="password" placeholder="Password" onChange={(e) => setFormData({...formData, password: e.target.value})} className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required />
                         </div>
-
-                        <div className="flex justify-end">
-                            <Link to="/forgot-password" class="text-sm font-bold text-blue-600 hover:text-blue-500">
-                                Forgot password?
-                            </Link>
-                        </div>
-
-                        <button 
-                            type="submit" 
-                            disabled={isLoading}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-blue-200 transition-all flex justify-center items-center gap-2"
-                        >
-                            {isLoading ? <Loader2 className="animate-spin"/> : "Secure Login"}
-                        </button>
+                        <div className="flex justify-end"><Link to="/forgot-password" class="text-sm font-bold text-blue-600 hover:text-blue-500">Forgot password?</Link></div>
+                        <button type="submit" disabled={isLoading} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold shadow-lg transition-all flex justify-center items-center gap-2">{isLoading ? <Loader2 className="animate-spin"/> : "Secure Login"}</button>
                     </form>
                 )}
 
-                {/* --- FORM 2: OTP --- */}
+                {/* OTP LOGIN FORM */}
                 {loginMethod === 'otp' && (
                     <div className="space-y-5 animate-in fade-in slide-in-from-left-4 duration-300">
+                        {/* Hidden ReCAPTCHA Container */}
+                        <div id="recaptcha-container"></div>
+                        
                         {otpStep === 1 ? (
                             <form onSubmit={handleSendOTP} className="space-y-5">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Mobile Number</label>
-                                    <input 
-                                        type="tel" 
-                                        value={phone}
-                                        onChange={(e) => setPhone(e.target.value)}
-                                        className="w-full p-3.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none font-bold tracking-wider"
-                                        placeholder="9876543210"
-                                        required
-                                    />
+                                    <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full p-3.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none font-bold tracking-wider" placeholder="9876543210" required />
                                 </div>
                                 <button disabled={isLoading} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold shadow-lg flex justify-center items-center gap-2">
                                     {isLoading ? <Loader2 className="animate-spin"/> : <>Get OTP <ArrowRight size={20}/></>}
@@ -181,16 +186,8 @@ const LoginPage = () => {
                         ) : (
                             <div className="space-y-5">
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Enter 4-Digit OTP</label>
-                                    <input 
-                                        type="text" 
-                                        value={otp}
-                                        onChange={(e) => setOtp(e.target.value)}
-                                        className="w-full p-4 rounded-xl border border-blue-500 ring-2 ring-blue-100 text-center text-2xl font-black tracking-[1em]"
-                                        placeholder="----"
-                                        maxLength={4}
-                                        autoFocus
-                                    />
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Enter OTP</label>
+                                    <input type="text" value={otp} onChange={(e) => setOtp(e.target.value)} className="w-full p-4 rounded-xl border border-blue-500 ring-2 ring-blue-100 text-center text-2xl font-black tracking-[1em]" placeholder="----" maxLength={6} autoFocus />
                                 </div>
                                 <button onClick={() => handleVerifyOTP(false)} disabled={isLoading} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold shadow-lg flex justify-center items-center gap-2">
                                     {isLoading ? <Loader2 className="animate-spin"/> : "Verify & Login"}
@@ -201,9 +198,7 @@ const LoginPage = () => {
                     </div>
                 )}
 
-                <div className="mt-8 text-center text-sm text-gray-500 font-medium">
-                    New here? <Link to="/register" className="text-blue-600 font-bold hover:underline">Create an account</Link>
-                </div>
+                <div className="mt-8 text-center text-sm text-gray-500 font-medium">New here? <Link to="/register" className="text-blue-600 font-bold hover:underline">Create an account</Link></div>
             </div>
         </div>
     );

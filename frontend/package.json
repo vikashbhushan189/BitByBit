@@ -13,6 +13,7 @@
     "@tailwindcss/typography": "^0.5.19",
     "axios": "^1.13.2",
     "chart.js": "^4.5.1",
+    "firebase": "^12.6.0",
     "katex": "^0.16.27",
     "lucide-react": "^0.555.0",
     "react": "^19.2.0",

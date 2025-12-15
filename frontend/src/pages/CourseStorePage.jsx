@@ -1,111 +1,180 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
+import { 
+    Search, Filter, ShoppingCart, ChevronRight, Loader2, BookOpen, 
+    Clock, Award, AlertCircle 
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, Circle, ShoppingCart, Loader2 } from 'lucide-react';
 
 const CourseStorePage = () => {
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [selectedCourseId, setSelectedCourseId] = useState(null);
+    const [searchQuery, setSearchQuery] = useState("");
+    const navigate = useNavigate();
 
     useEffect(() => {
-        api.get('courses/').then(res => {
+        const fetchCourses = async () => {
+            try {
+                // Fetch ALL courses to display in the store
+                const res = await api.get('courses/');
                 setCourses(res.data);
+            } catch (err) {
+                console.error("Error fetching store courses:", err);
+            } finally {
                 setLoading(false);
-            }).catch(err => console.error(err));
+            }
+        };
+        fetchCourses();
     }, []);
 
-    if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-blue-600"/></div>;
+    // Filter Logic
+    const filteredCourses = courses.filter(c => 
+        c.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
-    const paidCourses = courses.filter(c => c.is_paid);
-    const freeCourses = courses.filter(c => !c.is_paid);
-
-    const handleEnroll = () => {
-        if(!selectedCourseId) return alert("Please select a batch first.");
-        
-        const isLoggedIn = !!localStorage.getItem('access_token');
-        
-        if (!isLoggedIn) {
-            navigate('/login'); // Send guest to login
-        } else {
-            // User is logged in -> Proceed to Payment
-            alert(`Redirecting to payment for Course ID: ${selectedCourseId} (Payment Gateway integration pending)`);
-        }
+    // Dynamic Color Assigner (Mint, Lavender, Blue, Rose loop)
+    const getCardColor = (index) => {
+        const colors = ['bg-emerald-100', 'bg-purple-100', 'bg-blue-100', 'bg-rose-100'];
+        return colors[index % colors.length];
     };
 
+    if (loading) return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+            <Loader2 className="animate-spin text-slate-400" size={32} />
+        </div>
+    );
+
     return (
-        <div className="min-h-screen bg-white font-sans">
-            <div className="max-w-2xl mx-auto p-6">
-                <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-2xl font-bold text-slate-900">Select your batch</h1>
-                    <button onClick={() => window.history.back()} className="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
-                </div>
-
-                {/* Paid Batches Section */}
-                <div className="mb-8">
-                    <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Paid Batches</h2>
-                    <div className="space-y-3">
-                        {paidCourses.map(course => (
-                            <CourseOption 
-                                key={course.id} 
-                                course={course} 
-                                isSelected={selectedCourseId === course.id}
-                                onSelect={() => setSelectedCourseId(course.id)}
-                            />
-                        ))}
-                        {paidCourses.length === 0 && <p className="text-slate-400 text-sm italic">No paid batches available.</p>}
+        <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-20">
+            
+            {/* --- HEADER & UTILITY BAR --- */}
+            <div className="bg-white border-b border-slate-200 sticky top-0 z-30 px-6 py-4 shadow-sm">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    
+                    {/* Title & Counter */}
+                    <div>
+                        <h1 className="text-2xl font-black text-slate-900 tracking-tight">All Courses</h1>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">
+                            {filteredCourses.length} courses available
+                        </p>
                     </div>
-                </div>
 
-                {/* Free Batches Section */}
-                <div>
-                    <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Free Batches</h2>
-                    <div className="space-y-3">
-                        {freeCourses.map(course => (
-                            <CourseOption 
-                                key={course.id} 
-                                course={course} 
-                                isSelected={selectedCourseId === course.id}
-                                onSelect={() => setSelectedCourseId(course.id)}
+                    {/* Controls: Search & Filter */}
+                    <div className="flex items-center gap-3 w-full md:w-auto">
+                        <div className="relative flex-1 md:w-80">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                            <input 
+                                type="text" 
+                                placeholder="Search for courses..." 
+                                className="w-full pl-10 pr-4 py-2.5 bg-slate-100 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all outline-none"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
                             />
-                        ))}
-                    </div>
-                </div>
-
-                {/* Bottom Action Bar */}
-                <div className="fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 p-4 shadow-2xl">
-                    <div className="max-w-2xl mx-auto">
-                        <button 
-                            onClick={handleEnroll}
-                            disabled={!selectedCourseId}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                            <ShoppingCart size={20} /> Continue to Enroll
+                        </div>
+                        <button className="p-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-600 transition-colors border border-transparent hover:border-slate-300">
+                            <Filter size={18} />
                         </button>
                     </div>
                 </div>
-                <div className="h-24"></div> {/* Spacer for fixed footer */}
+            </div>
+
+            {/* --- MAIN GRID CONTENT --- */}
+            <div className="max-w-7xl mx-auto px-6 py-8">
+                
+                {filteredCourses.length === 0 ? (
+                    <div className="text-center py-20">
+                        <div className="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+                            <AlertCircle size={32} />
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-700">No courses found</h3>
+                        <p className="text-slate-500">Try adjusting your search terms.</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {filteredCourses.map((course, idx) => (
+                            <div key={course.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:border-slate-300 transition-all duration-300 flex flex-col h-full group">
+                                
+                                {/* 1. Header / Thumbnail (Solid Color Block) */}
+                                <div className={`h-40 ${getCardColor(idx)} p-6 flex flex-col justify-between relative overflow-hidden`}>
+                                    {/* Decor */}
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/20 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                                    
+                                    <div className="flex justify-between items-start relative z-10">
+                                        <span className="bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-slate-800 shadow-sm">
+                                            {course.is_paid ? 'Premium' : 'Free Access'}
+                                        </span>
+                                        {/* Placeholder Icon based on ID for variety */}
+                                        <div className="text-slate-900/10">
+                                            <Award size={48} />
+                                        </div>
+                                    </div>
+                                    
+                                    <h3 className="text-xl font-black text-slate-900 leading-tight line-clamp-2 relative z-10">
+                                        {course.title}
+                                    </h3>
+                                </div>
+
+                                {/* 2. Body Info */}
+                                <div className="p-6 flex-1 flex flex-col">
+                                    <p className="text-sm text-slate-500 leading-relaxed line-clamp-3 mb-6 flex-1">
+                                        {course.description || "Comprehensive coverage of the syllabus with expert-curated notes, quizzes, and mock tests."}
+                                    </p>
+
+                                    {/* Meta Tags */}
+                                    <div className="flex gap-4 mb-6 text-xs font-bold text-slate-400 uppercase tracking-wide">
+                                        <div className="flex items-center gap-1"><BookOpen size={14}/> {course.subjects?.length || 0} Subjects</div>
+                                        <div className="flex items-center gap-1"><Clock size={14}/> Self-Paced</div>
+                                    </div>
+
+                                    {/* Divider */}
+                                    <div className="h-px bg-slate-100 w-full mb-6"></div>
+
+                                    {/* 3. Footer (Action Area) */}
+                                    <div className="flex items-end justify-between gap-4">
+                                        
+                                        {/* Pricing Lockup */}
+                                        <div>
+                                            <div className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">Price</div>
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-2xl font-black text-slate-900">
+                                                    {course.is_paid ? `₹${course.price || '999'}` : 'Free'}
+                                                </span>
+                                                {course.is_paid && (
+                                                    <>
+                                                        <span className="text-xs text-slate-400 line-through font-medium">₹2499</span>
+                                                        <span className="text-xs font-bold text-emerald-600">60% OFF</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Buttons */}
+                                        <div className="flex items-center gap-2">
+                                            <button 
+                                                onClick={() => navigate(`/course/generic/${course.id}`)} // Or specific logic
+                                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
+                                                title="View Details"
+                                            >
+                                                <ChevronRight size={20} />
+                                            </button>
+                                            
+                                            <button 
+                                                onClick={() => navigate('/login')} // Redirect to login or payment
+                                                className="bg-slate-900 hover:bg-black text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-slate-200 transition-transform active:scale-95 flex items-center gap-2"
+                                            >
+                                                {course.is_paid ? 'Buy Now' : 'Start'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );
 };
-
-const CourseOption = ({ course, isSelected, onSelect }) => (
-    <div 
-        onClick={onSelect}
-        className={`flex items-start gap-4 p-4 rounded-xl border cursor-pointer transition-all ${isSelected ? 'bg-blue-50 border-blue-500 shadow-sm' : 'bg-white border-slate-100 hover:border-slate-300'}`}
-    >
-        <div className="mt-1">
-            {isSelected 
-                ? <CheckCircle className="text-blue-600 fill-blue-100" size={20} /> 
-                : <Circle className="text-slate-300" size={20} />
-            }
-        </div>
-        <div>
-            <h3 className={`font-bold text-sm ${isSelected ? 'text-blue-800' : 'text-slate-700'}`}>{course.title}</h3>
-            <p className="text-xs text-slate-500 mt-1 line-clamp-1">{course.description}</p>
-        </div>
-    </div>
-);
 
 export default CourseStorePage;

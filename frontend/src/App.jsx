@@ -401,8 +401,8 @@ const Navbar = ({ theme, toggleTheme }) => {
                                 </Link>
                             )}
 
-                            {/* Logo */}
-                            <Link to={isLoggedIn ? "/dashboard" : "/"} className="flex items-center gap-2 cursor-pointer">
+                            {/* Logo: Always links to the absolute root / */}
+                            <Link to="/" className="flex items-center gap-2 cursor-pointer">
                                 <div className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 p-2 rounded-lg transition-colors"><GraduationCap size={24} /></div>
                                 <span className="font-black text-2xl tracking-tighter text-slate-900 dark:text-white"><span className="text-blue-600">Bit</span>byBit</span>
                             </Link>

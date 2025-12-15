@@ -8,7 +8,7 @@ import uuid
 
 # --- 1. CUSTOM USER MODEL ---
 class User(AbstractUser):
-    phone_number = models.CharField(max_length=15, unique=True)
+    phone_number = models.CharField(max_length=15, unique=True, blank=True, null=True) # Made optional for existing users/admin
     # This field is the key to Single Device Login. 
     # Incrementing this invalidates ALL old tokens.
     token_version = models.IntegerField(default=0) 
@@ -133,8 +133,8 @@ class Option(models.Model):
         return self.text
 
 class UserSubscription(models.Model):
-    """Tracks which user has bought which course"""
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    # FIX: Use explicit string reference 'exams.User'
+    user = models.ForeignKey('exams.User', on_delete=models.CASCADE) 
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     active = models.BooleanField(default=True)
     purchase_date = models.DateTimeField(auto_now_add=True)
@@ -154,15 +154,14 @@ class AdBanner(models.Model):
 
 # --- 3. Progress Tracking ---
 class ExamAttempt(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+    # FIX: Use explicit string reference 'exams.User'
+    user = models.ForeignKey('exams.User', on_delete=models.CASCADE, null=True, blank=True)
     exam = models.ForeignKey(Exam, on_delete=models.CASCADE)
     start_time = models.DateTimeField(auto_now_add=True)
     submit_time = models.DateTimeField(null=True, blank=True)
     total_score = models.FloatField(default=0.0)
     is_completed = models.BooleanField(default=False)
-
-    def __str__(self):
-        return f"{self.user} - {self.exam.title}"
+    def __str__(self): return f"{self.user} - {self.exam.title}"
 
 class StudentResponse(models.Model):
     attempt = models.ForeignKey(ExamAttempt, related_name='responses', on_delete=models.CASCADE)

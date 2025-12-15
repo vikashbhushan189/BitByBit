@@ -4,7 +4,7 @@ import api from '../api/axios';
 import { 
     Layout, BookOpen, User, LogOut, ChevronRight, ShoppingCart, 
     Flame, Zap, PlayCircle, Trophy, MoreVertical, Star, Shield, 
-    Clock, CheckCircle, AlertTriangle, Menu, X, TrendingUp, RefreshCw
+    Clock, CheckCircle, AlertTriangle, Menu, X, TrendingUp, RefreshCw, Home
 } from 'lucide-react';
 
 const DashboardPage = () => {
@@ -46,6 +46,7 @@ const DashboardPage = () => {
     const fetchDashboardData = async () => {
         setLoading(true);
         try {
+            // Use Promise.all to fetch concurrently
             const [userRes, courseRes, histRes] = await Promise.all([
                 api.get('auth/users/me/'),
                 api.get('courses/enrolled/'),
@@ -134,6 +135,7 @@ const DashboardPage = () => {
                     </div>
 
                     <nav className="space-y-2 flex-1">
+                        <SidebarItem icon={<Home size={20}/>} label="Home" onClick={() => navigate('/')} /> {/* ADDED HOME BUTTON */}
                         <SidebarItem icon={<Layout size={20}/>} label="My Learning" active />
                         <SidebarItem icon={<ShoppingCart size={20}/>} label="Course Store" onClick={() => navigate('/store')} />
                         <SidebarItem icon={<Trophy size={20}/>} label="Leaderboard" />
@@ -225,7 +227,7 @@ const DashboardPage = () => {
                 </header>
 
                 {/* SCROLLABLE CONTENT */}
-                <main className="flex-1 overflow-y-auto p-6 md:p-10 pb-32">
+                <main className="p-6 md:p-10 overflow-y-auto pb-32">
                     
                     {/* CASE 1: LOADING */}
                     {loading && (

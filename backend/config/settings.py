@@ -154,7 +154,7 @@ CORS_ALLOWED_ORIGINS = [
 
 # Trust for POST requests (Login/Register)
 CSRF_TRUSTED_ORIGINS = [
-    "https://bitbybit-p3ym.onrender.com",
+    "https://bitbybit-wudx.onrender.com/",
     "https://bitbybit-seven.vercel.app", 
 ]
 

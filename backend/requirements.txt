@@ -17,3 +17,5 @@ Pillow
 chardet==5.2.0
 requests==2.31.0
 Pygments==2.16.1
+django-storages==1.14.2
+boto3==1.28.62

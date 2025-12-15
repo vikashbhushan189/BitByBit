@@ -586,9 +586,9 @@ function App() {
                 <Route path="/topic/:topicId/notes" element={<PrivateRoute><NotesPage /></PrivateRoute>} />
                 <Route path="/chapter/:chapterId/notes" element={<PrivateRoute><NotesPage /></PrivateRoute>} />
                 
-                {/* Profile Placeholders */}
+                {/* Profile Routes */}
+                <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} /> {/* Updated Link */}
                 <Route path="/purchases" element={<PrivateRoute><Navigate to="/dashboard" /></PrivateRoute>} />
-                <Route path="/profile" element={<PrivateRoute><Navigate to="/dashboard" /></PrivateRoute>} />
                 <Route path="/help" element={<PrivateRoute><Navigate to="/dashboard" /></PrivateRoute>} />
 
                 {/* 3. ADMIN ROUTES */}

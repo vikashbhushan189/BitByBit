@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Base URL (Cloud Run or Local)
-const baseURL = 'https://bitbybit-p3ym.onrender.com/api/';
+const baseURL = 'https://bitbybit-wudx.onrender.com/api/';
 
 const api = axios.create({
     baseURL: baseURL,

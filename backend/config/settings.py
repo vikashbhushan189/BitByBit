@@ -25,8 +25,7 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-dev-key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com', '.run.app']
-
+ALLOWED_HOSTS = ['*']
 # --- CRITICAL FIX: Custom User Model ---
 AUTH_USER_MODEL = 'exams.User'
 
@@ -145,8 +144,9 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 # Trust for POST requests (Login/Register)
 CSRF_TRUSTED_ORIGINS = [
-    "https://bitbybit-wudx.onrender.com",
     "https://bitbybit-seven.vercel.app", 
+    "http://localhost:5173",
+    "https://bitbybit-wudx.onrender.com"
 ]
 
 CORS_ALLOW_CREDENTIALS = True

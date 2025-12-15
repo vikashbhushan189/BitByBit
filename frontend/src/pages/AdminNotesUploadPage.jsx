@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import api from '../../api/axios';
+import api from '../api/axios';
 import { UploadCloud, FileText, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 
 const AdminNotesUploadPage = () => {

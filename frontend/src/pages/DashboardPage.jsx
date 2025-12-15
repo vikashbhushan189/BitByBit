@@ -138,7 +138,7 @@ const DashboardPage = () => {
                         <SidebarItem icon={<Layout size={20}/>} label="My Learning" active />
                         <SidebarItem icon={<ShoppingCart size={20}/>} label="Course Store" onClick={() => navigate('/store')} />
                         <SidebarItem icon={<Trophy size={20}/>} label="Leaderboard" />
-                        <SidebarItem icon={<User size={20}/>} label="My Profile" />
+                        <SidebarItem icon={<User size={20}/>} label="My Profile" onClick={() => navigate('/profile')}/>
                     </nav>
 
                     <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700 mt-auto">

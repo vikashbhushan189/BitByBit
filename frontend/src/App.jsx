@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { 
     LogOut, LayoutDashboard, BookOpen, ArrowLeft, User, ChevronDown, ChevronUp, 
-    Menu, X, Search, Sun, Moon, GraduationCap, Home,
+    Menu, X, Search, Sun, Moon, GraduationCap, Home, Bell,
     
     // Profile Menu Helpers
     CreditCard, HelpCircle, 
@@ -301,6 +301,80 @@ const SearchModal = ({ isOpen, onClose }) => {
     );
 };
 
+// 2. Notification Dropdown (NEW)
+const NotificationMenu = () => {
+    const [isOpen, setIsOpen] = useState(false);
+    const menuRef = useRef(null);
+    // Mock notifications for now
+    const [notifications, setNotifications] = useState([
+        { id: 1, title: "New Quiz Available", msg: "Chapter 3: Thermodynamics quiz is live.", time: "2m ago", read: false },
+        { id: 2, title: "Notes Updated", msg: "Updated PDF notes for Organic Chemistry.", time: "1h ago", read: false },
+        { id: 3, title: "Welcome!", msg: "Thanks for joining Bit by Bit.", time: "1d ago", read: true }
+    ]);
+    const unreadCount = notifications.filter(n => !n.read).length;
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) setIsOpen(false);
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const markAllRead = () => {
+        setNotifications(prev => prev.map(n => ({...n, read: true})));
+    };
+
+    return (
+        <div className="relative" ref={menuRef}>
+            <button 
+                onClick={() => setIsOpen(!isOpen)} 
+                className="relative p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                title="Notifications"
+            >
+                <Bell size={20} />
+                {unreadCount > 0 && (
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-slate-900 animate-pulse"></span>
+                )}
+            </button>
+
+            {isOpen && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+                    <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                        <h3 className="font-bold text-slate-800 dark:text-white">Notifications</h3>
+                        {unreadCount > 0 && (
+                            <button onClick={markAllRead} className="text-xs text-blue-600 font-medium hover:underline">
+                                Mark all read
+                            </button>
+                        )}
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                        {notifications.length === 0 ? (
+                            <div className="p-8 text-center text-slate-400 text-sm">No new notifications</div>
+                        ) : (
+                            notifications.map(n => (
+                                <div key={n.id} className={`p-4 border-b border-slate-50 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${n.read ? 'opacity-60' : 'bg-blue-50/30 dark:bg-blue-900/10'}`}>
+                                    <div className="flex justify-between items-start mb-1">
+                                        <h4 className={`text-sm font-semibold ${n.read ? 'text-slate-700 dark:text-slate-300' : 'text-slate-900 dark:text-white'}`}>{n.title}</h4>
+                                        <span className="text-[10px] text-slate-400 whitespace-nowrap ml-2">{n.time}</span>
+                                    </div>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{n.msg}</p>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                    <div className="p-2 border-t border-slate-100 dark:border-slate-800 text-center">
+                         <button className="text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 py-1">
+                            View All Activity
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+
 // 2. Profile Dropdown
 const ProfileMenu = ({ handleLogout }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -455,7 +529,23 @@ const Navbar = ({ theme, toggleTheme }) => {
                             <button onClick={toggleTheme} className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">{theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}</button>
                             
                             {isLoggedIn ? (
-                                <ProfileMenu handleLogout={handleLogout} />
+                                <div className="flex items-center gap-3">
+                                    <Link 
+                                        to="/courses" 
+                                        className={`hidden md:flex items-center gap-2 text-sm font-semibold transition-colors ${location.pathname === '/courses' ? 'text-blue-600' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'}`}
+                                    >
+                                        <BookOpen size={18}/> 
+                                        <span>Library</span>
+                                    </Link>
+                                    
+                                    <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 hidden md:block"></div>
+
+                                    {/* NOTIFICATION BELL */}
+                                    <NotificationMenu />
+                                    
+                                    {/* PROFILE DROPDOWN */}
+                                    <ProfileMenu handleLogout={handleLogout} />
+                                </div>
                             ) : (
                                 <div className="flex items-center gap-3">
                                     <Link to="/login" className="text-slate-600 dark:text-slate-300 font-bold hover:text-blue-600 px-3 py-2 hidden sm:block">Login</Link>

@@ -36,66 +36,106 @@ const mockBanners = [
     }
 ];
 
+// --- EXAM DATA WITH STATUS ---
 const EXAM_CATEGORIES_DATA = [
     { 
         name: "IIT JEE", 
         icon: <Atom size={20} className="text-orange-500"/>, 
         items: [{name: "Mains"}, {name: "Advanced"}],
-        link: "/engineering/jee" // <--- Direct Link to JeePage
+        link: "/engineering/jee",
+        status: "active"
     },
     { 
         name: "NEET", 
         icon: <Stethoscope size={20} className="text-blue-500"/>, 
         items: [{name: "Class 11"}, {name: "Class 12"}],
-        link: "/medical/neet" // <--- Direct Link to NeetPage
-    },
-    { 
-        name: "UPSC CSE", 
-        icon: <Landmark size={20} className="text-yellow-600"/>, 
-        items: [{name: "Prelims"}, {name: "Mains"}],
-        link: "/civil-services/upsc" // <--- Direct Link to UpscPage
-    },
-    { 
-        name: "BPSC", 
-        icon: <Landmark size={20} className="text-orange-600"/>, 
-        items: [{name: "Prelims"}, {name: "Mains"}],
-        link: "/civil-services/bpsc" // <--- Direct Link to BpscPage
+        link: "/medical/neet",
+        status: "active"
     },
     { 
         name: "GATE", 
         icon: <Cpu size={20} className="text-purple-600"/>, 
         items: [{name: "CS & IT"}, {name: "Mechanical"}],
-        link: "/engineering/gate" // <--- Direct Link to GatePage
+        link: "/engineering/gate",
+        status: "active"
     },
     { 
-        name: "BPSC TRE", 
-        icon: <Users size={20} className="text-green-600"/>, 
-        items: [{name: "Primary"}, {name: "Secondary"}],
-        link: "/teaching/bpsc_tre" // <--- Direct Link to BpscTrePage
+        name: "UPSC CSE", 
+        icon: <Landmark size={20} className="text-yellow-600"/>, 
+        items: [{name: "Prelims"}, {name: "Mains"}],
+        link: "/civil-services/upsc",
+        status: "active"
     },
     { 
-        name: "UGC NET", 
-        icon: <BookOpen size={20} className="text-green-500"/>, 
-        items: [{name: "Paper 1"}, {name: "Computer Sc"}],
-        link: "/teaching/ugc_net" // <--- Direct Link to UgcNetPage
-    },
-    { 
-        name: "CTET", 
-        icon: <BookOpen size={20} className="text-teal-600"/>, 
-        items: [{name: "Paper 1"}, {name: "Paper 2"}],
-        link: "/teaching/ctet" // <--- Direct Link to CtetPage
+        name: "BPSC", 
+        icon: <Landmark size={20} className="text-orange-600"/>, 
+        items: [{name: "Prelims"}, {name: "Mains"}],
+        link: "/civil-services/bpsc",
+        status: "active"
     },
     { 
         name: "Defence", 
         icon: <Shield size={20} className="text-teal-500"/>, 
         items: [{name: "NDA"}, {name: "Agniveer"}],
-        link: "/defence/agniveer" // Defaulting to Agniveer for now
+        link: "/defence/agniveer",
+        status: "active"
     },
+    { 
+        name: "UGC NET", 
+        icon: <BookOpen size={20} className="text-green-500"/>, 
+        items: [{name: "Paper 1"}, {name: "Computer Sc"}],
+        link: "/teaching/ugc_net",
+        status: "active"
+    },
+    { 
+        name: "Teaching (CTET)", 
+        icon: <Users size={20} className="text-emerald-600"/>, 
+        items: [{name: "Paper 1"}, {name: "Paper 2"}],
+        link: "/teaching/ctet",
+        status: "active"
+    },
+    // --- COMING SOON CATEGORIES ---
     { 
         name: "SSC CGL", 
         icon: <Building2 size={20} className="text-red-500"/>, 
         items: [{name: "Tier 1"}, {name: "Tier 2"}],
-        link: "/category/ssc" // Generic Category Page
+        link: "#",
+        status: "coming_soon"
+    },
+    { 
+        name: "Banking", 
+        icon: <Briefcase size={20} className="text-indigo-500"/>, 
+        items: [{name: "PO"}, {name: "Clerk"}],
+        link: "#",
+        status: "coming_soon"
+    },
+    { 
+        name: "School Boards", 
+        icon: <Globe size={20} className="text-pink-500"/>, 
+        items: [{name: "CBSE"}, {name: "ICSE"}],
+        link: "#",
+        status: "coming_soon"
+    },
+    { 
+        name: "CA / CS", 
+        icon: <Calculator size={20} className="text-blue-600"/>, 
+        items: [{name: "Foundation"}, {name: "Inter"}],
+        link: "#",
+        status: "coming_soon"
+    },
+    { 
+        name: "MBA", 
+        icon: <TrendingUp size={20} className="text-purple-600"/>, 
+        items: [{name: "CAT"}, {name: "XAT"}],
+        link: "#",
+        status: "coming_soon"
+    },
+    { 
+        name: "Law (CLAT)", 
+        icon: <Scale size={20} className="text-slate-700"/>, 
+        items: [{name: "UG"}, {name: "PG"}],
+        link: "#",
+        status: "coming_soon"
     }
 ];
 
@@ -103,6 +143,10 @@ const LandingPage = () => {
     const [showAd, setShowAd] = useState(true);
     const [banners, setBanners] = useState([]);
     const [currentAdIndex, setCurrentAdIndex] = useState(0);
+    const navigate = useNavigate();
+
+    // --- TOAST STATE ---
+    const [toast, setToast] = useState(null); // { message, type }
 
     const [showAllCategories, setShowAllCategories] = useState(false);
     const INITIAL_CATEGORY_COUNT = 6; 
@@ -124,11 +168,41 @@ const LandingPage = () => {
         return () => clearInterval(timer);
     }, [banners]);
 
+    // Toast Timer
+    useEffect(() => {
+        if (toast) {
+            const timer = setTimeout(() => setToast(null), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [toast]);
+
     const activeBanner = banners[currentAdIndex];
+
+    const handleCategoryClick = (category) => {
+        if (category.status === 'coming_soon') {
+            setToast({ type: 'info', message: "Course is being prepared. We will notify you when added!" });
+        } else {
+            navigate(category.link);
+        }
+    };
 
     return (
         <div className="bg-white dark:bg-slate-900 font-sans text-slate-800 dark:text-slate-200 transition-colors duration-300">
             
+            {/* --- TOAST NOTIFICATION --- */}
+            {toast && (
+                <div className="fixed top-24 right-6 z-50 animate-in slide-in-from-right-10 fade-in duration-300">
+                    <div className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 border border-slate-700 dark:border-slate-200">
+                        <AlertCircle size={20} className="text-yellow-400 dark:text-yellow-600" />
+                        <div>
+                            <h4 className="font-bold text-sm">Coming Soon</h4>
+                            <p className="text-xs opacity-90">{toast.message}</p>
+                        </div>
+                        <button onClick={() => setToast(null)}><X size={16} className="opacity-50 hover:opacity-100"/></button>
+                    </div>
+                </div>
+            )}
+
             {/* --- AD BANNER --- */}
             {activeBanner && showAd && (
                 <div className={`relative bg-gradient-to-r from-${activeBanner.bg_gradient_from} to-${activeBanner.bg_gradient_to} text-white p-3 md:py-4 transition-all duration-500 ease-in-out`}>
@@ -216,27 +290,37 @@ const LandingPage = () => {
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {displayedCategories.map((category, idx) => (
-                            <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl p-6 hover:shadow-xl hover:border-blue-200 dark:hover:border-slate-600 transition-all group relative overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
+                            <div 
+                                key={idx} 
+                                onClick={() => handleCategoryClick(category)} // <--- CLICK HANDLER
+                                className={`bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl p-6 transition-all group relative overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300 cursor-pointer
+                                    ${category.status === 'coming_soon' ? 'opacity-70 hover:opacity-100 grayscale hover:grayscale-0' : 'hover:shadow-xl hover:border-blue-200 dark:hover:border-slate-600'}
+                                `}
+                            >
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100/50 dark:bg-blue-900/20 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
                                 <div className="relative z-10">
-                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                                        {category.name}
-                                    </h3>
+                                    <div className="flex justify-between items-start mb-4">
+                                        <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                            {category.name}
+                                        </h3>
+                                        {category.status === 'coming_soon' && (
+                                            <span className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-1 rounded">Soon</span>
+                                        )}
+                                    </div>
+                                    
                                     <div className="flex flex-wrap gap-2 mb-6">
                                         {category.items.map((exam, eIdx) => (
                                             <span key={eIdx} className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5">
-                                                {/* Use Category Icon for Items */}
                                                 {React.cloneElement(category.icon, { size: 14 })} 
                                                 {exam.name}
                                             </span>
                                         ))}
                                     </div>
-                                    <Link 
-                                        to={category.link} // Uses specific link now
-                                        className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-sm group-hover:translate-x-1 transition-transform"
-                                    >
-                                        Explore Category <ArrowRight size={16} />
-                                    </Link>
+                                    
+                                    <div className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-sm group-hover:translate-x-1 transition-transform">
+                                        {category.status === 'coming_soon' ? 'Notify Me' : 'Explore Category'} 
+                                        <ArrowRight size={16} />
+                                    </div>
                                 </div>
                             </div>
                         ))}

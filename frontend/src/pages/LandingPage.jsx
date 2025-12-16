@@ -13,6 +13,7 @@ import {
     FileText, Monitor, Cpu, GraduationCap
 } from 'lucide-react';
 import api from '../api/axios';
+import { useTheme } from '../hooks/useTheme';
 
 const mockBanners = [
     {
@@ -36,14 +37,66 @@ const mockBanners = [
 ];
 
 const EXAM_CATEGORIES_DATA = [
-    { name: "NEET", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 15h11"/><path d="m11 12 11 11"/><path d="M22 17 11 6"/><path d="m13 14-2 2"/></svg>, items: [{name: "Class 11"}, {name: "Class 12"}] },
-    { name: "IIT JEE", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M10 8h4"/><path d="M10 16h4"/><path d="m8 10 4 4 4-4"/></svg>, items: [{name: "Mains"}, {name: "Advanced"}] },
-    { name: "UPSC", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 11a7 7 0 0 0 7-7 7 7 0 0 0-7-7z"/><path d="M12 11a7 7 0 0 1-7-7 7 7 0 0 1 7-7z"/></svg>, items: [{name: "Prelims"}, {name: "Mains"}] },
-    { name: "Defence", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m8 6 4-4 4 4"/><path d="M12 2v20"/><path d="M16 16 12 20 8 16"/></svg>, items: [{name: "NDA"}, {name: "CDS"}, {name: "Agniveer"}] },
-    { name: "Banking", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>, items: [{name: "PO"}, {name: "Clerk"}] },
-    { name: "SSC", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20v-8"/><path d="M18 20v-4"/><path d="M6 20v-4"/><path d="M12 12V4"/><path d="M18 8V4"/><path d="M6 8V4"/></svg>, items: [{name: "CGL"}, {name: "CHSL"}] },
-    { name: "Teaching", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 10l.3-1.6a2 2 0 1 1 4.7 0l.3 1.6"/><path d="M12 22v-4"/><path d="M8 22v-4"/><path d="M16 22v-4"/></svg>, items: [{name: "CTET"}, {name: "BPSC TRE"}] },
-    { name: "GATE", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12V3H2v9a10 10 0 0 0 20 0V3h-3v9a7 7 0 0 1-14 0z"/><path d="M5 3h14"/></svg>, items: [{name: "CS & IT"}, {name: "Mechanical"}] },
+    { 
+        name: "IIT JEE", 
+        icon: <Atom size={20} className="text-orange-500"/>, 
+        items: [{name: "Mains"}, {name: "Advanced"}],
+        link: "/engineering/jee" // <--- Direct Link to JeePage
+    },
+    { 
+        name: "NEET", 
+        icon: <Stethoscope size={20} className="text-blue-500"/>, 
+        items: [{name: "Class 11"}, {name: "Class 12"}],
+        link: "/medical/neet" // <--- Direct Link to NeetPage
+    },
+    { 
+        name: "UPSC CSE", 
+        icon: <Landmark size={20} className="text-yellow-600"/>, 
+        items: [{name: "Prelims"}, {name: "Mains"}],
+        link: "/civil-services/upsc" // <--- Direct Link to UpscPage
+    },
+    { 
+        name: "BPSC", 
+        icon: <Landmark size={20} className="text-orange-600"/>, 
+        items: [{name: "Prelims"}, {name: "Mains"}],
+        link: "/civil-services/bpsc" // <--- Direct Link to BpscPage
+    },
+    { 
+        name: "GATE", 
+        icon: <Cpu size={20} className="text-purple-600"/>, 
+        items: [{name: "CS & IT"}, {name: "Mechanical"}],
+        link: "/engineering/gate" // <--- Direct Link to GatePage
+    },
+    { 
+        name: "BPSC TRE", 
+        icon: <Users size={20} className="text-green-600"/>, 
+        items: [{name: "Primary"}, {name: "Secondary"}],
+        link: "/teaching/bpsc_tre" // <--- Direct Link to BpscTrePage
+    },
+    { 
+        name: "UGC NET", 
+        icon: <BookOpen size={20} className="text-green-500"/>, 
+        items: [{name: "Paper 1"}, {name: "Computer Sc"}],
+        link: "/teaching/ugc_net" // <--- Direct Link to UgcNetPage
+    },
+    { 
+        name: "CTET", 
+        icon: <BookOpen size={20} className="text-teal-600"/>, 
+        items: [{name: "Paper 1"}, {name: "Paper 2"}],
+        link: "/teaching/ctet" // <--- Direct Link to CtetPage
+    },
+    { 
+        name: "Defence", 
+        icon: <Shield size={20} className="text-teal-500"/>, 
+        items: [{name: "NDA"}, {name: "Agniveer"}],
+        link: "/defence/agniveer" // Defaulting to Agniveer for now
+    },
+    { 
+        name: "SSC CGL", 
+        icon: <Building2 size={20} className="text-red-500"/>, 
+        items: [{name: "Tier 1"}, {name: "Tier 2"}],
+        link: "/category/ssc" // Generic Category Page
+    }
 ];
 
 const LandingPage = () => {
@@ -129,6 +182,7 @@ const LandingPage = () => {
                         </div>
                     </div>
                     <div className="md:w-1/2">
+                        {/* 3D Floating Elements */}
                         <div className="relative bg-gradient-to-br from-slate-800 to-slate-900 p-8 rounded-3xl border border-slate-700 shadow-2xl">
                             <div className="flex items-center justify-between mb-8">
                                 <div className="flex gap-2"><div className="w-3 h-3 rounded-full bg-red-500"/><div className="w-3 h-3 rounded-full bg-yellow-500"/><div className="w-3 h-3 rounded-full bg-green-500"/></div>
@@ -171,13 +225,16 @@ const LandingPage = () => {
                                     <div className="flex flex-wrap gap-2 mb-6">
                                         {category.items.map((exam, eIdx) => (
                                             <span key={eIdx} className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5">
-                                                {/* Using the Atom icon from the category definition as a placeholder */}
-                                                {React.cloneElement(category.icon || <Atom size={14}/>, { size: 14 })} 
+                                                {/* Use Category Icon for Items */}
+                                                {React.cloneElement(category.icon, { size: 14 })} 
                                                 {exam.name}
                                             </span>
                                         ))}
                                     </div>
-                                    <Link to={`/category/${category.name.toLowerCase().replace(/\s+/g, '-')}`} className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-sm group-hover:translate-x-1 transition-transform">
+                                    <Link 
+                                        to={category.link} // Uses specific link now
+                                        className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-sm group-hover:translate-x-1 transition-transform"
+                                    >
                                         Explore Category <ArrowRight size={16} />
                                     </Link>
                                 </div>

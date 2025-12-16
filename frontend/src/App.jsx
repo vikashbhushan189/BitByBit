@@ -11,7 +11,7 @@ import {
     // Mega Menu Icons (Grouped)
     Atom, Stethoscope, Building2, Scale, Briefcase, Globe, Code, 
     Calculator, Landmark, Gavel, Plane, Microscope, PenTool, TrendingUp, 
-    FileText, Monitor, Cpu, Trophy, CheckCircle, Users, Zap
+    FileText, Monitor, Cpu, Trophy, CheckCircle, Users, Zap, Bell
     
 } from 'lucide-react';
 import { useTheme } from './hooks/useTheme';

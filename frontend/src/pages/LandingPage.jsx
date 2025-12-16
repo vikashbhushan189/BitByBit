@@ -10,7 +10,7 @@ import {
     // Category Icons (Used in the Grid)
     Atom, Stethoscope, Building2, Scale, Briefcase, Globe, Code, 
     Calculator, Landmark, Gavel, Plane, Microscope, PenTool, TrendingUp,
-    FileText, Monitor, Cpu, GraduationCap
+    FileText, Monitor, Cpu, GraduationCap, Shield
 } from 'lucide-react';
 import api from '../api/axios';
 import { useTheme } from '../hooks/useTheme';

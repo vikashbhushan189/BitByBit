@@ -8,7 +8,7 @@ import {
     Calculator, Globe, Microscope, Target, X, CreditCard, ArrowRight,
     Cpu, Code, Database, Layers, Network, Server
 } from 'lucide-react';
-import api from '../../../../api/axios';
+import api from '../../../api/axios';
 
 // --- COURSE DATA ---
 const UGC_NET_DETAILS = {

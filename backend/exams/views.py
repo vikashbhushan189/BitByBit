@@ -11,6 +11,7 @@ from django.conf import settings
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.exceptions import APIException
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -21,27 +22,46 @@ from .serializers import CourseSerializer, ExamSerializer, ExamAttemptSerializer
 from .ai_service import generate_questions_from_text, generate_question_from_image
 from .permissions import IsPaidSubscriberOrAdmin
 
+# --- CUSTOM EXCEPTION FOR CONFLICT ---
+class Conflict(APIException):
+    status_code = 409
+    default_detail = 'Device Conflict'
+    default_code = 'conflict'
 
-# --- CUSTOM PASSWORD LOGIN ---
+# --- CUSTOM PASSWORD LOGIN (With Conflict Check) ---
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-    @classmethod
-    def get_token(cls, user):
-        # 1. Generate standard token
-        token = super().get_token(user)
-        
-        # 2. Add custom claim: token_version
-        # This stamps the token with the current version from the DB
-        token['token_version'] = user.token_version
-        
-        return token
-
     def validate(self, attrs):
+        # 1. Validate Credentials (Username/Pass)
+        # This will raise 401 if wrong, which is correct.
         data = super().validate(attrs)
-        # 3. Increment version in DB (Invalidates all previous tokens)
+        
+        # 2. Check for Force Login Flag
+        request = self.context.get('request')
+        force_login = request.data.get('force_login', False)
+        
+        # 3. Check for Active Session
+        # If token_version > 0, it means they have logged in before.
+        # Ideally, we would check for *active* tokens, but JWT is stateless.
+        # So we treat "has logged in before" as "might be logged in elsewhere".
+        if self.user.token_version > 0 and not force_login:
+             raise Conflict({
+                 "message": "You are logged in on another device. Do you want to logout from there?",
+                 "requires_confirmation": True
+             })
+        
+        # 4. Increment Version (This invalidates all old tokens)
         self.user.token_version += 1
         self.user.save()
         
+        # 5. Re-Generate Token with NEW Version
+        # We discard the initial token from super().validate() because it used the OLD version.
+        refresh = RefreshToken.for_user(self.user)
+        refresh['token_version'] = self.user.token_version # Stamp it!
+        
+        data['refresh'] = str(refresh)
+        data['access'] = str(refresh.access_token)
         data['role'] = "admin" if self.user.is_superuser else "student"
+        
         return data
 
 

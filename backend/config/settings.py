@@ -155,7 +155,7 @@ CORS_ALLOW_CREDENTIALS = True
 # --- DRF & JWT SETTINGS ---
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'exams.authentication.SingleDeviceJWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny', # Default open, lock down specific views

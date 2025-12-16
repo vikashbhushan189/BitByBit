@@ -24,12 +24,26 @@ from .permissions import IsPaidSubscriberOrAdmin
 
 # --- CUSTOM PASSWORD LOGIN ---
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        # 1. Generate standard token
+        token = super().get_token(user)
+        
+        # 2. Add custom claim: token_version
+        # This stamps the token with the current version from the DB
+        token['token_version'] = user.token_version
+        
+        return token
+
     def validate(self, attrs):
         data = super().validate(attrs)
+        # 3. Increment version in DB (Invalidates all previous tokens)
         self.user.token_version += 1
         self.user.save()
+        
         data['role'] = "admin" if self.user.is_superuser else "student"
         return data
+
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer

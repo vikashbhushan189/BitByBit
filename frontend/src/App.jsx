@@ -466,9 +466,19 @@ const PrivateRoute = ({ children }) => {
     return token ? children : <Navigate to="/login" />;
 };
 
+// FIX: AdminRoute now strictly checks for 'admin' role
 const AdminRoute = ({ children }) => {
     const token = localStorage.getItem('access_token');
-    return token ? children : <Navigate to="/admin-portal" />;
+    const userRole = localStorage.getItem('user_role');
+    
+    // 1. Not logged in? Go to Admin Login
+    if (!token) return <Navigate to="/admin-portal" replace />;
+    
+    // 2. Logged in but NOT admin? Kick them to Student Dashboard
+    if (userRole !== 'admin') return <Navigate to="/dashboard" replace />;
+    
+    // 3. Admin? Let them in
+    return children;
 };
 
 // --- APP & LAYOUT ---

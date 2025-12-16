@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react'; 
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { 
+    // Core Navigation & UI (Placed first)
     LogOut, LayoutDashboard, BookOpen, ArrowLeft, User, ChevronDown, ChevronUp, 
-    Menu, X, Search, Sun, Moon, GraduationCap, Home, Bell,
+    Menu, X, Search, Sun, Moon, GraduationCap, Home,
     
     // Profile Menu Helpers
     CreditCard, HelpCircle, 
@@ -58,183 +59,56 @@ const NAV_LINKS = [
         type: "mega_tabs",  
         categories: [
             {
-                id: "neet",
-                name: "NEET",
+                id: "competitive",
+                name: "Competitive",
                 items: [
-                    { name: "Class 11", icon: <Stethoscope size={20} className="text-blue-500"/> },
-                    { name: "Class 12", icon: <Stethoscope size={20} className="text-blue-500"/> },
-                    { name: "Dropper", icon: <Stethoscope size={20} className="text-blue-500"/> }
-                ]
-            },
-            {
-                id: "jee",
-                name: "IIT JEE",
-                items: [
-                    { name: "Class 11", icon: <Atom size={20} className="text-orange-500"/> },
-                    { name: "Class 12", icon: <Atom size={20} className="text-orange-500"/> },
-                    { name: "Dropper", icon: <Atom size={20} className="text-orange-500"/> }
-                ]
-            },
-            {
-                id: "foundation",
-                name: "Pre Foundation",
-                items: [
-                    { name: "Class 9", icon: <BookOpen size={20} className="text-green-500"/> },
-                    { name: "Class 10", icon: <BookOpen size={20} className="text-green-500"/> },
-                    { name: "Olympiad", icon: <Trophy size={20} className="text-yellow-500"/> }
-                ]
-            },
-            {
-                id: "school",
-                name: "School Boards",
-                items: [
-                    { name: "CBSE", icon: <BookOpen size={20} className="text-purple-500"/> },
-                    { name: "ICSE", icon: <BookOpen size={20} className="text-purple-500"/> },
-                    { name: "UP Board", icon: <Globe size={20} className="text-pink-500"/> },
-                    { name: "Maharashtra Board", icon: <Globe size={20} className="text-pink-500"/> }
-                ]
-            },
-            {
-                id: "upsc",
-                name: "UPSC",
-                items: [
-                    { name: "Prelims", icon: <Landmark size={20} className="text-orange-600"/> },
-                    { name: "Mains", icon: <Landmark size={20} className="text-orange-600"/> },
-                    { name: "Optional", icon: <BookOpen size={20} className="text-orange-600"/> }
+                    { name: "IIT JEE", icon: <Atom size={20} className="text-orange-500"/>, link: "/engineering/jee" },
+                    { name: "NEET", icon: <Stethoscope size={20} className="text-blue-500"/>, link: "/medical/neet" },
+                    { name: "GATE", icon: <Cpu size={20} className="text-purple-500"/>, link: "/engineering/gate" },
+                    { name: "UGC NET", icon: <BookOpen size={20} className="text-green-500"/>, link: "/teaching/ugc_net" }
                 ]
             },
             {
                 id: "govt",
-                name: "Govt Job Exams",
+                name: "Govt Exams",
                 items: [
-                    { name: "SSC", icon: <Building2 size={20} className="text-red-500"/> },
-                    { name: "Banking", icon: <Briefcase size={20} className="text-indigo-500"/> },
-                    { name: "Teaching", icon: <Users size={20} className="text-green-600"/> },
-                    { name: "Judiciary", icon: <Gavel size={20} className="text-yellow-600"/> }
+                    { name: "SSC CGL", icon: <Building2 size={20} className="text-red-500"/>, link: "/category/ssc" },
+                    { name: "Banking", icon: <Briefcase size={20} className="text-indigo-500"/>, link: "/category/banking" },
+                    { name: "Railways", icon: <Monitor size={20} className="text-slate-500"/>, link: "/category/railways" }
                 ]
             },
             {
                 id: "defence",
                 name: "Defence",
                 items: [
-                    { name: "NDA", icon: <CheckCircle size={20} className="text-teal-500"/> },
-                    { name: "CDS", icon: <CheckCircle size={20} className="text-teal-500"/> },
-                    { name: "AFCAT", icon: <Plane size={20} className="text-teal-500"/> },
-                    { name: "Agniveer", icon: <CheckCircle size={20} className="text-teal-500"/> }
+                    { name: "NDA", icon: <CheckCircle size={20} className="text-teal-500"/>, link: "/defence/nda" },
+                    { name: "CDS", icon: <CheckCircle size={20} className="text-teal-500"/>, link: "/defence/cds" },
+                    { name: "AFCAT", icon: <Plane size={20} className="text-teal-500"/>, link: "/defence/afcat" },
+                    { name: "Agniveer", icon: <CheckCircle size={20} className="text-teal-500"/>, link: "/defence/agniveer" }
                 ]
             },
             {
-                id: "ca",
-                name: "CA",
+                id: "civil",
+                name: "Civil Services",
                 items: [
-                    { name: "Foundation", icon: <Calculator size={20} className="text-blue-600"/> },
-                    { name: "Intermediate", icon: <Calculator size={20} className="text-blue-600"/> },
-                    { name: "Final", icon: <Calculator size={20} className="text-blue-600"/> }
+                    { name: "UPSC CSE", icon: <Landmark size={20} className="text-yellow-600"/>, link: "/civil-services/upsc" },
+                    { name: "BPSC", icon: <Landmark size={20} className="text-orange-600"/>, link: "/civil-services/bpsc" }
                 ]
             },
             {
-                id: "olympiad",
-                name: "Olympiad",
+                id: "teaching",
+                name: "Teaching",
                 items: [
-                    { name: "NSO", icon: <Trophy size={20} className="text-yellow-500"/> },
-                    { name: "IMO", icon: <Trophy size={20} className="text-yellow-500"/> },
-                    { name: "NTSE", icon: <Trophy size={20} className="text-yellow-500"/> }
+                    { name: "BPSC TRE", icon: <Users size={20} className="text-green-600"/>, link: "/teaching/bpsc_tre" },
+                    { name: "CTET", icon: <BookOpen size={20} className="text-teal-600"/>, link: "/teaching/ctet" }
                 ]
             },
             {
-                id: "mba",
-                name: "MBA",
+                id: "school",
+                name: "School Boards",
                 items: [
-                    { name: "CAT", icon: <TrendingUp size={20} className="text-purple-600"/> },
-                    { name: "XAT", icon: <TrendingUp size={20} className="text-purple-600"/> },
-                    { name: "MAT", icon: <TrendingUp size={20} className="text-purple-600"/> }
-                ]
-            },
-            {
-                id: "psc",
-                name: "State PSC",
-                items: [
-                    { name: "UPPSC", icon: <Landmark size={20} className="text-orange-500"/> },
-                    { name: "BPSC", icon: <Landmark size={20} className="text-orange-500"/> },
-                    { name: "MPPSC", icon: <Landmark size={20} className="text-orange-500"/> }
-                ]
-            },
-            {
-                id: "commerce",
-                name: "Commerce",
-                items: [
-                    { name: "Class 11", icon: <Calculator size={20} className="text-green-500"/> },
-                    { name: "Class 12", icon: <Calculator size={20} className="text-green-500"/> },
-                    { name: "CUET Commerce", icon: <Calculator size={20} className="text-green-500"/> }
-                ]
-            },
-            {
-                id: "gate",
-                name: "GATE",
-                items: [
-                    { name: "CS & IT", icon: <Cpu size={20} className="text-red-500"/> },
-                    { name: "Mechanical", icon: <Cpu size={20} className="text-red-500"/> },
-                    { name: "Civil", icon: <Cpu size={20} className="text-red-500"/> },
-                    { name: "Electrical", icon: <Zap size={20} className="text-yellow-500"/> }
-                ]
-            },
-            {
-                id: "cuet",
-                name: "CUET",
-                items: [
-                    { name: "Science", icon: <Atom size={20} className="text-blue-500"/> },
-                    { name: "Commerce", icon: <Calculator size={20} className="text-green-500"/> },
-                    { name: "Arts", icon: <PenTool size={20} className="text-pink-500"/> }
-                ]
-            },
-            {
-                id: "aeje",
-                name: "AE/JE",
-                items: [
-                    { name: "SSC JE", icon: <Cpu size={20} className="text-slate-600"/> },
-                    { name: "RRB JE", icon: <Monitor size={20} className="text-slate-600"/> }
-                ]
-            },
-            {
-                id: "jam",
-                name: "IIT JAM & CSIR NET",
-                items: [
-                    { name: "Physics", icon: <Atom size={20} className="text-indigo-500"/> },
-                    { name: "Maths", icon: <Calculator size={20} className="text-indigo-500"/> },
-                    { name: "Life Sciences", icon: <Microscope size={20} className="text-green-500"/> }
-                ]
-            },
-            {
-                id: "law",
-                name: "LAW",
-                items: [
-                    { name: "CLAT", icon: <Scale size={20} className="text-slate-700"/> },
-                    { name: "AILET", icon: <Scale size={20} className="text-slate-700"/> },
-                    { name: "Judiciary", icon: <Gavel size={20} className="text-yellow-700"/> }
-                ]
-            },
-            {
-                id: "ese",
-                name: "ESE GATE",
-                items: [
-                    { name: "Prelims", icon: <Cpu size={20} className="text-blue-700"/> },
-                    { name: "Mains", icon: <Cpu size={20} className="text-blue-700"/> }
-                ]
-            },
-            {
-                id: "ipmat",
-                name: "IPMAT",
-                items: [
-                    { name: "IIM Indore", icon: <GraduationCap size={20} className="text-blue-800"/> },
-                    { name: "IIM Rohtak", icon: <GraduationCap size={20} className="text-blue-800"/> }
-                ]
-            },
-            {
-                id: "ielts",
-                name: "IELTS",
-                items: [
-                    { name: "Academic", icon: <Globe size={20} className="text-cyan-500"/> },
-                    { name: "General", icon: <Globe size={20} className="text-cyan-500"/> }
+                    { name: "CBSE 12", icon: <BookOpen size={20} className="text-blue-400"/>, link: "/category/school" },
+                    { name: "CBSE 10", icon: <BookOpen size={20} className="text-blue-400"/>, link: "/category/school" }
                 ]
             }
         ]

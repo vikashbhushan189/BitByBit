@@ -6,7 +6,7 @@ import {
     Calendar, Award, Star, ChevronDown, ChevronUp, 
     Shield, ArrowLeft, Zap, Users, BookOpen, BrainCircuit, 
     Calculator, Globe, Microscope, Target, X, CreditCard, ArrowRight,
-    Cpu, Code, Database, Layers, Network, Server, Layout
+    Cpu, Code, Database, Layers, Network, Server, Layout, TrendingUp
 } from 'lucide-react';
 import api from '../../../api/axios';
 

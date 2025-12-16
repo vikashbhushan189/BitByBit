@@ -182,6 +182,7 @@ DJOSER = {
     'SEND_CONFIRMATION_EMAIL': True,
     'SET_USERNAME_RETYPE': True,
     'SET_PASSWORD_RETYPE': True,
+    
     'PASSWORD_RESET_CONFIRM_URL': 'password-reset/{uid}/{token}',
     'USERNAME_RESET_CONFIRM_URL': 'username-reset/{uid}/{token}',
     'ACTIVATION_URL': 'activate/{uid}/{token}',
@@ -193,6 +194,12 @@ DJOSER = {
         'user': 'exams.serializers.CustomUserSerializer',
         'current_user': 'exams.serializers.CustomUserSerializer',
     },
+
+    'EMAIL': {
+        'password_reset': 'exams.email.CustomPasswordResetEmail',
+        'activation': 'exams.email.CustomActivationEmail',
+    },
+
     'DOMAIN': 'bitbybit-seven.vercel.app', 
     'SITE_NAME': 'Bit By Bit',
 }

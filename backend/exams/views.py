@@ -21,6 +21,7 @@ from .models import Course, Exam, ExamAttempt, Question, Option, StudentResponse
 from .serializers import CourseSerializer, ExamSerializer, ExamAttemptSerializer, TopicSerializer, AdBannerSerializer, ChapterSerializer
 from .ai_service import generate_questions_from_text, generate_question_from_image
 from .permissions import IsPaidSubscriberOrAdmin
+import chardet
 
 # --- CUSTOM EXCEPTION FOR CONFLICT ---
 class Conflict(APIException):

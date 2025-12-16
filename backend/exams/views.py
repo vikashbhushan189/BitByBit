@@ -40,15 +40,11 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         request = self.context.get('request')
         force_login = request.data.get('force_login', False)
         
-        # 3. Check for Active Session
-        # If token_version > 0, it means they have logged in before.
-        # Ideally, we would check for *active* tokens, but JWT is stateless.
-        # So we treat "has logged in before" as "might be logged in elsewhere".
-        if self.user.token_version > 0 and not force_login:
-             raise Conflict({
-                 "message": "You are logged in on another device. Do you want to logout from there?",
-                 "requires_confirmation": True
-             })
+        # 3. Check active session
+        is_active_session = self.user.last_login and (not self.user.last_logout or self.user.last_login > self.user.last_logout)
+        
+        if is_active_session and not force_login:
+             raise Conflict({ ... }) # Raise 409
         
         # 4. Increment Version (This invalidates all old tokens)
         self.user.token_version += 1

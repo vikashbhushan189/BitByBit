@@ -10,7 +10,7 @@ class User(AbstractUser):
     # This field is the key to Single Device Login. 
     # Incrementing this invalidates ALL old tokens.
     token_version = models.IntegerField(default=0) 
-
+    last_logout = models.DateTimeField(null=True, blank=True)
     # Fix conflicts with default Django auth
     groups = models.ManyToManyField(
         'auth.Group',

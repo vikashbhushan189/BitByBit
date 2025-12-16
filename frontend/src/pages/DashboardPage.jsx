@@ -93,11 +93,22 @@ const DashboardPage = () => {
         }
     }, [activeCourse, attempts]);
 
-    const handleLogout = () => {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user_role');
-        window.location.href = '/login';
+    const handleLogout = async () => {
+        try {
+            // 1. Tell backend to record "Logout Time"
+            // This ensures next login won't trigger "Device Conflict" warning
+            await api.post('auth-otp/logout/');
+        } catch (e) {
+            console.error("Logout API failed", e);
+        } finally {
+            // 2. Clear local storage regardless of API success
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user_role');
+            
+            // 3. Redirect to login
+            window.location.href = '/login';
+        }
     };
 
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
@@ -139,6 +150,13 @@ const DashboardPage = () => {
                         <SidebarItem icon={<ShoppingCart size={20}/>} label="Course Store" onClick={() => navigate('/store')} />
                         <SidebarItem icon={<Trophy size={20}/>} label="Leaderboard" />
                         <SidebarItem icon={<User size={20}/>} label="My Profile" onClick={() => navigate('/profile')}/>
+                    {/* Added Logout here for mobile convenience */}
+                        <button 
+                            onClick={handleLogout}
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        >
+                            <LogOut size={20}/> <span>Logout</span>
+                        </button>
                     </nav>
 
                     <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700 mt-auto">

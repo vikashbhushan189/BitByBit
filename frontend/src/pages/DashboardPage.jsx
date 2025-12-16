@@ -4,7 +4,7 @@ import api from '../api/axios';
 import { 
     Layout, BookOpen, User, LogOut, ChevronRight, ShoppingCart, 
     Flame, Zap, PlayCircle, Trophy, MoreVertical, Star, Shield, 
-    Clock, CheckCircle, AlertTriangle, Menu, X, TrendingUp, RefreshCw, Home
+    Clock, CheckCircle, AlertTriangle, Menu, X, TrendingUp, RefreshCw, Home, Bell
 } from 'lucide-react';
 
 const DashboardPage = () => {

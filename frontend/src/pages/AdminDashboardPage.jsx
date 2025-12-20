@@ -1,14 +1,26 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import api from '../api/axios'; // <--- Import API
 import { Wand2, Layout, LogOut, ShieldCheck, UploadCloud, FileText, Megaphone } from 'lucide-react';
 
 const AdminDashboardPage = () => {
     
-    const handleLogout = () => {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user_role');
-        window.location.href = '/admin-portal';
+    // --- UPDATED LOGOUT LOGIC ---
+    const handleLogout = async () => {
+        try {
+            // 1. Tell backend to record logout time
+            await api.post('auth-otp/logout/');
+        } catch (e) {
+            console.error("Logout API call failed", e);
+        } finally {
+            // 2. Clear local credentials regardless of API success
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user_role');
+            
+            // 3. Redirect to Admin Login
+            window.location.href = '/admin-portal';
+        }
     };
 
     return (

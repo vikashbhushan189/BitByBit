@@ -81,33 +81,33 @@ const AdminNotesEditorPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-900 text-white p-8 font-sans">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white p-8 font-sans transition-colors duration-300">
             <div className="max-w-5xl mx-auto">
                 <h1 className="text-3xl font-bold mb-8 flex items-center gap-3">
-                    <FileText className="text-blue-400"/> Admin Notes Editor
+                    <FileText className="text-blue-600 dark:text-blue-400"/> Admin Notes Editor
                 </h1>
 
                 {/* --- SELECTION PANEL --- */}
-                <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase mb-2">1. Course</label>
-                        <select className="w-full p-2 bg-slate-900 border border-slate-600 rounded text-white" 
+                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">1. Course</label>
+                        <select className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none" 
                             onChange={e => setSelectedCourse(e.target.value)} value={selectedCourse}>
                             <option value="">-- Select Course --</option>
                             {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase mb-2">2. Subject</label>
-                        <select className="w-full p-2 bg-slate-900 border border-slate-600 rounded text-white" 
+                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">2. Subject</label>
+                        <select className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none" 
                             onChange={e => setSelectedSubject(e.target.value)} value={selectedSubject} disabled={!selectedCourse}>
                             <option value="">-- Select Subject --</option>
                             {subjects.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase mb-2">3. Chapter</label>
-                        <select className="w-full p-2 bg-slate-900 border border-slate-600 rounded text-white" 
+                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">3. Chapter</label>
+                        <select className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none" 
                             onChange={e => setSelectedChapter(e.target.value)} value={selectedChapter} disabled={!selectedSubject}>
                             <option value="">-- Select Chapter --</option>
                             {chapters.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
@@ -117,11 +117,11 @@ const AdminNotesEditorPage = () => {
 
                 {/* --- EDITOR AREA --- */}
                 {selectedChapter && (
-                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl relative">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl relative">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-xl font-bold">Edit Content (Markdown)</h2>
                             {message && (
-                                <div className="flex items-center gap-2 text-green-400 text-sm font-bold bg-green-900/30 px-3 py-1 rounded-full">
+                                <div className="flex items-center gap-2 text-green-700 dark:text-green-400 text-sm font-bold bg-green-100 dark:bg-green-900/30 px-3 py-1 rounded-full">
                                     <CheckCircle size={16}/> {message}
                                 </div>
                             )}
@@ -133,7 +133,7 @@ const AdminNotesEditorPage = () => {
                             </div>
                         ) : (
                             <textarea
-                                className="w-full h-[500px] bg-slate-900 border border-slate-600 rounded-lg p-4 text-slate-200 font-mono text-sm leading-relaxed focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
+                                className="w-full h-[500px] bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-4 text-slate-800 dark:text-slate-200 font-mono text-sm leading-relaxed focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
                                 value={notesContent}
                                 onChange={e => setNotesContent(e.target.value)}
                                 placeholder="# Add your notes here..."
@@ -144,7 +144,7 @@ const AdminNotesEditorPage = () => {
                             <button 
                                 onClick={handleSave}
                                 disabled={saving || loading}
-                                className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg flex items-center gap-2 disabled:opacity-50"
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg flex items-center gap-2 disabled:opacity-50"
                             >
                                 {saving ? <Loader2 className="animate-spin"/> : <Save size={20}/>}
                                 Save Changes

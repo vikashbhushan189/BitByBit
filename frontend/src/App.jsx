@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react'; 
+import React, { useEffect, useState, useRef } from 'react';
+import api from './api/axios';
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { 
     // Core Navigation & UI (Placed first)
@@ -315,12 +316,22 @@ const Navbar = ({ theme, toggleTheme }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-    const handleLogout = () => {
-        const role = localStorage.getItem('user_role');
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user_role');
-        window.location.href = role === 'admin' ? '/admin-portal' : '/login'; 
+    const handleLogout = async () => {
+        try {
+            // 1. Tell backend we are leaving
+            await api.post('auth-otp/logout/');
+        } catch (e) {
+            console.error("Logout API failed (ignoring)", e);
+        } finally {
+            // 2. Clear local storage ALWAYS
+            const role = localStorage.getItem('user_role');
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user_role');
+            
+            // 3. Redirect
+            window.location.href = role === 'admin' ? '/admin-portal' : '/login'; 
+        }
     };
 
     const showBackButton = location.pathname !== '/dashboard' && location.pathname !== '/';

@@ -16,12 +16,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-# Project Imports
 from .models import Course, Exam, ExamAttempt, Question, Option, StudentResponse, Topic, Chapter, Subject, AdBanner, UserSubscription, User, OTP
 from .serializers import CourseSerializer, ExamSerializer, ExamAttemptSerializer, TopicSerializer, AdBannerSerializer, ChapterSerializer
 from .ai_service import generate_questions_from_text, generate_question_from_image
 from .permissions import IsPaidSubscriberOrAdmin
-import chardet
 
 # --- CUSTOM EXCEPTION FOR CONFLICT ---
 class Conflict(APIException):
@@ -29,38 +27,40 @@ class Conflict(APIException):
     default_detail = 'Device Conflict'
     default_code = 'conflict'
 
-# --- CUSTOM PASSWORD LOGIN (With Conflict Check) ---
+# --- CUSTOM PASSWORD LOGIN (Fixed Logic) ---
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
-        # 1. Validate Credentials (Username/Pass)
-        # This will raise 401 if wrong, which is correct.
         data = super().validate(attrs)
         
-        # 2. Check for Force Login Flag
         request = self.context.get('request')
         force_login = request.data.get('force_login', False)
         
-        # 3. Check active session
-        is_active_session = self.user.last_login and (not self.user.last_logout or self.user.last_login > self.user.last_logout)
+        # LOGIC FIX: Only raise conflict if user is CURRENTLY active.
+        # Active means: They logged in, but haven't logged out since then.
+        is_active_session = self.user.last_login and (
+            not self.user.last_logout or self.user.last_login > self.user.last_logout
+        )
         
+        # If active elsewhere AND not forcing a new session -> Conflict
         if is_active_session and not force_login:
-             raise Conflict({ ... }) # Raise 409
+             raise Conflict({
+                 "message": "You are logged in on another device. Do you want to logout from there?",
+                 "requires_confirmation": True
+             })
         
-        # 4. Increment Version (This invalidates all old tokens)
+        # Valid Login Process
         self.user.token_version += 1
+        self.user.last_login = timezone.now()
         self.user.save()
         
-        # 5. Re-Generate Token with NEW Version
-        # We discard the initial token from super().validate() because it used the OLD version.
         refresh = RefreshToken.for_user(self.user)
-        refresh['token_version'] = self.user.token_version # Stamp it!
+        refresh['token_version'] = self.user.token_version 
         
         data['refresh'] = str(refresh)
         data['access'] = str(refresh.access_token)
         data['role'] = "admin" if self.user.is_superuser else "student"
         
         return data
-
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
@@ -69,7 +69,14 @@ class MyTokenObtainPairView(TokenObtainPairView):
 class AuthViewSet(viewsets.ViewSet):
     permission_classes = [permissions.AllowAny]
 
-    # ... (Keep send_otp and verify_otp for your manual testing if you want, or replace them) ...
+    # --- LOGOUT ENDPOINT (Critical for clean sessions) ---
+    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def logout(self, request):
+        user = request.user
+        user.last_logout = timezone.now()
+        user.save()
+        return Response({"status": "success", "message": "Logged out successfully"})
+
     @action(detail=False, methods=['post'])
     def send_otp(self, request):
         phone = request.data.get('phone')
@@ -97,32 +104,27 @@ class AuthViewSet(viewsets.ViewSet):
     def firebase_exchange(self, request):
         phone = request.data.get('phone')
         force_login = request.data.get('force_login', False)
-        
         if not phone: return Response({"error": "Phone number required"}, status=400)
-
         return self._perform_login(phone, force_login)
 
     def _perform_login(self, phone, force_login):
-        # FIX: Do NOT auto-create. Check if user exists first.
         try:
             user = User.objects.get(phone_number=phone)
         except User.DoesNotExist:
-            # If user doesn't exist, tell frontend to redirect to Register
-            return Response({
-                "status": "not_registered",
-                "message": "Account does not exist. Please register first.",
-                "phone": phone
-            }, status=404) # 404 Not Found is appropriate here
+            return Response({"status": "not_registered", "message": "Account does not exist."}, status=404)
 
-        # 3. Single Device Check
-        if not force_login and user.token_version > 0:
+        # LOGIC FIX: Same check as Password Login
+        is_active_session = user.last_login and (
+            not user.last_logout or user.last_login > user.last_logout
+        )
+
+        if not force_login and is_active_session:
              return Response({
                  "status": "conflict", 
-                 "message": "You are logged in on another device. Do you want to logout from there?",
+                 "message": "You are logged in on another device.",
                  "requires_confirmation": True
              }, status=409)
 
-        # 4. Perform Login
         user.token_version += 1
         user.last_login = timezone.now()
         user.save()
@@ -136,45 +138,36 @@ class AuthViewSet(viewsets.ViewSet):
             "refresh": str(refresh),
             "role": "admin" if user.is_superuser else "student"
         })
-    
 
-# --- STUDENT VIEWS ---
+# --- STUDENT/ADMIN VIEWS ---
 class CourseViewSet(viewsets.ReadOnlyModelViewSet):
-    # OPTIMIZED QUERYSET: Fetch deeply nested relations to prevent N+1 crashes
+    # Optimized Prefetch
     queryset = Course.objects.prefetch_related(
         'subjects',
         'subjects__chapters',
-        'subjects__chapters__topics',      # Needed for legacy quiz check
-        'subjects__chapters__quiz',        # New chapter quizzes
-        'subjects__chapters__topics__quiz_legacy', # Legacy topic quizzes
-        'subjects__tests',                 # Subject tests
-        'mocks'                            # Course mocks/pyqs
+        'subjects__chapters__topics',
+        'subjects__chapters__quiz',
+        'subjects__chapters__topics__quiz_legacy',
+        'subjects__tests',
+        'mocks',
+        'pyqs'
     ).all()
-    
     serializer_class = CourseSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     @action(detail=False, methods=['get'])
     def enrolled(self, request):
-        if not request.user.is_authenticated:
-            return Response([])
-        
+        if not request.user.is_authenticated: return Response([])
         subscribed_ids = UserSubscription.objects.filter(user=request.user, active=True).values_list('course_id', flat=True)
-        
-        # Apply EXACT SAME prefetch optimization
         courses = Course.objects.filter(id__in=subscribed_ids).prefetch_related(
-            'subjects',
-            'subjects__chapters',
-            'subjects__chapters__topics',
-            'subjects__chapters__quiz',
-            'subjects__chapters__topics__quiz_legacy',
-            'subjects__tests',
-            'mocks'
+            'subjects', 'subjects__chapters', 'subjects__chapters__topics',
+            'subjects__chapters__quiz', 'subjects__chapters__topics__quiz_legacy',
+            'subjects__tests', 'mocks'
         )
-        
         serializer = self.get_serializer(courses, many=True)
         return Response(serializer.data)
-
+    
+    
 class ChapterViewSet(viewsets.ModelViewSet):
     queryset = Chapter.objects.all()
     serializer_class = ChapterSerializer

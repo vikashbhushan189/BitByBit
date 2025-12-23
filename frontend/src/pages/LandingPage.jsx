@@ -256,17 +256,46 @@ const LandingPage = () => {
                         </div>
                     </div>
                     <div className="md:w-1/2">
-                        {/* 3D Floating Elements */}
+                        {/* 3D VIDEO CONTAINER */}
                         <div className="relative bg-gradient-to-br from-slate-800 to-slate-900 p-8 rounded-3xl border border-slate-700 shadow-2xl">
-                            <div className="flex items-center justify-between mb-8">
-                                <div className="flex gap-2"><div className="w-3 h-3 rounded-full bg-red-500"/><div className="w-3 h-3 rounded-full bg-yellow-500"/><div className="w-3 h-3 rounded-full bg-green-500"/></div>
-                                <div className="text-slate-500 text-xs font-mono">live_class.mp4</div>
-                            </div>
-                            <div className="bg-slate-950 rounded-xl h-64 flex items-center justify-center border border-slate-800 relative overflow-hidden group">
-                                <div className="absolute inset-0 bg-blue-600/10 group-hover:bg-blue-600/20 transition-colors"></div>
-                                <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform">
-                                    <div className="w-0 h-0 border-t-[10px] border-t-transparent border-l-[20px] border-l-white border-b-[10px] border-b-transparent ml-1"></div>
+                            {/* Window Controls */}
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-400 transition-colors"/>
+                                    <div className="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-400 transition-colors"/>
+                                    <div className="w-3 h-3 rounded-full bg-green-500 hover:bg-green-400 transition-colors"/>
                                 </div>
+                                <div className="text-slate-500 text-xs font-mono bg-slate-800 px-3 py-1 rounded-full border border-slate-700">
+                                    intro_video.mp4
+                                </div>
+                            </div>
+
+                            {/* --- THE VIDEO PLAYER --- */}
+                            <div className="bg-black rounded-xl overflow-hidden shadow-inner border border-slate-800 aspect-video relative group">
+                                <video 
+                                    className="w-full h-full object-cover"
+                                    autoPlay 
+                                    loop 
+                                    muted 
+                                    playsInline
+                                    poster="/assets/video-thumbnail.jpg" // Optional: Add a thumbnail image
+                                >
+                                    {/* Make sure the file exists at frontend/public/assets/intro.mp4 */}
+                                    <source src="/assets/intro.mp4" type="video/mp4" />
+                                    Your browser does not support the video tag.
+                                </video>
+                                
+                                {/* Overlay Gradient (Optional) */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none"></div>
+                            </div>
+
+                            {/* Progress Bar (Decorative) */}
+                            <div className="mt-6 flex gap-4 items-center">
+                                <PlayCircle size={20} className="text-blue-500"/>
+                                <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                                    <div className="h-full w-2/3 bg-blue-500 animate-pulse"></div>
+                                </div>
+                                <span className="text-xs text-slate-400 font-mono">01:24 / 02:00</span>
                             </div>
                         </div>
                     </div>
